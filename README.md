@@ -50,6 +50,40 @@ python3 upload_intervals_plan.py --upload
 
 ---
 
+## Comprehensive Training Ecosystem (COROS + Strava + Hevy)
+
+```text
+       ┌───────────────────────────────┐
+       │   Intervals.icu (Core Hub)    │
+       │   - 8-Week Training Calendar  │
+       │   - Fatigue (ATL) & Form (TSB)│
+       └───┬───────────────────────▲───┘
+           │ 1. Pushes planned     │ 2. Pulls completed
+           │    workouts to watch  │    runs / rides
+           ▼                       │
+       ┌───────────┐         ┌─────┴─────┐
+       │   COROS   ├────────►│  Strava   │
+       │   Watch   │ Syncs   │ (Social)  │
+       └───────────┘ runs    └─────▲─────┘
+                                   │ Syncs gym routines
+                             ┌─────┴─────┐
+                             │   Hevy    │
+                             │ (Strength)│
+                             └───────────┘
+```
+
+1. **COROS Watch (Endurance Workouts)**:
+   - In the **COROS App** $\rightarrow$ **Profile** $\rightarrow$ **Settings** $\rightarrow$ **3rd Party Apps** $\rightarrow$ Connect **Intervals.icu**.
+   - Your planned workouts will sync directly onto your COROS watch calendar. Completed runs and rides will automatically upload back to Intervals.icu.
+2. **Strava (Social & Activity Hub)**:
+   - In **Intervals.icu Settings** $\rightarrow$ **Connections** $\rightarrow$ Connect **Strava**.
+   - Also connect Strava inside the COROS app so watch workouts post to your social feed.
+3. **Hevy (Strength Workouts)**:
+   - In the **Hevy App** $\rightarrow$ **Settings** $\rightarrow$ **Integrations** $\rightarrow$ Connect **Strava**.
+   - When you log a workout in Hevy, it uploads to Strava as `WeightTraining`. Intervals.icu will automatically import it, tracking your gym load against your fatigue curve!
+
+---
+
 ## Project Structure
 
 ```text
