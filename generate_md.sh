@@ -5,17 +5,15 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
 # Run the Python generator
-python3 generate_all_md.py
+python3 generate_all_md.py "$@"
 
-# Display the contents of ALL_WORKOUTS.md in the terminal
-if [ -f "ALL_WORKOUTS.md" ]; then
+# Display the contents of PLAN.md in the terminal
+if [ -f "PLAN.md" ]; then
   printf "\n========================================\n"
-  printf "          ALL_WORKOUTS.md\n"
+  printf "          PLAN.md (COMPLETE)\n"
   printf "========================================\n\n"
-  cat "ALL_WORKOUTS.md"
+  cat "PLAN.md"
   printf "\n========================================\n"
-  printf "       End of ALL_WORKOUTS.md\n"
+  printf "          End of PLAN.md\n"
   printf "========================================\n\n"
 fi
-
-echo "✅ Generated and displayed ALL_WORKOUTS.md with the complete 8-week plan."

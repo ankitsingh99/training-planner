@@ -1,404 +1,392 @@
-# Complete 8-Week Training Plan
+# 8-Week Run & Bike Comprehensive Training Plan
 
-This document contains all 30 planned activities and notes across the 8-week block (2026-11-02 to 2026-12-27).
+A structured 8-week dual-sport progression designed to build VO2 max, aerobic endurance, and durability without accumulated burnout.
+
+## Overview Schedule
+
+| Week | Monday (Quality Run) | Tuesday (Aerobic Ride) | Thursday (Optional VO2 Bike) | Weekend (Club Ride) |
+| :--- | :--- | :--- | :--- | :--- |
+| **Week 1** | 5 x 3 min (48m 30s) | Zone 2 (40m) | 4 x 4 min (46m) | ~50 km (~3h flexible) |
+| **Week 2** | 4 x 4 min (49m) | Zone 2 (45m) | 2 x (10 x 30s hard / 30s easy) (48m) | ~50 km (~3h flexible) |
+| **Week 3** | 5 x 4 min (56m) | Zone 2 (50m) | 3 x (10 x 30s hard / 30s easy) (63m) | ~50 km (~3h flexible) |
+| **Week 4 (Deload)** | Deload: 4 x 3 min (45m) | Zone 2 (35m) | *Rest / Recovery* | ~50 km (~3h flexible) |
+| **Week 5** | 4 x 5 min (55m) | Zone 2 (55m) | 5 x 4 min (53m) | ~50 km (~3h flexible) |
+| **Week 6** | 5 x 4 min (53m 30s) | Zone 2 (60m) | 3 x (13 x 30s hard / 15s easy) (62m 15s) | ~50 km (~3h flexible) |
+| **Week 7 (Peak)** | 6 x 4 min (63m) | Zone 2 (60m) | 4 x 6 min (58m) | ~50 km (~3h flexible) |
+| **Week 8 (Taper)** | Taper: 3 x 3 min (39m) | Zone 2 (40m) | *Rest / Recovery* | ~50 km (~3h flexible) |
 
 ---
 
-## W1 quality run — 5 x 3 min — `2026-11-02T00:00:00`
+## Training Guidelines & Intensity Zones
+
+- **Monday Quality Runs:** VO2 max intervals. Run by effort (approx. 5K race pace / RPE 8–9). HR may lag on short reps—do not sprint the first rep.
+- **Tuesday Easy Aerobic Rides:** True conversational Zone 2 (HR ~131–148 bpm). Back off immediately if heart rate drifts.
+- **Thursday Optional Bike Intervals:** High-intensity VO2 intervals. **Strictly optional:** skip this workout if your weekend club ride is hard or if overall fatigue is elevated.
+- **Weekend Club Ride:** ~50 km endurance ride (approx. 3 hours including coffee/group stops). Can be moved between Saturday and Sunday as needed.
+- **Deload & Taper (Weeks 4 & 8):** Hard Thursday bike sessions are removed to absorb training stress and allow supercompensation.
+
+---
+
+## Detailed Workouts by Week
+
+### Week 1 — Progression Phase
+
+#### Monday, 2026-11-02: W1 quality run — 5 x 3 min
 
 - **Type:** Run
 - **Category:** WORKOUT
-- **Duration:** 48m 30s (2910s)
-- **External ID:** `chatgpt-8wk-run-bike-2026-11-02-w1-mon-run`
-- **Description:** Run by effort, not pace. Keep repetitions consistent; do not sprint the first interval. HR may lag during short reps.
+- **Total Duration:** 48m 30s (2910s)
+- **Focus:** Run by effort, not pace. Keep repetitions consistent; do not sprint the first interval. HR may lag during short reps.
 
-### Workout Structure
-- Warm up very easily; build gradually [12m (720s), HR: 65–80 %lthr]
+**Workout Structure:**
+- Warm up very easily; build gradually [12m, HR: 65–80 %lthr]
 - **5x Repeat:** 5 x 3 min — hard but repeatable, approximately 5K effort
-  - Hard interval; even effort [3m (180s)]
-  - Easy jog or walk recovery [2m 30s (150s)]
-- Easy cool-down [9m (540s)]
+  - Hard interval; even effort [3m]
+  - Easy jog or walk recovery [2m 30s]
+- Easy cool-down [9m]
 
----
-## W1 easy aerobic ride — 40 min — `2026-11-03T00:00:00`
-
-- **Type:** Ride
-- **Category:** WORKOUT
-- **Duration:** 40m (2400s)
-- **External ID:** `chatgpt-8wk-run-bike-2026-11-02-w1-tue-easy-ride`
-- **Description:** 40 minutes conversational Zone 2. Keep HR approximately 131–148 bpm; back off if it drifts or the legs feel heavy. This should feel easy.
-
-### Workout Structure
-- Steady conversational aerobic ride; HR 131–148 bpm [40m (2400s)]
-
----
-## W1 OPTIONAL bike VO2 — 4 x 4 min — `2026-11-05T00:00:00`
+#### Tuesday, 2026-11-03: W1 easy aerobic ride — 40 min
 
 - **Type:** Ride
 - **Category:** WORKOUT
-- **Duration:** 46m (2760s)
-- **External ID:** `chatgpt-8wk-run-bike-2026-11-02-w1-thu-optional-bike`
-- **Description:** OPTIONAL, not an extra obligation. Do this only if the weekend club ride will be easy/moderate and recovery is good. If the club ride is hard, skip this session entirely. Keep efforts repeatable, not all-out.
+- **Total Duration:** 40m (2400s)
+- **Focus:** 40 minutes conversational Zone 2. Keep HR approximately 131–148 bpm; back off if it drifts or the legs feel heavy. This should feel easy.
 
-### Workout Structure
-- Warm up gradually [10m (600s)]
+**Workout Structure:**
+- Steady conversational aerobic ride; HR 131–148 bpm [40m]
+
+#### Thursday, 2026-11-05: W1 OPTIONAL bike VO2 — 4 x 4 min
+
+- **Type:** Ride
+- **Category:** WORKOUT
+- **Total Duration:** 46m (2760s)
+- **Focus:** OPTIONAL, not an extra obligation. Do this only if the weekend club ride will be easy/moderate and recovery is good. If the club ride is hard, skip this session entirely. Keep efforts repeatable, not all-out.
+
+**Workout Structure:**
+- Warm up gradually [10m]
 - **4x Repeat:** 4 x 4 min
-  - Hard but repeatable; RPE 8–9 [4m (240s)]
-  - Very easy spinning [3m (180s)]
-- Easy cool-down [8m (480s)]
+  - Hard but repeatable; RPE 8–9 [4m]
+  - Very easy spinning [3m]
+- Easy cool-down [8m]
 
----
-## W1 weekend club ride — flexible day — `2026-11-07T00:00:00`
+#### Saturday, 2026-11-07: W1 weekend club ride — flexible day
 
 - **Type:** Ride
 - **Category:** NOTE
-- **Duration:** N/A
-- **External ID:** `chatgpt-8wk-run-bike-2026-11-02-w1-weekend-club-ride`
-- **Description:** Target: approximately 50 km, about 3 hours including stops. Move this reminder to Sunday if that is the club ride day. If the ride is hard, it replaces Thursday's optional bike intervals; do not do both hard sessions.
+- **Focus:** Target: approximately 50 km, about 3 hours including stops. Move this reminder to Sunday if that is the club ride day. If the ride is hard, it replaces Thursday's optional bike intervals; do not do both hard sessions.
 
 ---
-## W2 quality run — 4 x 4 min — `2026-11-09T00:00:00`
+
+### Week 2 — Progression Phase
+
+#### Monday, 2026-11-09: W2 quality run — 4 x 4 min
 
 - **Type:** Run
 - **Category:** WORKOUT
-- **Duration:** 49m (2940s)
-- **External ID:** `chatgpt-8wk-run-bike-2026-11-02-w2-mon-run`
-- **Description:** Run by effort, not pace. Keep repetitions consistent; do not sprint the first interval. HR may lag during short reps.
+- **Total Duration:** 49m (2940s)
+- **Focus:** Run by effort, not pace. Keep repetitions consistent; do not sprint the first interval. HR may lag during short reps.
 
-### Workout Structure
-- Warm up very easily; build gradually [12m (720s), HR: 65–80 %lthr]
+**Workout Structure:**
+- Warm up very easily; build gradually [12m, HR: 65–80 %lthr]
 - **4x Repeat:** 4 x 4 min — hard but repeatable, approximately 5K effort
-  - Hard interval; even effort [4m (240s)]
-  - Easy jog or walk recovery [3m (180s)]
-- Easy cool-down [9m (540s)]
+  - Hard interval; even effort [4m]
+  - Easy jog or walk recovery [3m]
+- Easy cool-down [9m]
 
----
-## W2 easy aerobic ride — 45 min — `2026-11-10T00:00:00`
-
-- **Type:** Ride
-- **Category:** WORKOUT
-- **Duration:** 45m (2700s)
-- **External ID:** `chatgpt-8wk-run-bike-2026-11-02-w2-tue-easy-ride`
-- **Description:** 45 minutes conversational Zone 2. Keep HR approximately 131–148 bpm; back off if it drifts or the legs feel heavy. This should feel easy.
-
-### Workout Structure
-- Steady conversational aerobic ride; HR 131–148 bpm [45m (2700s)]
-
----
-## W2 OPTIONAL bike VO2 — 2 x (10 x 30s hard / 30s easy) — `2026-11-12T00:00:00`
+#### Tuesday, 2026-11-10: W2 easy aerobic ride — 45 min
 
 - **Type:** Ride
 - **Category:** WORKOUT
-- **Duration:** 48m (2880s)
-- **External ID:** `chatgpt-8wk-run-bike-2026-11-02-w2-thu-optional-bike`
-- **Description:** OPTIONAL, not an extra obligation. Do this only if the weekend club ride will be easy/moderate and recovery is good. If the club ride is hard, skip this session entirely. Keep efforts repeatable, not all-out.
+- **Total Duration:** 45m (2700s)
+- **Focus:** 45 minutes conversational Zone 2. Keep HR approximately 131–148 bpm; back off if it drifts or the legs feel heavy. This should feel easy.
 
-### Workout Structure
-- Warm up gradually [10m (600s)]
+**Workout Structure:**
+- Steady conversational aerobic ride; HR 131–148 bpm [45m]
+
+#### Thursday, 2026-11-12: W2 OPTIONAL bike VO2 — 2 x (10 x 30s hard / 30s easy)
+
+- **Type:** Ride
+- **Category:** WORKOUT
+- **Total Duration:** 48m (2880s)
+- **Focus:** OPTIONAL, not an extra obligation. Do this only if the weekend club ride will be easy/moderate and recovery is good. If the club ride is hard, skip this session entirely. Keep efforts repeatable, not all-out.
+
+**Workout Structure:**
+- Warm up gradually [10m]
 - **2x Repeat:** 2 x (10 x 30s hard / 30s easy) — repeat sets
   - **10x Repeat:** Interval block
     - Hard, controlled effort; RPE 8–9 [30s]
     - Very easy spinning [30s]
-  - Easy spin between blocks [5m (300s)]
-- Easy cool-down [8m (480s)]
+  - Easy spin between blocks [5m]
+- Easy cool-down [8m]
 
----
-## W2 weekend club ride — flexible day — `2026-11-14T00:00:00`
+#### Saturday, 2026-11-14: W2 weekend club ride — flexible day
 
 - **Type:** Ride
 - **Category:** NOTE
-- **Duration:** N/A
-- **External ID:** `chatgpt-8wk-run-bike-2026-11-02-w2-weekend-club-ride`
-- **Description:** Target: approximately 50 km, about 3 hours including stops. Move this reminder to Sunday if that is the club ride day. If the ride is hard, it replaces Thursday's optional bike intervals; do not do both hard sessions.
+- **Focus:** Target: approximately 50 km, about 3 hours including stops. Move this reminder to Sunday if that is the club ride day. If the ride is hard, it replaces Thursday's optional bike intervals; do not do both hard sessions.
 
 ---
-## W3 quality run — 5 x 4 min — `2026-11-16T00:00:00`
+
+### Week 3 — Progression Phase
+
+#### Monday, 2026-11-16: W3 quality run — 5 x 4 min
 
 - **Type:** Run
 - **Category:** WORKOUT
-- **Duration:** 56m (3360s)
-- **External ID:** `chatgpt-8wk-run-bike-2026-11-02-w3-mon-run`
-- **Description:** Run by effort, not pace. Keep repetitions consistent; do not sprint the first interval. HR may lag during short reps.
+- **Total Duration:** 56m (3360s)
+- **Focus:** Run by effort, not pace. Keep repetitions consistent; do not sprint the first interval. HR may lag during short reps.
 
-### Workout Structure
-- Warm up very easily; build gradually [12m (720s), HR: 65–80 %lthr]
+**Workout Structure:**
+- Warm up very easily; build gradually [12m, HR: 65–80 %lthr]
 - **5x Repeat:** 5 x 4 min — hard but repeatable, approximately 5K effort
-  - Hard interval; even effort [4m (240s)]
-  - Easy jog or walk recovery [3m (180s)]
-- Easy cool-down [9m (540s)]
+  - Hard interval; even effort [4m]
+  - Easy jog or walk recovery [3m]
+- Easy cool-down [9m]
 
----
-## W3 easy aerobic ride — 50 min — `2026-11-17T00:00:00`
-
-- **Type:** Ride
-- **Category:** WORKOUT
-- **Duration:** 50m (3000s)
-- **External ID:** `chatgpt-8wk-run-bike-2026-11-02-w3-tue-easy-ride`
-- **Description:** 50 minutes conversational Zone 2. Keep HR approximately 131–148 bpm; back off if it drifts or the legs feel heavy. This should feel easy.
-
-### Workout Structure
-- Steady conversational aerobic ride; HR 131–148 bpm [50m (3000s)]
-
----
-## W3 OPTIONAL bike VO2 — 3 x (10 x 30s hard / 30s easy) — `2026-11-19T00:00:00`
+#### Tuesday, 2026-11-17: W3 easy aerobic ride — 50 min
 
 - **Type:** Ride
 - **Category:** WORKOUT
-- **Duration:** 63m (3780s)
-- **External ID:** `chatgpt-8wk-run-bike-2026-11-02-w3-thu-optional-bike`
-- **Description:** OPTIONAL, not an extra obligation. Do this only if the weekend club ride will be easy/moderate and recovery is good. If the club ride is hard, skip this session entirely. Keep efforts repeatable, not all-out.
+- **Total Duration:** 50m (3000s)
+- **Focus:** 50 minutes conversational Zone 2. Keep HR approximately 131–148 bpm; back off if it drifts or the legs feel heavy. This should feel easy.
 
-### Workout Structure
-- Warm up gradually [10m (600s)]
+**Workout Structure:**
+- Steady conversational aerobic ride; HR 131–148 bpm [50m]
+
+#### Thursday, 2026-11-19: W3 OPTIONAL bike VO2 — 3 x (10 x 30s hard / 30s easy)
+
+- **Type:** Ride
+- **Category:** WORKOUT
+- **Total Duration:** 63m (3780s)
+- **Focus:** OPTIONAL, not an extra obligation. Do this only if the weekend club ride will be easy/moderate and recovery is good. If the club ride is hard, skip this session entirely. Keep efforts repeatable, not all-out.
+
+**Workout Structure:**
+- Warm up gradually [10m]
 - **3x Repeat:** 3 x (10 x 30s hard / 30s easy) — repeat sets
   - **10x Repeat:** Interval block
     - Hard, controlled effort; RPE 8–9 [30s]
     - Very easy spinning [30s]
-  - Easy spin between blocks [5m (300s)]
-- Easy cool-down [8m (480s)]
+  - Easy spin between blocks [5m]
+- Easy cool-down [8m]
 
----
-## W3 weekend club ride — flexible day — `2026-11-21T00:00:00`
+#### Saturday, 2026-11-21: W3 weekend club ride — flexible day
 
 - **Type:** Ride
 - **Category:** NOTE
-- **Duration:** N/A
-- **External ID:** `chatgpt-8wk-run-bike-2026-11-02-w3-weekend-club-ride`
-- **Description:** Target: approximately 50 km, about 3 hours including stops. Move this reminder to Sunday if that is the club ride day. If the ride is hard, it replaces Thursday's optional bike intervals; do not do both hard sessions.
+- **Focus:** Target: approximately 50 km, about 3 hours including stops. Move this reminder to Sunday if that is the club ride day. If the ride is hard, it replaces Thursday's optional bike intervals; do not do both hard sessions.
 
 ---
-## W4 quality run — Deload: 4 x 3 min — `2026-11-23T00:00:00`
+
+### Week 4 — Deload Phase
+
+#### Monday, 2026-11-23: W4 quality run — Deload: 4 x 3 min
 
 - **Type:** Run
 - **Category:** WORKOUT
-- **Duration:** 45m (2700s)
-- **External ID:** `chatgpt-8wk-run-bike-2026-11-02-w4-mon-run`
-- **Description:** Run by effort, not pace. Keep repetitions consistent; do not sprint the first interval. HR may lag during short reps.
+- **Total Duration:** 45m (2700s)
+- **Focus:** Run by effort, not pace. Keep repetitions consistent; do not sprint the first interval. HR may lag during short reps.
 
-### Workout Structure
-- Warm up very easily; build gradually [12m (720s), HR: 65–80 %lthr]
+**Workout Structure:**
+- Warm up very easily; build gradually [12m, HR: 65–80 %lthr]
 - **4x Repeat:** Deload: 4 x 3 min — hard but repeatable, approximately 5K effort
-  - Hard interval; even effort [3m (180s)]
-  - Easy jog or walk recovery [3m (180s)]
-- Easy cool-down [9m (540s)]
+  - Hard interval; even effort [3m]
+  - Easy jog or walk recovery [3m]
+- Easy cool-down [9m]
 
----
-## W4 easy aerobic ride — 35 min — `2026-11-24T00:00:00`
+#### Tuesday, 2026-11-24: W4 easy aerobic ride — 35 min
 
 - **Type:** Ride
 - **Category:** WORKOUT
-- **Duration:** 35m (2100s)
-- **External ID:** `chatgpt-8wk-run-bike-2026-11-02-w4-tue-easy-ride`
-- **Description:** 35 minutes conversational Zone 2. Keep HR approximately 131–148 bpm; back off if it drifts or the legs feel heavy. This should feel easy.
+- **Total Duration:** 35m (2100s)
+- **Focus:** 35 minutes conversational Zone 2. Keep HR approximately 131–148 bpm; back off if it drifts or the legs feel heavy. This should feel easy.
 
-### Workout Structure
-- Steady conversational aerobic ride; HR 131–148 bpm [35m (2100s)]
+**Workout Structure:**
+- Steady conversational aerobic ride; HR 131–148 bpm [35m]
 
----
-## W4 weekend club ride — flexible day — `2026-11-28T00:00:00`
+#### Saturday, 2026-11-28: W4 weekend club ride — flexible day
 
 - **Type:** Ride
 - **Category:** NOTE
-- **Duration:** N/A
-- **External ID:** `chatgpt-8wk-run-bike-2026-11-02-w4-weekend-club-ride`
-- **Description:** Target: approximately 50 km, about 3 hours including stops. Move this reminder to Sunday if that is the club ride day. If the ride is hard, it replaces Thursday's optional bike intervals; do not do both hard sessions.
+- **Focus:** Target: approximately 50 km, about 3 hours including stops. Move this reminder to Sunday if that is the club ride day. If the ride is hard, it replaces Thursday's optional bike intervals; do not do both hard sessions.
 
 ---
-## W5 quality run — 4 x 5 min — `2026-11-30T00:00:00`
+
+### Week 5 — Progression Phase
+
+#### Monday, 2026-11-30: W5 quality run — 4 x 5 min
 
 - **Type:** Run
 - **Category:** WORKOUT
-- **Duration:** 55m (3300s)
-- **External ID:** `chatgpt-8wk-run-bike-2026-11-02-w5-mon-run`
-- **Description:** Run by effort, not pace. Keep repetitions consistent; do not sprint the first interval. HR may lag during short reps.
+- **Total Duration:** 55m (3300s)
+- **Focus:** Run by effort, not pace. Keep repetitions consistent; do not sprint the first interval. HR may lag during short reps.
 
-### Workout Structure
-- Warm up very easily; build gradually [12m (720s), HR: 65–80 %lthr]
+**Workout Structure:**
+- Warm up very easily; build gradually [12m, HR: 65–80 %lthr]
 - **4x Repeat:** 4 x 5 min — hard but repeatable, approximately 5K effort
-  - Hard interval; even effort [5m (300s)]
-  - Easy jog or walk recovery [3m 30s (210s)]
-- Easy cool-down [9m (540s)]
+  - Hard interval; even effort [5m]
+  - Easy jog or walk recovery [3m 30s]
+- Easy cool-down [9m]
 
----
-## W5 easy aerobic ride — 55 min — `2026-12-01T00:00:00`
-
-- **Type:** Ride
-- **Category:** WORKOUT
-- **Duration:** 55m (3300s)
-- **External ID:** `chatgpt-8wk-run-bike-2026-11-02-w5-tue-easy-ride`
-- **Description:** 55 minutes conversational Zone 2. Keep HR approximately 131–148 bpm; back off if it drifts or the legs feel heavy. This should feel easy.
-
-### Workout Structure
-- Steady conversational aerobic ride; HR 131–148 bpm [55m (3300s)]
-
----
-## W5 OPTIONAL bike VO2 — 5 x 4 min — `2026-12-03T00:00:00`
+#### Tuesday, 2026-12-01: W5 easy aerobic ride — 55 min
 
 - **Type:** Ride
 - **Category:** WORKOUT
-- **Duration:** 53m (3180s)
-- **External ID:** `chatgpt-8wk-run-bike-2026-11-02-w5-thu-optional-bike`
-- **Description:** OPTIONAL, not an extra obligation. Do this only if the weekend club ride will be easy/moderate and recovery is good. If the club ride is hard, skip this session entirely. Keep efforts repeatable, not all-out.
+- **Total Duration:** 55m (3300s)
+- **Focus:** 55 minutes conversational Zone 2. Keep HR approximately 131–148 bpm; back off if it drifts or the legs feel heavy. This should feel easy.
 
-### Workout Structure
-- Warm up gradually [10m (600s)]
+**Workout Structure:**
+- Steady conversational aerobic ride; HR 131–148 bpm [55m]
+
+#### Thursday, 2026-12-03: W5 OPTIONAL bike VO2 — 5 x 4 min
+
+- **Type:** Ride
+- **Category:** WORKOUT
+- **Total Duration:** 53m (3180s)
+- **Focus:** OPTIONAL, not an extra obligation. Do this only if the weekend club ride will be easy/moderate and recovery is good. If the club ride is hard, skip this session entirely. Keep efforts repeatable, not all-out.
+
+**Workout Structure:**
+- Warm up gradually [10m]
 - **5x Repeat:** 5 x 4 min
-  - Hard but repeatable; RPE 8–9 [4m (240s)]
-  - Very easy spinning [3m (180s)]
-- Easy cool-down [8m (480s)]
+  - Hard but repeatable; RPE 8–9 [4m]
+  - Very easy spinning [3m]
+- Easy cool-down [8m]
 
----
-## W5 weekend club ride — flexible day — `2026-12-05T00:00:00`
+#### Saturday, 2026-12-05: W5 weekend club ride — flexible day
 
 - **Type:** Ride
 - **Category:** NOTE
-- **Duration:** N/A
-- **External ID:** `chatgpt-8wk-run-bike-2026-11-02-w5-weekend-club-ride`
-- **Description:** Target: approximately 50 km, about 3 hours including stops. Move this reminder to Sunday if that is the club ride day. If the ride is hard, it replaces Thursday's optional bike intervals; do not do both hard sessions.
+- **Focus:** Target: approximately 50 km, about 3 hours including stops. Move this reminder to Sunday if that is the club ride day. If the ride is hard, it replaces Thursday's optional bike intervals; do not do both hard sessions.
 
 ---
-## W6 quality run — 5 x 4 min — `2026-12-07T00:00:00`
+
+### Week 6 — Progression Phase
+
+#### Monday, 2026-12-07: W6 quality run — 5 x 4 min
 
 - **Type:** Run
 - **Category:** WORKOUT
-- **Duration:** 53m 30s (3210s)
-- **External ID:** `chatgpt-8wk-run-bike-2026-11-02-w6-mon-run`
-- **Description:** Run by effort, not pace. Keep repetitions consistent; do not sprint the first interval. HR may lag during short reps.
+- **Total Duration:** 53m 30s (3210s)
+- **Focus:** Run by effort, not pace. Keep repetitions consistent; do not sprint the first interval. HR may lag during short reps.
 
-### Workout Structure
-- Warm up very easily; build gradually [12m (720s), HR: 65–80 %lthr]
+**Workout Structure:**
+- Warm up very easily; build gradually [12m, HR: 65–80 %lthr]
 - **5x Repeat:** 5 x 4 min — hard but repeatable, approximately 5K effort
-  - Hard interval; even effort [4m (240s)]
-  - Easy jog or walk recovery [2m 30s (150s)]
-- Easy cool-down [9m (540s)]
+  - Hard interval; even effort [4m]
+  - Easy jog or walk recovery [2m 30s]
+- Easy cool-down [9m]
 
----
-## W6 easy aerobic ride — 60 min — `2026-12-08T00:00:00`
-
-- **Type:** Ride
-- **Category:** WORKOUT
-- **Duration:** 60m (3600s)
-- **External ID:** `chatgpt-8wk-run-bike-2026-11-02-w6-tue-easy-ride`
-- **Description:** 60 minutes conversational Zone 2. Keep HR approximately 131–148 bpm; back off if it drifts or the legs feel heavy. This should feel easy.
-
-### Workout Structure
-- Steady conversational aerobic ride; HR 131–148 bpm [60m (3600s)]
-
----
-## W6 OPTIONAL bike VO2 — 3 x (13 x 30s hard / 15s easy) — `2026-12-10T00:00:00`
+#### Tuesday, 2026-12-08: W6 easy aerobic ride — 60 min
 
 - **Type:** Ride
 - **Category:** WORKOUT
-- **Duration:** 62m 15s (3735s)
-- **External ID:** `chatgpt-8wk-run-bike-2026-11-02-w6-thu-optional-bike`
-- **Description:** OPTIONAL, not an extra obligation. Do this only if the weekend club ride will be easy/moderate and recovery is good. If the club ride is hard, skip this session entirely. Keep efforts repeatable, not all-out.
+- **Total Duration:** 60m (3600s)
+- **Focus:** 60 minutes conversational Zone 2. Keep HR approximately 131–148 bpm; back off if it drifts or the legs feel heavy. This should feel easy.
 
-### Workout Structure
-- Warm up gradually [10m (600s)]
+**Workout Structure:**
+- Steady conversational aerobic ride; HR 131–148 bpm [60m]
+
+#### Thursday, 2026-12-10: W6 OPTIONAL bike VO2 — 3 x (13 x 30s hard / 15s easy)
+
+- **Type:** Ride
+- **Category:** WORKOUT
+- **Total Duration:** 62m 15s (3735s)
+- **Focus:** OPTIONAL, not an extra obligation. Do this only if the weekend club ride will be easy/moderate and recovery is good. If the club ride is hard, skip this session entirely. Keep efforts repeatable, not all-out.
+
+**Workout Structure:**
+- Warm up gradually [10m]
 - **3x Repeat:** 3 x (13 x 30s hard / 15s easy) — repeat sets
   - **13x Repeat:** Interval block
     - Hard, controlled effort; RPE 8–9 [30s]
     - Very easy spinning [15s]
-  - Easy spin between blocks [5m (300s)]
-- Easy cool-down [8m (480s)]
+  - Easy spin between blocks [5m]
+- Easy cool-down [8m]
 
----
-## W6 weekend club ride — flexible day — `2026-12-12T00:00:00`
+#### Saturday, 2026-12-12: W6 weekend club ride — flexible day
 
 - **Type:** Ride
 - **Category:** NOTE
-- **Duration:** N/A
-- **External ID:** `chatgpt-8wk-run-bike-2026-11-02-w6-weekend-club-ride`
-- **Description:** Target: approximately 50 km, about 3 hours including stops. Move this reminder to Sunday if that is the club ride day. If the ride is hard, it replaces Thursday's optional bike intervals; do not do both hard sessions.
+- **Focus:** Target: approximately 50 km, about 3 hours including stops. Move this reminder to Sunday if that is the club ride day. If the ride is hard, it replaces Thursday's optional bike intervals; do not do both hard sessions.
 
 ---
-## W7 quality run — 6 x 4 min — `2026-12-14T00:00:00`
+
+### Week 7 — Peak Training Phase
+
+#### Monday, 2026-12-14: W7 quality run — 6 x 4 min
 
 - **Type:** Run
 - **Category:** WORKOUT
-- **Duration:** 63m (3780s)
-- **External ID:** `chatgpt-8wk-run-bike-2026-11-02-w7-mon-run`
-- **Description:** Run by effort, not pace. Keep repetitions consistent; do not sprint the first interval. HR may lag during short reps.
+- **Total Duration:** 63m (3780s)
+- **Focus:** Run by effort, not pace. Keep repetitions consistent; do not sprint the first interval. HR may lag during short reps.
 
-### Workout Structure
-- Warm up very easily; build gradually [12m (720s), HR: 65–80 %lthr]
+**Workout Structure:**
+- Warm up very easily; build gradually [12m, HR: 65–80 %lthr]
 - **6x Repeat:** 6 x 4 min — hard but repeatable, approximately 5K effort
-  - Hard interval; even effort [4m (240s)]
-  - Easy jog or walk recovery [3m (180s)]
-- Easy cool-down [9m (540s)]
+  - Hard interval; even effort [4m]
+  - Easy jog or walk recovery [3m]
+- Easy cool-down [9m]
 
----
-## W7 easy aerobic ride — 60 min — `2026-12-15T00:00:00`
-
-- **Type:** Ride
-- **Category:** WORKOUT
-- **Duration:** 60m (3600s)
-- **External ID:** `chatgpt-8wk-run-bike-2026-11-02-w7-tue-easy-ride`
-- **Description:** 60 minutes conversational Zone 2. Keep HR approximately 131–148 bpm; back off if it drifts or the legs feel heavy. This should feel easy.
-
-### Workout Structure
-- Steady conversational aerobic ride; HR 131–148 bpm [60m (3600s)]
-
----
-## W7 OPTIONAL bike VO2 — 4 x 6 min — `2026-12-17T00:00:00`
+#### Tuesday, 2026-12-15: W7 easy aerobic ride — 60 min
 
 - **Type:** Ride
 - **Category:** WORKOUT
-- **Duration:** 58m (3480s)
-- **External ID:** `chatgpt-8wk-run-bike-2026-11-02-w7-thu-optional-bike`
-- **Description:** OPTIONAL, not an extra obligation. Do this only if the weekend club ride will be easy/moderate and recovery is good. If the club ride is hard, skip this session entirely. Keep efforts repeatable, not all-out.
+- **Total Duration:** 60m (3600s)
+- **Focus:** 60 minutes conversational Zone 2. Keep HR approximately 131–148 bpm; back off if it drifts or the legs feel heavy. This should feel easy.
 
-### Workout Structure
-- Warm up gradually [10m (600s)]
+**Workout Structure:**
+- Steady conversational aerobic ride; HR 131–148 bpm [60m]
+
+#### Thursday, 2026-12-17: W7 OPTIONAL bike VO2 — 4 x 6 min
+
+- **Type:** Ride
+- **Category:** WORKOUT
+- **Total Duration:** 58m (3480s)
+- **Focus:** OPTIONAL, not an extra obligation. Do this only if the weekend club ride will be easy/moderate and recovery is good. If the club ride is hard, skip this session entirely. Keep efforts repeatable, not all-out.
+
+**Workout Structure:**
+- Warm up gradually [10m]
 - **4x Repeat:** 4 x 6 min
-  - Hard but repeatable; RPE 8–9 [6m (360s)]
-  - Very easy spinning [4m (240s)]
-- Easy cool-down [8m (480s)]
+  - Hard but repeatable; RPE 8–9 [6m]
+  - Very easy spinning [4m]
+- Easy cool-down [8m]
 
----
-## W7 weekend club ride — flexible day — `2026-12-19T00:00:00`
+#### Saturday, 2026-12-19: W7 weekend club ride — flexible day
 
 - **Type:** Ride
 - **Category:** NOTE
-- **Duration:** N/A
-- **External ID:** `chatgpt-8wk-run-bike-2026-11-02-w7-weekend-club-ride`
-- **Description:** Target: approximately 50 km, about 3 hours including stops. Move this reminder to Sunday if that is the club ride day. If the ride is hard, it replaces Thursday's optional bike intervals; do not do both hard sessions.
+- **Focus:** Target: approximately 50 km, about 3 hours including stops. Move this reminder to Sunday if that is the club ride day. If the ride is hard, it replaces Thursday's optional bike intervals; do not do both hard sessions.
 
 ---
-## W8 quality run — Taper: 3 x 3 min — `2026-12-21T00:00:00`
+
+### Week 8 — Taper Phase
+
+#### Monday, 2026-12-21: W8 quality run — Taper: 3 x 3 min
 
 - **Type:** Run
 - **Category:** WORKOUT
-- **Duration:** 39m (2340s)
-- **External ID:** `chatgpt-8wk-run-bike-2026-11-02-w8-mon-run`
-- **Description:** Run by effort, not pace. Keep repetitions consistent; do not sprint the first interval. HR may lag during short reps.
+- **Total Duration:** 39m (2340s)
+- **Focus:** Run by effort, not pace. Keep repetitions consistent; do not sprint the first interval. HR may lag during short reps.
 
-### Workout Structure
-- Warm up very easily; build gradually [12m (720s), HR: 65–80 %lthr]
+**Workout Structure:**
+- Warm up very easily; build gradually [12m, HR: 65–80 %lthr]
 - **3x Repeat:** Taper: 3 x 3 min — hard but repeatable, approximately 5K effort
-  - Hard interval; even effort [3m (180s)]
-  - Easy jog or walk recovery [3m (180s)]
-- Easy cool-down [9m (540s)]
+  - Hard interval; even effort [3m]
+  - Easy jog or walk recovery [3m]
+- Easy cool-down [9m]
 
----
-## W8 easy aerobic ride — 40 min — `2026-12-22T00:00:00`
+#### Tuesday, 2026-12-22: W8 easy aerobic ride — 40 min
 
 - **Type:** Ride
 - **Category:** WORKOUT
-- **Duration:** 40m (2400s)
-- **External ID:** `chatgpt-8wk-run-bike-2026-11-02-w8-tue-easy-ride`
-- **Description:** 40 minutes conversational Zone 2. Keep HR approximately 131–148 bpm; back off if it drifts or the legs feel heavy. This should feel easy.
+- **Total Duration:** 40m (2400s)
+- **Focus:** 40 minutes conversational Zone 2. Keep HR approximately 131–148 bpm; back off if it drifts or the legs feel heavy. This should feel easy.
 
-### Workout Structure
-- Steady conversational aerobic ride; HR 131–148 bpm [40m (2400s)]
+**Workout Structure:**
+- Steady conversational aerobic ride; HR 131–148 bpm [40m]
 
----
-## W8 weekend club ride — flexible day — `2026-12-26T00:00:00`
+#### Saturday, 2026-12-26: W8 weekend club ride — flexible day
 
 - **Type:** Ride
 - **Category:** NOTE
-- **Duration:** N/A
-- **External ID:** `chatgpt-8wk-run-bike-2026-11-02-w8-weekend-club-ride`
-- **Description:** Target: approximately 50 km, about 3 hours including stops. Move this reminder to Sunday if that is the club ride day. If the ride is hard, it replaces Thursday's optional bike intervals; do not do both hard sessions.
+- **Focus:** Target: approximately 50 km, about 3 hours including stops. Move this reminder to Sunday if that is the club ride day. If the ride is hard, it replaces Thursday's optional bike intervals; do not do both hard sessions.
 
 ---
