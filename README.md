@@ -35,18 +35,17 @@ To generate the full human-readable workout breakdown and print it to your termi
 This produces `ALL_WORKOUTS.md` with every workout's target zones, intervals, duration, and structure.
 
 ### Upload Workouts to Intervals.icu
-To push all 30 events to your Intervals.icu calendar:
+To push events to your Intervals.icu calendar:
 ```bash
 ./push_intervals.sh
 ```
-Alternatively, using the Python script directly:
-```bash
-# Dry run preview (no changes made)
-python3 upload_intervals_plan.py
 
-# Push to calendar
-python3 upload_intervals_plan.py --upload
-```
+- **Smart Duplicate Prevention:** The script queries your Intervals.icu calendar first. If all 30 events are already present, the upload is skipped so no duplicate workouts can be created.
+- **Partial Sync:** If only some events are found (e.g. if you deleted a week), only the missing events are uploaded.
+- **Force Overwrite:** To force an update/overwrite of all existing events, run:
+  ```bash
+  ./push_intervals.sh --force
+  ```
 
 ---
 

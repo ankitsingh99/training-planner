@@ -10,7 +10,8 @@ Security:
 
 Usage:
   python3 upload_intervals_plan.py           # Dry run
-  python3 upload_intervals_plan.py --upload  # Upload events
+  python3 upload_intervals_plan.py --upload  # Upload events (skips already existing)
+  python3 upload_intervals_plan.py --upload --force  # Force re-upload / update
 """
 
 import argparse
@@ -43,7 +44,12 @@ def load_env_file():
 load_env_file()
 
 BASE = "https://intervals.icu/api/v1/athlete/0/events/bulk?upsert=true"
+EVENTS_QUERY_URL = "https://intervals.icu/api/v1/athlete/0/events"
 PREFIX = "chatgpt-8wk-run-bike-2026-11-02"
+USER_AGENT = (
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
+)
 
 # Progression intentionally keeps only one mandatory quality run and one easy
 # aerobic ride each week. Thursday bike intervals are explicitly optional:
@@ -228,12 +234,37 @@ def make_events():
     return events
 
 
+def fetch_existing_events(key, start_date_str, end_date_str):
+    """Fetch existing calendar events from Intervals.icu within the given date window."""
+    token = base64.b64encode(("API_KEY:" + key).encode()).decode()
+    url = f"{EVENTS_QUERY_URL}?oldest={start_date_str}&newest={end_date_str}"
+    req = urllib.request.Request(
+        url,
+        headers={
+            "Authorization": "Basic " + token,
+            "Accept": "application/json",
+            "User-Agent": USER_AGENT,
+        },
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=30) as response:
+            return json.loads(response.read().decode("utf-8"))
+    except Exception as exc:
+        print(f"Notice: Could not check existing events ({exc}); proceeding with bulk upsert.")
+        return None
+
+
 def main():
     parser = argparse.ArgumentParser(description="Upload or preview 8-week Intervals.icu plan.")
     parser.add_argument(
         "--upload",
         action="store_true",
         help="Actually upload events to Intervals.icu; otherwise runs in dry-run mode.",
+    )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Force upload and overwrite even if events already exist on the calendar.",
     )
     args = parser.parse_args()
 
@@ -254,8 +285,36 @@ def main():
             "Please configure INTERVALS_API_KEY in your .env file or shell environment."
         )
 
+    # Duplicate prevention: Check if events already exist on the athlete's calendar
+    existing = fetch_existing_events(key, "2026-11-02", "2026-12-27")
+    events_to_upload = events
+
+    if existing is not None:
+        existing_ext_ids = {
+            e.get("external_id")
+            for e in existing
+            if e.get("external_id") and e.get("external_id", "").startswith(PREFIX)
+        }
+
+        if not args.force:
+            events_to_upload = [e for e in events if e.get("external_id") not in existing_ext_ids]
+            if not events_to_upload:
+                print(
+                    f"\n✅ All {len(events)} events are already present on your Intervals.icu calendar!\n"
+                    "No duplicate workouts created. Upload skipped.\n"
+                    "Tip: Run with '--force' to overwrite / re-upload the existing workouts."
+                )
+                return
+            elif len(events_to_upload) < len(events):
+                print(
+                    f"\nFound {len(existing_ext_ids)} existing events on your calendar.\n"
+                    f"Uploading only the {len(events_to_upload)} missing event(s)..."
+                )
+        else:
+            print(f"\nForce flag enabled: re-uploading / updating all {len(events)} events...")
+
     token = base64.b64encode(("API_KEY:" + key).encode()).decode()
-    body = json.dumps(events).encode("utf-8")
+    body = json.dumps(events_to_upload).encode("utf-8")
 
     # Use a browser-like User-Agent to satisfy Cloudflare bot protection.
     req = urllib.request.Request(
@@ -266,10 +325,7 @@ def main():
             "Authorization": "Basic " + token,
             "Content-Type": "application/json",
             "Accept": "application/json",
-            "User-Agent": (
-                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
-            ),
+            "User-Agent": USER_AGENT,
         },
     )
 
