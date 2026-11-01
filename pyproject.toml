@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "intervals-plan"
+version = "0.2.0"
+description = "Adaptive 8-week run & bike training plan tool for Intervals.icu"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "Ashish Singh" }]
+license = { text = "MIT" }
+dependencies = [
+    "pyyaml>=6.0",
+    "pydantic>=2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+]
+
+[project.scripts]
+intervals-plan = "intervals_plan.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

@@ -1,0 +1,144 @@
+{
+  "title": "8-Week VO2max + Hypertrophy-Friendly Run/Bike Plan",
+  "description": "Structured dual-sport progression targeting VO2max and aerobic durability while respecting strength training recovery and gym rest on Tuesdays.",
+  "config": {
+    "start_date": "2026-11-02",
+    "total_weeks": 8,
+    "prefix": "chatgpt-8wk-run-bike-2026-11-02",
+    "athlete_lthr": 164,
+    "athlete_max_hr": 193,
+    "athlete_resting_hr": 52,
+    "athlete_endurance_hr_min": 131,
+    "athlete_endurance_hr_max": 148,
+    "include_w4_bike": false,
+    "include_w8_retest": true,
+    "club_ride_default_day": "Saturday"
+  },
+  "weeks": [
+    {
+      "week_number": 1,
+      "phase": "Progression",
+      "run_reps": 5,
+      "run_work_min": 3,
+      "run_recovery_sec": 150,
+      "run_label": "5 x 3 min",
+      "easy_ride_min": 40,
+      "bike_spec": {
+        "type": "standard",
+        "reps": 4,
+        "work_sec": 240,
+        "rest_sec": 180,
+        "label": "4 x 4 min"
+      }
+    },
+    {
+      "week_number": 2,
+      "phase": "Progression",
+      "run_reps": 4,
+      "run_work_min": 4,
+      "run_recovery_sec": 180,
+      "run_label": "4 x 4 min",
+      "easy_ride_min": 45,
+      "bike_spec": {
+        "type": "microburst",
+        "sets": 2,
+        "reps": 10,
+        "work_sec": 30,
+        "rest_sec": 30,
+        "set_rest_sec": 300,
+        "label": "2 x (10 x 30s hard / 30s easy)"
+      }
+    },
+    {
+      "week_number": 3,
+      "phase": "Progression",
+      "run_reps": 5,
+      "run_work_min": 4,
+      "run_recovery_sec": 180,
+      "run_label": "5 x 4 min",
+      "easy_ride_min": 50,
+      "bike_spec": {
+        "type": "microburst",
+        "sets": 3,
+        "reps": 10,
+        "work_sec": 30,
+        "rest_sec": 30,
+        "set_rest_sec": 300,
+        "label": "3 x (10 x 30s hard / 30s easy)"
+      }
+    },
+    {
+      "week_number": 4,
+      "phase": "Deload",
+      "is_deload": true,
+      "run_reps": 4,
+      "run_work_min": 3,
+      "run_recovery_sec": 180,
+      "run_label": "Deload: 4 x 3 min",
+      "easy_ride_min": 35,
+      "bike_spec": null
+    },
+    {
+      "week_number": 5,
+      "phase": "Progression",
+      "run_reps": 4,
+      "run_work_min": 5,
+      "run_recovery_sec": 210,
+      "run_label": "4 x 5 min",
+      "easy_ride_min": 55,
+      "bike_spec": {
+        "type": "standard",
+        "reps": 5,
+        "work_sec": 240,
+        "rest_sec": 180,
+        "label": "5 x 4 min"
+      }
+    },
+    {
+      "week_number": 6,
+      "phase": "Progression",
+      "run_reps": 5,
+      "run_work_min": 4,
+      "run_recovery_sec": 150,
+      "run_label": "5 x 4 min",
+      "easy_ride_min": 60,
+      "bike_spec": {
+        "type": "microburst",
+        "sets": 3,
+        "reps": 13,
+        "work_sec": 30,
+        "rest_sec": 15,
+        "set_rest_sec": 300,
+        "label": "3 x (13 x 30s hard / 15s easy)"
+      }
+    },
+    {
+      "week_number": 7,
+      "phase": "Peak",
+      "run_reps": 6,
+      "run_work_min": 4,
+      "run_recovery_sec": 180,
+      "run_label": "6 x 4 min",
+      "easy_ride_min": 60,
+      "bike_spec": {
+        "type": "standard",
+        "reps": 4,
+        "work_sec": 360,
+        "rest_sec": 240,
+        "label": "4 x 6 min"
+      }
+    },
+    {
+      "week_number": 8,
+      "phase": "Taper",
+      "is_taper": true,
+      "has_5k_retest": true,
+      "run_reps": 3,
+      "run_work_min": 3,
+      "run_recovery_sec": 180,
+      "run_label": "Taper: 3 x 3 min",
+      "easy_ride_min": 40,
+      "bike_spec": null
+    }
+  ]
+}

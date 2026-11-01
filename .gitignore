@@ -3,12 +3,25 @@ __pycache__/
 *.py[cod]
 *.egg-info/
 *.dist-info/
+.pytest_cache/
+
 # Virtual env
+.venv/
 venv/
+env/
 .env
+*.token
+secrets.*
+
+# Data & logs (preserve directory structure via .gitkeep)
+data/backups/*
+!data/backups/.gitkeep
+data/manifest.json
+data/audit.log
+
 # macOS
 .DS_Store
+
 # IDE
 .idea/
 .vscode/
-
