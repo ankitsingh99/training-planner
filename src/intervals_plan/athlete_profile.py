@@ -88,3 +88,4 @@ class AthleteProfileConfig:
         valid_keys = cls.__dataclass_fields__.keys()
         filtered = {k: v for k, v in data.items() if k in valid_keys}
         return cls(**filtered)
+

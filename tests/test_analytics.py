@@ -102,3 +102,4 @@ def test_intensity_distribution_seiler_polarization():
     assert dist.low_intensity_pct == 80.0
     assert dist.high_intensity_pct == 20.0
     assert dist.is_polarized is True
+

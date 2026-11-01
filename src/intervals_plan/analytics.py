@@ -440,3 +440,4 @@ class RollingMetricsAnalyzer:
             intensity_distribution=intensity_dist,
             raw_wellness_count=len(wellness_records),
         )
+

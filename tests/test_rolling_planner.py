@@ -128,3 +128,4 @@ def test_rolling_planner_two_weeks():
     w2_events = [e for e in events if "w2" in (e.external_id or "")]
     assert len(w1_events) == 7
     assert len(w2_events) == 7
+

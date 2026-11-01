@@ -45,3 +45,4 @@ def test_athlete_profile_from_dict_ignores_extra_keys():
     profile = AthleteProfileConfig.from_dict(data)
     assert profile.goal == "cycling"
     assert profile.weekly_hours == 10.0
+
