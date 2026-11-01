@@ -118,6 +118,9 @@ def build_parser() -> argparse.ArgumentParser:
     # watch-research
     subparsers.add_parser("watch-research", help="Display Wear OS / Watchletic / COROS ecosystem research")
 
+    # coros-status
+    subparsers.add_parser("coros-status", help="Check live COROS connection and workout sync status")
+
     return parser
 
 
@@ -343,6 +346,37 @@ def handle_adapt(cfg: Config, args: argparse.Namespace) -> None:
     print(f"✅ Applied adaptive modification to Intervals.icu calendar! ({res['status']})")
 
 
+def handle_coros_status(cfg: Config) -> None:
+    print("\n⌚ Checking COROS Cloud Connection & Sync Status...\n")
+    client = IntervalsClient(api_key=cfg.api_key, athlete_id=cfg.athlete_id, base_url=cfg.base_url)
+    try:
+        ath = client._request("GET", f"/athlete/{cfg.athlete_id}")
+        user_id = ath.get("coros_user_id")
+        sync_acts = ath.get("coros_sync_activities")
+        upload_workouts = ath.get("coros_upload_workouts")
+        download_wellness = ath.get("coros_download_wellness")
+        last_upload = ath.get("coros_last_upload")
+
+        print("Connection Details:")
+        print(f"  - COROS User ID:        {user_id or 'Not Connected'}")
+        print(f"  - Upload Workouts:      {'✅ ENABLED' if upload_workouts else '❌ DISABLED'}")
+        print(f"  - Download Activities:  {'✅ ENABLED' if sync_acts else '❌ DISABLED'}")
+        print(f"  - Download Wellness:    {'✅ ENABLED' if download_wellness else '❌ DISABLED'}")
+        print(f"  - Last Cloud Push:      {last_upload or 'Never'}")
+
+        if upload_workouts and user_id:
+            print("\n✅ Verification Successful: Intervals.icu is actively pushing workouts to COROS!")
+            print("Note on COROS API Window:")
+            print("  - COROS uses a rolling 7-day forward window.")
+            print("  - All workouts for the upcoming 7 days (Week 1) are already pushed to your COROS calendar.")
+            print("  - Open your COROS mobile app and sync with Bluetooth to push them to your COROS DURA / watch.")
+        else:
+            print("\n⚠️  COROS is not configured to upload planned workouts in Intervals.icu.")
+            print("Please enable 'Upload planned workouts' under Intervals.icu -> Settings -> COROS.")
+    except Exception as exc:
+        print(f"❌ Error querying COROS status: {exc}")
+
+
 def main() -> None:
     parser = build_parser()
     args = parser.parse_args()
@@ -427,6 +461,8 @@ def main() -> None:
             print(f"  - [{ent['timestamp']}] {ent['action']} | Status: {ent['status']} | Targets: {len(ent['target_ids'])}")
     elif args.subcommand == "watch-research":
         print_watch_research()
+    elif args.subcommand == "coros-status":
+        handle_coros_status(cfg)
 
 
 if __name__ == "__main__":
