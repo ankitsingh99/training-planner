@@ -25,15 +25,18 @@ class AdaptiveEngine:
                 easy_steps = [
                     create_step(30 * 60, "Easy recovery spin; high cadence, minimal resistance")
                 ]
+                desc = (
+                    "🎯 Focus: Active recovery & metabolic flush.\n"
+                    "💡 How to execute: Substituted due to hard weekend club ride. Keep resistance minimal and cadence high (85-95 rpm). "
+                    "This session is designed to promote blood flow and tissue healing without CNS or muscular fatigue.\n\n"
+                    "- 30m 50-60% LTHR Active recovery spin; high cadence, minimal resistance\n"
+                )
                 converted = IntervalsEvent(
                     start_date_local=ev.start_date_local,
                     category="WORKOUT",
                     type="Ride",
                     name=f"W{week_number} Recovery Spin (Substituted for hard VO2)",
-                    description=(
-                        "Substituted due to hard weekend club ride. Active recovery spin "
-                        "to flush legs and maintain aerobic blood flow without CNS/muscular fatigue."
-                    ),
+                    description=desc,
                     moving_time=calc_duration(easy_steps),
                     external_id=ev.external_id,
                     workout_doc=WorkoutDoc(description="Active recovery spin", steps=easy_steps),
