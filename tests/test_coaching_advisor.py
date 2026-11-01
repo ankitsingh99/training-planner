@@ -130,3 +130,19 @@ def test_coaching_advisor_under_training():
     advice = CoachingAdvisor(prof).advise(report)
     assert any("Under-Training" in a for a in advice.alerts)
 
+
+def test_coaching_advisor_with_ai():
+    class DummyLLM:
+        def generate(self, prompt, **kwargs):
+            return "Prioritize aerobic endurance and fuel intervals cleanly."
+
+    prof = AthleteProfileConfig(target_race_date=None)
+    report = _make_dummy_report()
+    advisor = CoachingAdvisor(prof)
+    advice = advisor.advise(report, use_ai=True, llm_client=DummyLLM())
+
+    assert advice.ai_summary == "Prioritize aerobic endurance and fuel intervals cleanly."
+    assert advice.token_metrics is not None
+    lines = advice.to_lines()
+    assert any("AI SPORTS-SCIENCE SYNTHESIS" in l for l in lines)
+

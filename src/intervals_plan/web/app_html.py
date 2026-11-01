@@ -532,13 +532,21 @@ def get_app_html() -> str:
         </div>
 
         <div class="card">
-          <div class="card-title">Sports Science Coaching Briefing</div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.5rem;">
+            <div class="card-title" style="margin-bottom:0;">Sports Science Coaching Briefing</div>
+            <button class="btn btn-secondary" id="aiSynthBtn" onclick="fetchAiCoach()" style="font-size:0.75rem; padding:0.25rem 0.5rem;">AI Synthesis (:free)</button>
+          </div>
           <div style="font-weight: 700; font-size: 1.1rem; color: var(--accent); margin-bottom: 0.5rem;" id="coachHeadline">
             Analyzing training status...
           </div>
-          <p style="font-size: 0.875rem; color: #d1d5db; line-height: 1.5; margin-bottom: 1rem;" id="coachFocus">
+          <p style="font-size: 0.875rem; color: #d1d5db; line-height: 1.5; margin-bottom: 0.75rem;" id="coachFocus">
             Loading tailored guidance...
           </p>
+          <div id="aiCoachBox" style="display:none; background: #0f172a; border: 1px solid #0284c7; border-radius: 6px; padding: 0.75rem; margin-bottom: 0.75rem;">
+            <div style="font-size: 0.75rem; font-weight: 700; color: #38bdf8; text-transform: uppercase; margin-bottom: 4px;">AI Sports Science Synthesis (Token-Lean)</div>
+            <div style="font-size: 0.8125rem; color: #e2e8f0; line-height: 1.4;" id="aiCoachText"></div>
+            <div style="font-size: 0.7rem; color: #94a3b8; margin-top: 4px;" id="aiCoachMetrics"></div>
+          </div>
           <ul id="coachRecList" style="font-size: 0.8125rem; color: var(--text-muted); padding-left: 1.25rem; line-height: 1.6;">
           </ul>
         </div>
@@ -1019,23 +1027,7 @@ def get_app_html() -> str:
 
         // Coaching briefing
         if (coach) {
-          document.getElementById('coachHeadline').innerText = coach.headline;
-          document.getElementById('coachFocus').innerText = coach.training_focus;
-          document.getElementById('targetHoursText').innerText = coach.target_weekly_hours.toFixed(1) + ' Hours';
-
-          const recList = document.getElementById('coachRecList');
-          recList.innerHTML = '';
-          (coach.key_recommendations || []).forEach(item => {
-            const li = document.createElement('li');
-            li.innerText = item;
-            recList.appendChild(li);
-          });
-
-          if (coach.alerts && coach.alerts.length > 0) {
-            document.getElementById('readinessAlert').style.display = 'block';
-            document.getElementById('alertTitle').innerText = 'Biometric & Physiological Notice';
-            document.getElementById('alertDesc').innerText = coach.alerts.join(' • ');
-          }
+          renderCoach(coach);
         }
 
         // Populate Profile inputs
@@ -1052,6 +1044,50 @@ def get_app_html() -> str:
 
       } catch (err) {
         console.error('Failed to load dashboard data:', err);
+      }
+    }
+
+    function renderCoach(coach) {
+      if (!coach) return;
+      document.getElementById('coachHeadline').innerText = coach.headline;
+      document.getElementById('coachFocus').innerText = coach.training_focus;
+      document.getElementById('targetHoursText').innerText = (coach.target_weekly_hours || 0).toFixed(1) + ' Hours';
+
+      const recList = document.getElementById('coachRecList');
+      recList.innerHTML = '';
+      (coach.key_recommendations || []).forEach(item => {
+        const li = document.createElement('li');
+        li.innerText = item;
+        recList.appendChild(li);
+      });
+
+      if (coach.ai_summary) {
+        document.getElementById('aiCoachBox').style.display = 'block';
+        document.getElementById('aiCoachText').innerText = coach.ai_summary;
+        if (coach.token_metrics) {
+          const hitText = coach.token_metrics.cache_hit ? 'Local Cache Hit (0 tok)' : `${coach.token_metrics.total_tokens || 0} tokens`;
+          document.getElementById('aiCoachMetrics').innerText = `Cost: Zero-Cost (:free) | Accounting: ${hitText}`;
+        }
+      }
+
+      if (coach.alerts && coach.alerts.length > 0) {
+        document.getElementById('readinessAlert').style.display = 'block';
+        document.getElementById('alertTitle').innerText = 'Biometric & Physiological Notice';
+        document.getElementById('alertDesc').innerText = coach.alerts.join(' • ');
+      }
+    }
+
+    async function fetchAiCoach() {
+      const btn = document.getElementById('aiSynthBtn');
+      if (btn) btn.innerText = 'Analyzing...';
+      try {
+        const res = await fetch('/api/coaching?ai=true');
+        const data = await res.json();
+        renderCoach(data);
+      } catch (err) {
+        console.error('Failed to fetch AI coaching:', err);
+      } finally {
+        if (btn) btn.innerText = 'AI Synthesis (:free)';
       }
     }
 

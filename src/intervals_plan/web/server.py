@@ -103,7 +103,8 @@ class AdaptPulseRequestHandler(BaseHTTPRequestHandler):
             prof = AthleteProfileConfig.load()
             report = self._compute_report()
             advisor = CoachingAdvisor(prof)
-            advice = advisor.advise(report)
+            use_ai = query.get("ai", ["false"])[0].lower() in ("true", "1", "yes")
+            advice = advisor.advise(report, use_ai=use_ai)
             self._send_json(advice.to_dict())
             return
 
@@ -175,6 +176,15 @@ class AdaptPulseRequestHandler(BaseHTTPRequestHandler):
             intensity = query.get("intensity", ["moderate"])[0]
             fuel = calculate_fueling(dur, sport, intensity)
             self._send_json(fuel.to_dict())
+            return
+
+        # 10. Token Audit API
+        if path == "/api/token-audit":
+            from intervals_plan.token_audit import run_token_audit
+            from intervals_plan.llm_client import get_session_token_usage
+            data = run_token_audit(top=10)
+            data["session_token_usage"] = get_session_token_usage()
+            self._send_json(data)
             return
 
         self._send_json({"error": "Endpoint not found"}, status=404)

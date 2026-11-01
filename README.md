@@ -204,6 +204,9 @@ Get personalized advice on periodization, race-phase focus, and autonomic readin
 # Full coaching guidance in formatted text
 adaptpulse coach
 
+# AI-enhanced coaching synthesis using token-lean OpenRouter free models (:free)
+adaptpulse coach --ai
+
 # Output machine-readable JSON
 adaptpulse coach --json
 ```
@@ -368,6 +371,29 @@ Guidance provided:
 - Next-day recovery adaptation recommendations
 - Evidence-based intra-workout fueling critique and next-session fueling adjustments
 
+### 13. Token-Lean Architecture & Context Audit
+
+Audit the repository token footprint, per-turn always-on context weight, and bloat:
+
+```bash
+# Display repository token sizes and always-on budget audit
+adaptpulse token-audit
+
+# Top 25 largest tracked files with token estimates
+adaptpulse token-audit --top 25
+
+# Output machine-readable JSON
+adaptpulse token-audit --json
+```
+
+Key Token-Lean Architecture Mechanisms:
+- **Strict Ignore Rules (`.geminiignore`)**: Excludes virtual environments, backup snapshots, caches, audit logs, and build artifacts from entering LLM context.
+- **Local-First Deterministic Compute**: ACWR, PMC, CSS swimming threshold, fueling formulas, and compliance metrics execute 100% locally on CPU at 0 tokens before any LLM interaction.
+- **Persistent SQLite Response Cache (`data/cache/llm_cache.sqlite`)**: Hashes `(system, prompt, model)` via SHA-256 for instant 0-token reuse of repetitive queries.
+- **Input Text Compaction & Strict Output Caps**: Strips HTML boilerplate, removes duplicate whitespace, and bounds `max_tokens` (<= 400) to eliminate verbose completions.
+- **Strict Zero-Cost Free Models**: Discovers and routes to OpenRouter `:free` models (`openrouter/free`, `google/gemma-4-31b-it:free`).
+- **Quiet Execution (`tools/q.sh`) & Structure Map (`tools/repo_map.py`)**: Locates code symbols before reading targeted line ranges, keeping context compact.
+
 ---
 
 ## Ecosystem Integration Guide
@@ -413,7 +439,9 @@ Run the automated test suite with coverage reporting:
 coverage run -m pytest && coverage report -m
 ```
 
-The test suite covers 133 unit, integration, and safety tests with **>95% test coverage (currently 96%)**:
+The test suite covers 144 unit, integration, and safety tests with **>95% test coverage (currently 96%)**:
+- Token-lean OpenRouter client with local SQLite disk response cache and zero-cost `:free` enforcement
+- Repository token audit, always-on context weighting, and code structure symbol mapping
 - TrainingPeaks API connector and OAuth token error redaction
 - Sports science analytics: ACWR sweet spot/danger zone, PMC (CTL/ATL/TSB), Seiler 80/20 polarization, and Plews/Kiviniemi autonomic readiness
 - Intra-workout fueling & hydration prescriptions (carbs g/hr, fluids mL/hr, sodium mg/hr)

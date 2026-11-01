@@ -180,3 +180,4 @@ def calculate_fueling(
         strategy_summary=summary,
         recommendations=recs,
     )
+

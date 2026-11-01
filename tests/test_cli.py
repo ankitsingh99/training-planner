@@ -31,6 +31,7 @@ from intervals_plan.cli import (
     handle_profile,
     handle_session_review,
     handle_sync,
+    handle_token_audit,
     handle_tp_status,
     load_plan,
     main,
@@ -272,11 +273,17 @@ def test_handle_coach_cli():
         inst.list_events.return_value = []
         mock_cls.return_value = inst
 
-        args_text = argparse.Namespace(json=False)
+        args_text = argparse.Namespace(json=False, ai=False)
         handle_coach(cfg, args_text)
 
-        args_json = argparse.Namespace(json=True)
+        args_json = argparse.Namespace(json=True, ai=False)
         handle_coach(cfg, args_json)
+
+        # AI synthesis test
+        with patch("intervals_plan.llm_client.OpenRouterClient.generate") as mock_gen:
+            mock_gen.return_value = "Mocked AI coaching synthesis."
+            args_ai = argparse.Namespace(json=False, ai=True)
+            handle_coach(cfg, args_ai)
 
 
 def test_handle_export_cli(tmp_path: Path):
@@ -444,6 +451,7 @@ def test_cli_main_subcommand_dispatch():
         (["intervals-plan", "tp-status"], "handle_tp_status"),
         (["intervals-plan", "compliance"], "handle_compliance"),
         (["intervals-plan", "review-session"], "handle_session_review"),
+        (["intervals-plan", "token-audit"], "handle_token_audit"),
     ]:
         with patch.object(sys, "argv", sub), \
              patch(f"intervals_plan.cli.{handler_name}") as mock_handler:
@@ -498,3 +506,12 @@ def test_handle_session_review_cli():
         json=True,
     )
     handle_session_review(args_json)
+
+
+def test_handle_token_audit_cli():
+    cfg = Config()
+    args_text = argparse.Namespace(top=5, json=False)
+    handle_token_audit(cfg, args_text)
+
+    args_json = argparse.Namespace(top=5, json=True)
+    handle_token_audit(cfg, args_json)

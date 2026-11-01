@@ -26,6 +26,8 @@ class CoachingAdvice:
     alerts: List[str]
     target_weekly_hours: float
     target_weekly_tss: float
+    ai_summary: Optional[str] = None
+    token_metrics: Optional[Dict[str, Any]] = None
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -42,6 +44,13 @@ class CoachingAdvice:
         
         lines.append("\n[TRAINING FOCUS]")
         lines.append(f"  {self.training_focus}")
+
+        if self.ai_summary:
+            lines.append("\n[AI SPORTS-SCIENCE SYNTHESIS (TOKEN-OPTIMIZED)]")
+            lines.append(f"  {self.ai_summary}")
+            if self.token_metrics:
+                cache_status = "Local Disk Cache Hit (0 tok)" if self.token_metrics.get("cache_hit") else f"{self.token_metrics.get('total_tokens', 0)} tokens"
+                lines.append(f"  Cost: Zero-Cost (:free) | Accounting: {cache_status}")
 
         if self.alerts:
             lines.append("\n[SAFETY & BIOMETRIC ALERTS]")
@@ -65,6 +74,8 @@ class CoachingAdvisor:
         self,
         report: RollingAnalysisReport,
         current_date: Optional[datetime.date] = None,
+        use_ai: bool = False,
+        llm_client: Optional[Any] = None,
     ) -> CoachingAdvice:
         """Generate structured coaching advice."""
         today = current_date or datetime.date.today()
@@ -148,6 +159,47 @@ class CoachingAdvisor:
             headline = "Recovery Intervention: Sympathetic Strain Detected"
             recommendations.insert(0, "Downshift today's planned intensity: switch to easy Zone 1 spin or take full rest.")
 
+        ai_summary = None
+        token_metrics = None
+
+        if use_ai:
+            client = llm_client
+            if client is None:
+                from intervals_plan.llm_client import OpenRouterClient
+                client = OpenRouterClient()
+
+            ctl_val = readiness.ctl if readiness.ctl is not None else 0.0
+            atl_val = readiness.atl if readiness.atl is not None else 0.0
+            tsb_val = readiness.tsb if readiness.tsb is not None else 0.0
+            rhr_str = f"{readiness.rhr_delta:+.1f} bpm" if readiness.rhr_delta is not None else "normal"
+            weeks_str = f"{weeks_out}w" if weeks_out is not None else "n/a"
+            compact_prompt = (
+                f"Goal: {self.profile.goal}, Phase: {phase} ({weeks_str}). "
+                f"Readiness: {readiness.readiness_state} ({readiness.readiness_score}/100, RHR delta: {rhr_str}). "
+                f"ACWR: {acwr.ratio:.2f} ({acwr.status}). "
+                f"PMC: CTL={ctl_val:.0f}, ATL={atl_val:.0f}, TSB={tsb_val:+.0f}. "
+                f"Budget: {readiness.target_next_week_hours:.1f}h / ~{readiness.target_next_week_tss:.0f} TSS. "
+                f"Provide exactly 2 concise sentences of expert sports science coaching advice on adaptation and load."
+            )
+            try:
+                from intervals_plan.llm_client import get_session_token_usage
+                usage_before = get_session_token_usage()
+                ai_summary = client.generate(
+                    compact_prompt,
+                    system="You are an elite endurance sports scientist. Give concise, clinical training advice in 2 sentences.",
+                    max_tokens=150,
+                    trim_input=True,
+                )
+                usage_after = get_session_token_usage()
+                cache_hit = usage_after["cache_hits"] > usage_before["cache_hits"]
+                total_tokens = usage_after["total_tokens"] - usage_before["total_tokens"]
+                token_metrics = {
+                    "total_tokens": total_tokens,
+                    "cache_hit": cache_hit,
+                }
+            except Exception as exc:
+                ai_summary = f"AI coaching synthesis unavailable ({exc}). Proceeding with deterministic sports science rules."
+
         return CoachingAdvice(
             headline=headline,
             periodization_phase=phase,
@@ -159,5 +211,7 @@ class CoachingAdvisor:
             alerts=alerts,
             target_weekly_hours=readiness.target_next_week_hours,
             target_weekly_tss=readiness.target_next_week_tss,
+            ai_summary=ai_summary,
+            token_metrics=token_metrics,
         )
 

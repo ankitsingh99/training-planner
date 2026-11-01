@@ -18,10 +18,14 @@ secrets.*
 # Data & logs (preserve directory structure via .gitkeep)
 data/backups/*
 !data/backups/.gitkeep
+data/cache/*
+!data/cache/.gitkeep
 data/manifest.json
 data/audit.log
 data/athlete_profile.json
 !data/athlete_profile.json.example
+*.sqlite
+*.sqlite3
 
 # macOS
 .DS_Store

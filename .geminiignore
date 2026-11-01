@@ -1,0 +1,43 @@
+# ============================================================
+# .geminiignore - Controls which files enter the LLM context
+# Strategy: index ONLY files needed for live application logic
+# ============================================================
+
+# Dependency Directories & Virtual Envs
+.venv/
+venv/
+env/
+**/node_modules/
+
+# Python Runtime Artifacts & Caches
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+*.dist-info/
+
+# Data backups, manifests, logs, caches
+data/backups/**
+data/audit.log
+data/manifest.json
+data/cache/**
+*.sqlite
+*.sqlite3
+
+# Export files and temporary plans
+plans/export/**
+
+# OS & IDE Files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Secrets
+.env
+*.token
+secrets.*

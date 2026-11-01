@@ -154,7 +154,20 @@ def test_web_ui_endpoints():
             assert review_res["execution_score"] >= 80
             assert review_res["intensity_discipline"] == "ON_TARGET"
 
-        # 14. OPTIONS test
+        # 14. Token Audit API
+        with urllib.request.urlopen(f"{base_url}/api/token-audit") as res:
+            assert res.status == 200
+            tok_audit = json.loads(res.read().decode("utf-8"))
+            assert "always_on_tokens" in tok_audit
+            assert "session_token_usage" in tok_audit
+
+        # 15. Coaching with AI flag
+        with urllib.request.urlopen(f"{base_url}/api/coaching?ai=false") as res:
+            assert res.status == 200
+            coach_data = json.loads(res.read().decode("utf-8"))
+            assert "headline" in coach_data
+
+        # 16. OPTIONS test
         req_options = urllib.request.Request(f"{base_url}/api/profile", method="OPTIONS")
         with urllib.request.urlopen(req_options) as res:
             assert res.status == 200

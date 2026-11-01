@@ -54,6 +54,10 @@ class Config:
     tp_client_secret: str = field(default="")
     tp_athlete_id: str = field(default="")
     tp_base_url: str = field(default="https://api.trainingpeaks.com")
+    # OpenRouter API settings (Token-Lean & Zero-Cost)
+    openrouter_api_key: str = field(default="")
+    openrouter_model: str = field(default="openrouter/free")
+    openrouter_base_url: str = field(default="https://openrouter.ai/api/v1")
 
     @classmethod
     def load(cls, prompt_if_missing: bool = False) -> "Config":
@@ -74,6 +78,11 @@ class Config:
         tp_athlete_id = os.environ.get("TRAININGPEAKS_ATHLETE_ID", "").strip().strip("'\"")
         tp_base_url = os.environ.get("TRAININGPEAKS_BASE_URL", "https://api.trainingpeaks.com").strip().strip("'\"")
 
+        # OpenRouter settings
+        or_key = os.environ.get("OPENROUTER_API_KEY", "").strip().strip("'\"")
+        or_model = os.environ.get("OPENROUTER_MODEL", "openrouter/free").strip().strip("'\"")
+        or_base_url = os.environ.get("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1").strip().strip("'\"")
+
         cfg = cls(
             api_key=key,
             athlete_id=athlete_id,
@@ -84,14 +93,18 @@ class Config:
             tp_client_secret=tp_client_secret,
             tp_athlete_id=tp_athlete_id,
             tp_base_url=tp_base_url,
+            openrouter_api_key=or_key,
+            openrouter_model=or_model,
+            openrouter_base_url=or_base_url,
         )
         cfg.ensure_dirs()
         return cfg
 
     def ensure_dirs(self) -> None:
-        """Ensure necessary data and backup directories exist."""
+        """Ensure necessary data, backup, and cache directories exist."""
         self.data_dir.mkdir(parents=True, exist_ok=True)
         (self.data_dir / "backups").mkdir(parents=True, exist_ok=True)
+        (self.data_dir / "cache").mkdir(parents=True, exist_ok=True)
 
     def summary(self) -> str:
         """Safe representation of active configuration."""
@@ -101,6 +114,8 @@ class Config:
             f"Managed Prefix:       {self.default_prefix}\n"
             f"Data Directory:       {self.data_dir}\n"
             f"Intervals Key:        {redact_secret(self.api_key)}\n"
-            f"TrainingPeaks Token:  {redact_secret(self.tp_access_token)}"
+            f"TrainingPeaks Token:  {redact_secret(self.tp_access_token)}\n"
+            f"OpenRouter Model:     {self.openrouter_model}\n"
+            f"OpenRouter Key:       {redact_secret(self.openrouter_api_key)}"
         )
 

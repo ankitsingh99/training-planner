@@ -185,6 +185,7 @@ def build_parser() -> argparse.ArgumentParser:
     # coach
     coach_p = subparsers.add_parser("coach", help="Get intelligent coaching guidance based on biometrics & goals")
     coach_p.add_argument("--json", action="store_true", help="Output coaching guidance in JSON format")
+    coach_p.add_argument("--ai", action="store_true", help="Generate AI sports-science synthesis using token-lean OpenRouter free models")
 
     # export
     exp_all_p = subparsers.add_parser("export", help="Export workouts to Zwift (.zwo), iCalendar (.ics), or JSON")
@@ -206,8 +207,13 @@ def build_parser() -> argparse.ArgumentParser:
     rev_p.add_argument("--feeling", choices=["strong", "normal", "heavy_legs", "exhausted", "pain_or_niggle"], default="normal", help="Subjective feeling")
     rev_p.add_argument("--avg-hr", type=int, default=None, help="Average heart rate (bpm)")
     rev_p.add_argument("--max-hr", type=int, default=None, help="Maximum heart rate (bpm)")
-    rev_p.add_argument("--decoupling", type=float, default=None, help="Aerobic decoupling % drift (Pw:HR or Pa:HR)")
+    rev_p.add_argument("--decoupling", type=float, default=None, help="Aerobic decoupling percent drift (Pw:HR or Pa:HR)")
     rev_p.add_argument("--json", action="store_true", help="Output debrief in JSON format")
+
+    # token-audit
+    tok_p = subparsers.add_parser("token-audit", help="Audit repository token footprint, always-on context, and bloat")
+    tok_p.add_argument("--top", type=int, default=15, help="Number of top files to display")
+    tok_p.add_argument("--json", action="store_true", help="Output machine-readable JSON")
 
     return parser
 
@@ -734,13 +740,33 @@ def handle_coach(cfg: Config, args: argparse.Namespace) -> None:
     report = analyzer.analyze_30d(wellness, act_dicts)
 
     advisor = CoachingAdvisor(prof)
-    advice = advisor.advise(report, current_date=today)
+    use_ai = getattr(args, "ai", False)
+    llm_client = None
+    if use_ai:
+        from intervals_plan.llm_client import OpenRouterClient
+        llm_client = OpenRouterClient(
+            api_key=cfg.openrouter_api_key,
+            base_url=cfg.openrouter_base_url,
+            default_model=cfg.openrouter_model,
+        )
+
+    advice = advisor.advise(report, current_date=today, use_ai=use_ai, llm_client=llm_client)
 
     if args.json:
         print(json.dumps(advice.to_dict(), indent=2))
     else:
         for line in advice.to_lines():
             print(line)
+
+
+def handle_token_audit(cfg: Config, args: argparse.Namespace) -> None:
+    """Audit repository token footprint, always-on context weight, and bloat."""
+    from intervals_plan.token_audit import format_audit_report, run_token_audit
+    data = run_token_audit(top=args.top)
+    if args.json:
+        print(json.dumps(data, indent=2))
+    else:
+        print(format_audit_report(data))
 
 
 def handle_export(cfg: Config, args: argparse.Namespace) -> None:
@@ -975,6 +1001,8 @@ def main() -> None:
         handle_compliance(cfg, args)
     elif args.subcommand == "review-session":
         handle_session_review(args)
+    elif args.subcommand == "token-audit":
+        handle_token_audit(cfg, args)
 
 
 if __name__ == "__main__":
