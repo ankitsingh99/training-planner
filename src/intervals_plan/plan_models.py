@@ -74,3 +74,4 @@ class TrainingPlan:
             errors.append("Plan lacks a scheduled deload week (expected week 4).")
 
         return errors
+

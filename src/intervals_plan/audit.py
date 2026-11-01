@@ -45,3 +45,4 @@ class AuditLogger:
                     except json.JSONDecodeError:
                         continue
         return entries[-limit:]
+

@@ -124,3 +124,4 @@ def calculate_diff(
             diff.to_update.append(event_diff)
 
     return diff
+

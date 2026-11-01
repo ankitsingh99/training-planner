@@ -143,3 +143,4 @@ class SyncManager:
             "total_verified": len(events_to_upload),
             "backup_path": str(backup_path),
         }
+

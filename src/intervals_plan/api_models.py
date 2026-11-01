@@ -177,3 +177,4 @@ class AthleteProfile:
             city=data.get("city"),
             country=data.get("country"),
         )
+

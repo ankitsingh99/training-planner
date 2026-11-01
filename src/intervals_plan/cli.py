@@ -218,7 +218,8 @@ def handle_events_list(cfg: Config, args: argparse.Namespace) -> None:
     print(f"\n📅 Found {len(events)} events between {args.from_date} and {args.to_date}:")
     for ev in events:
         ext_tag = f" [{ev.external_id}]" if ev.external_id else ""
-        print(f"  - ID: {ev.id or 'None':<9} | {ev.start_date_local} | {ev.type:<5} | {ev.name}{ext_tag}")
+        sport_str = str(ev.type or ev.category or "Note")
+        print(f"  - ID: {str(ev.id or 'None'):<9} | {ev.start_date_local} | {sport_str:<5} | {ev.name}{ext_tag}")
 
 
 def handle_sync(cfg: Config, args: argparse.Namespace) -> None:
@@ -430,3 +431,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

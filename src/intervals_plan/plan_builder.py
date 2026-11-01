@@ -315,3 +315,4 @@ class PlanBuilder:
             events.append(self.build_club_ride_note(w, weekend_day))
 
         return events
+

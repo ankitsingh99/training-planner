@@ -164,3 +164,4 @@ class IntervalsClient:
             return res if isinstance(res, list) else []
         except IntervalsAPIError:
             return []
+

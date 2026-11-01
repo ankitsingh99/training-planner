@@ -41,3 +41,4 @@ class BackupManager:
 
         data = json.loads(path.read_text(encoding="utf-8"))
         return [IntervalsEvent.from_dict(item) for item in data]
+

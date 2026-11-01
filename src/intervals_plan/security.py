@@ -58,3 +58,4 @@ def get_secure_key(env_var: str = "INTERVALS_API_KEY") -> str:
         pass
     
     return ""
+

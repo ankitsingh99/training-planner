@@ -91,3 +91,4 @@ class AdaptiveEngine:
             else:
                 adapted.append(ev)
         return adapted
+

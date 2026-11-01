@@ -71,3 +71,4 @@ def print_watch_research() -> None:
     print("-" * 70)
     print(WATCH_ECOSYSTEM_RESEARCH["recommendation"])
     print("-" * 70 + "\n")
+

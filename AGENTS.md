@@ -14,3 +14,4 @@
 3. **Read-Back Verification**: Never assume an HTTP success response means the database is updated. Re-read every modified or created event from Intervals.icu to verify IDs, timestamps, and contents.
 4. **Offline Validation**: Plan schemas, interval structures, and workout documents must be completely testable offline with unit tests without making live network calls.
 5. **Backups & Audit**: Create a timestamped backup before modifying or deleting any live events. Record every action in `data/audit.log` and track state in `data/manifest.json`.
+

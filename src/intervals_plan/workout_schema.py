@@ -80,3 +80,4 @@ def steps_to_intervals_text(steps: List[WorkoutStep], indent: int = 0) -> List[s
         else:
             lines.append(f"{prefix}- {s.text}".strip())
     return lines
+

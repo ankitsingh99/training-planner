@@ -84,3 +84,4 @@ class Config:
             f"Data Directory: {self.data_dir}\n"
             f"API Key:        {redact_secret(self.api_key)}"
         )
+
