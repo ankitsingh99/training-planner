@@ -52,12 +52,24 @@ def create_step(
     hr_start: Optional[float] = None,
     hr_end: Optional[float] = None,
     hr_units: str = "%lthr",
+    p_start: Optional[float] = None,
+    p_end: Optional[float] = None,
+    p_units: str = "%ftp",
 ) -> WorkoutStep:
-    """Helper to create a single duration-based step with optional HR target."""
+    """Helper to create a single duration-based step with optional HR and Power targets."""
     hr = None
     if hr_start is not None or hr_end is not None:
         hr = HRTarget(start=hr_start, end=hr_end, units=hr_units)
-    return WorkoutStep(duration=int(seconds), text=text, hr=hr)
+
+    power = None
+    if p_start is not None or p_end is not None:
+        power = {"units": p_units}
+        if p_start is not None:
+            power["start"] = p_start
+        if p_end is not None:
+            power["end"] = p_end
+
+    return WorkoutStep(duration=int(seconds), text=text, hr=hr, power=power)
 
 
 def create_repeat(reps: int, text: str, sub_steps: List[WorkoutStep]) -> WorkoutStep:

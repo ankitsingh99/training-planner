@@ -1,0 +1,25 @@
+{
+  "goal": "dual_sport_hybrid",
+  "weekly_hours": 8.0,
+  "philosophy": "polarized_80_20",
+  "planning_horizon": "1_week",
+  "target_race_distance": "10k",
+  "target_race_date": null,
+  "lthr_run": 182,
+  "lthr_bike": 182,
+  "max_hr": 200,
+  "ftp_bike": 250,
+  "resting_hr_baseline": 50,
+  "schedule_preference": {
+    "Monday": "rest",
+    "Tuesday": "run_quality",
+    "Wednesday": "run_aerobic",
+    "Thursday": "bike_quality",
+    "Friday": "recovery_or_rest",
+    "Saturday": "long_ride",
+    "Sunday": "long_run"
+  },
+  "max_safe_acwr": 1.35,
+  "max_ctl_ramp_per_week": 6.0,
+  "rhr_alert_elevation_bpm": 4
+}

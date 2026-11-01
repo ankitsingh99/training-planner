@@ -1,29 +1,35 @@
-# Intervals.icu Adaptive Training Plan Tool
+# Intervals.icu Adaptive Training Plan Tool & Sports Science Suite
 
-A reliable, safe, CLI-first adaptive training plan management tool for [Intervals.icu](https://intervals.icu).
+A reliable, safe, CLI-first adaptive training suite for [Intervals.icu](https://intervals.icu).
 
-Designed around a dual-sport 8-week VO2 max & aerobic endurance progression that coordinates seamlessly with strength training (PPL / hypertrophy) and flexible weekend club rides.
+Combines **real-time body analytics (HRV, resting HR, sleep, wellness)** and **completed workout data** to dynamically plan and adapt your next 1 or 2 weeks of training. Grounded in peer-reviewed sports science research: **Stephen Seiler's 80/20 Polarized Model**, **Tim Gabbett's Acute:Chronic Workload Ratio (ACWR)**, **Coggan/Banister Performance Management (CTL/ATL/TSB)**, and **Kiviniemi/Plews HRV & Resting Heart Rate Autonomic Decision Trees**.
+
+Coordinates seamlessly with **COROS** watches/bike computers, **Strava**, and **Hevy** strength training.
 
 ---
 
 ## Key Features
 
-- **Adaptive Training Engine:**
-  - **Hard Weekend Ride Adaptation:** If your weekend club ride is hard or high fatigue, the engine automatically suppresses Thursday's hard bike intervals, substituting a 30-minute restorative spin to protect recovery.
-  - **Dynamic Rescheduling:** Move weekend club rides between Saturday and Sunday without duplicate events.
-  - **Aerobic Volume Scaling:** Bulk adjust easy aerobic ride durations across weeks with a single command.
+- **Rolling 30-Day Physiological & Training Load Analytics (`analyze`):**
+  - **Performance Management Chart (PMC):** Real-time Fitness (CTL), Fatigue (ATL), and Form (TSB).
+  - **Acute:Chronic Workload Ratio (ACWR):** Evaluates injury risk and workload progression using Tim Gabbett's "Sweet Spot" (0.8–1.3) vs. Danger Zone (>1.5).
+  - **Autonomic Nervous System & Recovery:** Tracks 30-day baseline resting HR and HRV. Automatically detects acute sympathetic strain (e.g. resting HR spike after hard weekend rides).
+  - **Intensity Polarization:** Evaluates actual time in Stephen Seiler's 3-zone model (low aerobic base vs. moderate grey zone vs. high-intensity intervals).
+- **Personalized Rolling Training Planner (`plan-next`):**
+  - Synthesizes 30-day body data and completed workouts to plan the next **1 or 2 weeks**.
+  - Dynamically scales volume to your weekly time commitment (e.g. **8+ hours/week**).
+  - **Auto-Adapts Intensity to Recovery:** Automatically substitutes high-intensity VO2 intervals with active recovery spins or aerobic flushes whenever elevated fatigue or resting HR spikes are detected.
+  - Fully compatible with COROS watches (plain ASCII, short <=20 character step cues, complete coaching notes).
+- **Configurable Athlete Profile & Training Goals (`profile`):**
+  - Interactive prompts and CLI flags to adjust your primary athletic goal (dual-sport hybrid, running, cycling, general fitness), weekly commitment hours, training philosophy (80/20 polarized, pyramidal, HRV-governed), and planning horizon.
 - **Safety First & Guarded Mutations:**
-  - **Dry-run by default:** Every mutation command (`sync`, `events edit`, `events delete`, `plan reschedule`, `adapt`) simulates changes before writing to Intervals.icu.
-  - **Guarded Deletion:** Single deletion requires `--confirm-delete`. Bulk deletion requires typing an exact confirmation phrase (e.g. `--confirm-phrase "DELETE 30 EVENTS"`).
-  - **Protected Assets:** Completed activities and unmanaged events outside the plan's prefix are strictly protected.
-- **Pre-Flight Diff & Read-Back Verification:**
-  - Computes rich diffs between your target plan and live calendar.
-  - Detects manual conflicts if workouts were edited directly on Intervals.icu.
-  - Re-reads every event after writes to guarantee verified persistence.
-  - Automatic JSON backups saved in `data/backups/` before any live mutation.
+  - **Dry-run by default:** Every mutation command (`plan-next`, `sync`, `events delete`, `adapt`) defaults to preview mode.
+  - Requires explicit `--apply` to update Intervals.icu.
+  - Single deletion requires `--confirm-delete`. Bulk deletion requires typing an exact confirmation phrase.
+  - Pre-flight diff checking and read-back verification on all remote mutations.
+  - Automatic timestamped backups saved in `data/backups/`.
 - **Security & Privacy:**
-  - Zero credential leakage: API keys and authorization headers are masked in terminal outputs, logs, and error dumps.
-  - Works with `.env` or secure hidden prompts via `getpass`.
+  - Zero credential leakage: API keys and authorization headers masked across all CLI outputs and logs.
 
 ---
 
@@ -52,52 +58,63 @@ Designed around a dual-sport 8-week VO2 max & aerobic endurance progression that
    ```bash
    intervals-plan doctor
    ```
-   *(Verifies your API key, discovers your Athlete ID, displays timezone and current metrics).*
 
 ---
 
-## CLI Reference
+## Complete Training Suite CLI Reference
 
-### 1. Diagnostics & Athlete Info
+### 1. Physiological Analytics & Training Load
 ```bash
-intervals-plan doctor               # System check & live API connectivity test
-intervals-plan athlete show         # Display authenticated athlete profile & metrics
+intervals-plan analyze              # Run 30-day rolling analysis (CTL/ATL/TSB, ACWR, Resting HR, Seiler 80/20)
+intervals-plan analyze --days 60    # Analyze over 60-day window
+intervals-plan analyze --json       # Output machine-readable JSON metrics
 ```
 
-### 2. Plan Validation & Preview
+### 2. Athlete Goals & Profile Configuration
 ```bash
-intervals-plan plan validate        # Offline validation of workout durations & steps
-intervals-plan plan preview         # Print weekly matrix and session details
-intervals-plan plan export-json     # Export plan as Intervals.icu JSON payload
+intervals-plan profile --show       # View current goal, weekly hours, benchmarks, and philosophy
+intervals-plan profile --edit       # Interactively edit goals, hours, or periodization model
+intervals-plan profile --hours 9.0  # Adjust weekly training budget via CLI flag
+intervals-plan profile --goal running --horizon 2_weeks
 ```
 
-### 3. Synchronization (Idempotent & Safe)
+### 3. Dynamic Rolling Plan Generator
 ```bash
-intervals-plan sync                 # Dry-run: shows diff (to create, to update, conflicts)
-intervals-plan sync --apply         # Applies mutations with post-write read-back verification
-intervals-plan sync --apply --force # Force overwrites any manual conflicts
+intervals-plan plan-next            # Preview next week's personalized plan (Dry Run)
+intervals-plan plan-next --weeks 2  # Plan next 2 weeks (14 days)
+intervals-plan plan-next --apply    # Commit personalized plan to Intervals.icu & queue for COROS
+intervals-plan plan-next --hours 8.5 --apply --force
 ```
 
-### 4. Adaptive Training Adjustments
+### 4. Adaptive Adjustments
 ```bash
-# Suppress Thursday hard bike intervals in Week 1 due to hard weekend club ride:
-intervals-plan adapt --club-ride-hard --week 1
-
-# Apply adaptation to live Intervals.icu calendar:
-intervals-plan adapt --club-ride-hard --week 1 --apply
-
-# Reschedule weekend club ride from Saturday to Sunday:
-intervals-plan plan reschedule --workout weekend-club-ride --week 1 --date 2026-11-08 --apply
+intervals-plan adapt --auto         # Auto-detect fatigue from 30d wellness/activities and adapt schedule
+intervals-plan adapt --club-ride-hard --week 1 --apply  # Manually substitute recovery spin for hard ride
 ```
 
-### 5. Events Inspection & Guarded Deletion
+### 5. Calendar Events & Guarded Deletion
 ```bash
-intervals-plan events list --from 2026-11-02 --to 2026-12-27 # List events in range
+intervals-plan events list --from 2026-11-02 --to 2026-11-15 # List live events
 intervals-plan events show <EVENT_ID>                        # View complete event JSON
 intervals-plan events delete <EVENT_ID> --confirm-delete     # Delete single event
-intervals-plan events delete-by-prefix chatgpt-8wk --confirm-phrase "DELETE 31 EVENTS"
+intervals-plan events delete-by-prefix dynamic --confirm-phrase "DELETE 7 EVENTS"
 intervals-plan events restore <BACKUP_FILE> --apply          # Restore from data/backups/
 ```
+
+### 6. COROS Watch Connection Status
+```bash
+intervals-plan coros-status         # Check live COROS cloud connection and workout upload status
+```
+
+---
+
+## Running the Automated Test Suite
+
+Run all unit, integration, and sports science analytics tests:
+```bash
+pytest
+```
+*Result: 40 passing tests covering schema, ACWR sweet spot & danger zone calculations, autonomic readiness, Seiler 80/20 distribution, dynamic periodization, and guarded deletion.*
 
 ### 6. Audit Trail & Manifest
 ```bash

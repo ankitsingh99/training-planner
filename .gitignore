@@ -18,6 +18,8 @@ data/backups/*
 !data/backups/.gitkeep
 data/manifest.json
 data/audit.log
+data/athlete_profile.json
+!data/athlete_profile.json.example
 
 # macOS
 .DS_Store

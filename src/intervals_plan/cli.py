@@ -3,13 +3,17 @@ Command-line interface for the Intervals.icu Adaptive Training Plan Tool.
 """
 
 import argparse
+import dataclasses
+import datetime
 import json
 from pathlib import Path
 import sys
 from typing import Any, Dict, List, Optional
 
 from intervals_plan.adaptive import AdaptiveEngine
+from intervals_plan.analytics import RollingAnalysisReport, RollingMetricsAnalyzer
 from intervals_plan.api_models import IntervalsEvent
+from intervals_plan.athlete_profile import AthleteProfileConfig
 from intervals_plan.audit import AuditLogger
 from intervals_plan.backup import BackupManager
 from intervals_plan.config import Config
@@ -18,6 +22,7 @@ from intervals_plan.integrations.watchletic_research import print_watch_research
 from intervals_plan.intervals_client import IntervalsAPIError, IntervalsClient
 from intervals_plan.plan_builder import PlanBuilder, get_default_8wk_plan
 from intervals_plan.plan_models import PlanConfig, TrainingPlan
+from intervals_plan.rolling_planner import DynamicRollingPlanner
 from intervals_plan.sync import SyncManager
 from intervals_plan.workout_schema import format_duration
 
@@ -100,9 +105,35 @@ def build_parser() -> argparse.ArgumentParser:
     # adapt
     adapt_p = subparsers.add_parser("adapt", help="Evaluate and apply adaptive training rules")
     adapt_p.add_argument("--club-ride-hard", action="store_true", help="Flag hard club ride (suppresses Thursday hard bike)")
+    adapt_p.add_argument("--auto", action="store_true", help="Auto-detect fatigue from 30d wellness/activities and adapt schedule")
     adapt_p.add_argument("--week", type=int, default=1, help="Week number to adapt")
     adapt_p.add_argument("--dry-run", action="store_true", default=True, help="Simulate without applying")
     adapt_p.add_argument("--apply", action="store_true", help="Apply adaptive change to calendar")
+
+    # analyze
+    ana_p = subparsers.add_parser("analyze", help="Analyze rolling 30-day physiological and training data")
+    ana_p.add_argument("--days", type=int, default=30, help="Analysis lookback window in days (default: 30)")
+    ana_p.add_argument("--json", action="store_true", help="Output analysis report in JSON format")
+
+    # profile
+    prof_p = subparsers.add_parser("profile", help="Manage athlete profile and adjustable training goals")
+    prof_p.add_argument("--show", action="store_true", help="Display current profile and parameters")
+    prof_p.add_argument("--edit", action="store_true", help="Interactively edit profile goals and constraints")
+    prof_p.add_argument("--goal", choices=["dual_sport_hybrid", "running", "cycling", "general_fitness"], help="Primary athletic goal")
+    prof_p.add_argument("--hours", type=float, help="Target weekly commitment in hours (e.g. 8.0)")
+    prof_p.add_argument("--philosophy", choices=["polarized_80_20", "pyramidal", "hrv_governed"], help="Training philosophy")
+    prof_p.add_argument("--horizon", choices=["1_week", "2_weeks"], help="Dynamic planning horizon")
+    prof_p.add_argument("--race-dist", help="Target race distance (e.g. 10k, half_marathon)")
+
+    # plan-next
+    pnext_p = subparsers.add_parser("plan-next", help="Dynamically plan next 1 or 2 weeks based on 30-day data")
+    pnext_p.add_argument("--weeks", type=int, choices=[1, 2], help="Number of weeks to plan (1 or 2)")
+    pnext_p.add_argument("--hours", type=float, help="Override weekly training hours budget")
+    pnext_p.add_argument("--goal", choices=["dual_sport_hybrid", "running", "cycling", "general_fitness"], help="Override athletic goal")
+    pnext_p.add_argument("--start-date", help="Cycle start date (YYYY-MM-DD, defaults to upcoming Monday)")
+    pnext_p.add_argument("--dry-run", action="store_true", default=True, help="Preview plan without applying")
+    pnext_p.add_argument("--apply", action="store_true", help="Apply planned workouts directly to Intervals.icu")
+    pnext_p.add_argument("--force", action="store_true", help="Force overwrite existing events in the target date range")
 
     # manifest
     man_p = subparsers.add_parser("manifest", help="Manifest management")
@@ -325,7 +356,23 @@ def handle_adapt(cfg: Config, args: argparse.Namespace) -> None:
     builder = PlanBuilder(plan)
     events = builder.build_all_events()
 
-    if args.club_ride_hard:
+    if getattr(args, "auto", False):
+        print("\n🤖 Running automatic physiological fatigue analysis...")
+        client = IntervalsClient(api_key=cfg.api_key, athlete_id=cfg.athlete_id, base_url=cfg.base_url)
+        profile = AthleteProfileConfig.load(cfg.data_dir / "athlete_profile.json")
+        lookback_start = datetime.date.today() - datetime.timedelta(days=30)
+        wellness = client.get_wellness_range(lookback_start.isoformat(), datetime.date.today().isoformat())
+        activities = client.get_activities(lookback_start.isoformat(), datetime.date.today().isoformat())
+        analyzer = RollingMetricsAnalyzer(target_hours_profile=profile.weekly_hours, athlete_lthr=profile.lthr_run)
+        report = analyzer.analyze_30d(wellness, activities)
+        if report.readiness.rhr_elevated or report.readiness.readiness_state in ["ELEVATED_FATIGUE", "RECOVERY_MANDATORY"]:
+            rhr_delta_str = f"{report.readiness.rhr_delta:+.1f}" if report.readiness.rhr_delta is not None else "N/A"
+            print(f"⚠️  Elevated strain detected (RHR delta: {rhr_delta_str} bpm, Form: {report.readiness.tsb:+.1f}).")
+            print("Action: Auto-substituting Week 1 Thursday high-intensity bike intervals with recovery spin...")
+            events = AdaptiveEngine.adapt_for_hard_club_ride(events, args.week)
+        else:
+            print("✅ Physiological markers are stable. No emergency downshift needed.")
+    elif args.club_ride_hard:
         print(f"\n🏃 Adaptive Trigger: Hard weekend club ride indicated for Week {args.week}.")
         print("Action: Suppressing Thursday's high-intensity bike intervals with an active recovery spin...")
         events = AdaptiveEngine.adapt_for_hard_club_ride(events, args.week)
@@ -344,6 +391,195 @@ def handle_adapt(cfg: Config, args: argparse.Namespace) -> None:
     sync_mgr = SyncManager(client=client, data_dir=cfg.data_dir, managed_prefix=plan.config.prefix)
     res = sync_mgr.apply_sync(events, plan.config.start_date, "2026-12-27", force=True)
     print(f"✅ Applied adaptive modification to Intervals.icu calendar! ({res['status']})")
+
+
+def handle_analyze(cfg: Config, args: argparse.Namespace) -> None:
+    client = IntervalsClient(api_key=cfg.api_key, athlete_id=cfg.athlete_id, base_url=cfg.base_url)
+    profile = AthleteProfileConfig.load(cfg.data_dir / "athlete_profile.json")
+
+    end_date = datetime.date.today()
+    start_date = end_date - datetime.timedelta(days=args.days)
+
+    print(f"\n📊 Fetching rolling {args.days}-day wellness and activity data from Intervals.icu...")
+    wellness_records = client.get_wellness_range(start_date.isoformat(), end_date.isoformat())
+    activities = client.get_activities(start_date.isoformat(), end_date.isoformat())
+
+    analyzer = RollingMetricsAnalyzer(
+        target_hours_profile=profile.weekly_hours,
+        athlete_lthr=profile.lthr_run,
+    )
+    report = analyzer.analyze_30d(wellness_records, activities, end_date.isoformat())
+
+    if args.json:
+        print(json.dumps(dataclasses.asdict(report), indent=2))
+    else:
+        for line in report.summary_lines():
+            print(line)
+
+
+def handle_profile(cfg: Config, args: argparse.Namespace) -> None:
+    profile_path = cfg.data_dir / "athlete_profile.json"
+    profile = AthleteProfileConfig.load(profile_path)
+
+    if args.edit:
+        print("\n⚙️  Interactive Athlete Profile Configuration:")
+        print("Press Enter to keep current values in [brackets].\n")
+        
+        goal_input = input(f"Primary Goal [{profile.goal}] (dual_sport_hybrid/running/cycling/general_fitness): ").strip()
+        if goal_input:
+            profile.goal = goal_input
+            
+        hours_input = input(f"Target Weekly Hours [{profile.weekly_hours}]: ").strip()
+        if hours_input:
+            try:
+                profile.weekly_hours = float(hours_input)
+            except ValueError:
+                pass
+                
+        phil_input = input(f"Philosophy [{profile.philosophy}] (polarized_80_20/pyramidal/hrv_governed): ").strip()
+        if phil_input:
+            profile.philosophy = phil_input
+            
+        horizon_input = input(f"Planning Horizon [{profile.planning_horizon}] (1_week/2_weeks): ").strip()
+        if horizon_input:
+            profile.planning_horizon = horizon_input
+            
+        race_input = input(f"Target Race / Distance [{profile.target_race_distance or 'none'}]: ").strip()
+        if race_input:
+            profile.target_race_distance = race_input
+
+        profile.save(profile_path)
+        print("\n✅ Athlete profile updated successfully!")
+
+    # Check CLI flag updates
+    updated = False
+    if args.goal:
+        profile.goal = args.goal
+        updated = True
+    if args.hours is not None:
+        profile.weekly_hours = args.hours
+        updated = True
+    if args.philosophy:
+        profile.philosophy = args.philosophy
+        updated = True
+    if args.horizon:
+        profile.planning_horizon = args.horizon
+        updated = True
+    if args.race_dist:
+        profile.target_race_distance = args.race_dist
+        updated = True
+
+    if updated:
+        profile.save(profile_path)
+        print("✅ Profile updated with CLI parameters!")
+
+    # Display profile summary
+    print("\n📋 Current Athlete Profile & Preferences:")
+    print("=" * 55)
+    print(f"  - Primary Goal:         {profile.goal}")
+    print(f"  - Target Weekly Hours:  {profile.weekly_hours:.1f} hours/week")
+    print(f"  - Training Philosophy:  {profile.philosophy}")
+    print(f"  - Planning Horizon:     {profile.planning_horizon}")
+    print(f"  - Target Race/Event:    {profile.target_race_distance or 'None'}")
+    print(f"  - Running LTHR:         {profile.lthr_run} bpm")
+    print(f"  - Cycling FTP:          {profile.ftp_bike} W (LTHR: {profile.lthr_bike} bpm)")
+    print(f"  - Max Heart Rate:       {profile.max_hr} bpm")
+    print(f"  - Resting HR Baseline:  {profile.resting_hr_baseline} bpm")
+    print(f"  - Config File:          {profile_path}")
+    print("=" * 55)
+    print("Tip: Run 'intervals-plan profile --edit' or pass flags e.g. '--hours 8.0' to adjust at any time.")
+
+
+def handle_plan_next(cfg: Config, args: argparse.Namespace) -> None:
+    profile_path = cfg.data_dir / "athlete_profile.json"
+    profile = AthleteProfileConfig.load(profile_path)
+
+    # Apply overrides
+    if args.hours is not None:
+        profile.weekly_hours = args.hours
+    if args.goal:
+        profile.goal = args.goal
+
+    weeks = args.weeks or (2 if profile.planning_horizon == "2_weeks" else 1)
+
+    if args.start_date:
+        cycle_start = datetime.date.fromisoformat(args.start_date)
+    else:
+        cycle_start = DynamicRollingPlanner.get_upcoming_monday()
+
+    cycle_end = cycle_start + datetime.timedelta(days=weeks * 7 - 1)
+
+    print(f"\n🔮 Generating Dynamic Rolling Plan ({weeks} Week{'s' if weeks > 1 else ''})")
+    print(f"Cycle Window: {cycle_start.isoformat()} to {cycle_end.isoformat()}")
+    print(f"Commitment:   {profile.weekly_hours:.1f} hours/week | Model: {profile.philosophy}")
+
+    client = IntervalsClient(api_key=cfg.api_key, athlete_id=cfg.athlete_id, base_url=cfg.base_url)
+
+    # 1. Fetch live 30-day data
+    lookback_start = datetime.date.today() - datetime.timedelta(days=30)
+    print("Fetching rolling 30-day physiological and activity data from Intervals.icu...")
+    wellness_records = client.get_wellness_range(lookback_start.isoformat(), datetime.date.today().isoformat())
+    activities = client.get_activities(lookback_start.isoformat(), datetime.date.today().isoformat())
+
+    analyzer = RollingMetricsAnalyzer(
+        target_hours_profile=profile.weekly_hours,
+        athlete_lthr=profile.lthr_run,
+    )
+    report = analyzer.analyze_30d(wellness_records, activities)
+
+    print(f"\nAutonomic & Load Assessment:")
+    print(f"  - Fitness (CTL):   {report.readiness.ctl:.1f} | Fatigue (ATL): {report.readiness.atl:.1f} | Form (TSB): {report.readiness.tsb:+.1f}")
+    print(f"  - ACWR Ratio:      {report.acwr.ratio:.2f} [{report.acwr.status}]")
+    if report.readiness.recent_resting_hr:
+        rhr_status = "⚠️ ELEVATED" if report.readiness.rhr_elevated else "✅ STABLE"
+        delta_str = f"{report.readiness.rhr_delta:+.1f} bpm" if report.readiness.rhr_delta is not None else "N/A"
+        print(f"  - Resting HR:      {report.readiness.recent_resting_hr:.0f} bpm (Baseline: {report.readiness.resting_hr_baseline:.0f} bpm, Delta: {delta_str}) [{rhr_status}]")
+    print(f"  - Readiness State: {report.readiness.readiness_state} (Score: {report.readiness.readiness_score}/100)")
+    print(f"  - Recommendation:  {report.readiness.recommendation}")
+
+    # 2. Generate workouts
+    prefix = f"dynamic-{profile.goal}-{cycle_start.isoformat()}"
+    planner = DynamicRollingPlanner(profile)
+    events = planner.generate_plan(
+        report=report,
+        start_date=cycle_start,
+        weeks_to_plan=weeks,
+        prefix=prefix,
+    )
+
+    print(f"\n📅 Proposed Workout Schedule ({len(events)} Sessions):")
+    print("-" * 72)
+    total_moving_secs = 0
+    for ev in events:
+        dur = ev.moving_time or 0
+        total_moving_secs += dur
+        dur_str = format_duration(dur) if dur > 0 else "Rest"
+        print(f"  {ev.start_date_local[:10]} | {ev.type:<5} | {dur_str:>7} | {ev.name}")
+    print("-" * 72)
+    print(f"Total Moving Time: {total_moving_secs / 3600.0:.1f} hours (Target: {report.readiness.target_next_week_hours:.1f}h)")
+
+    # 3. Diff against live calendar
+    sync_mgr = SyncManager(client=client, data_dir=cfg.data_dir, managed_prefix=prefix)
+    diff, _ = sync_mgr.preview_sync(events, cycle_start.isoformat(), cycle_end.isoformat())
+
+    print("\n🔄 Synchronization Diff:")
+    print(diff.summary())
+
+    if not args.apply:
+        print("\n[DRY RUN] No changes were made to Intervals.icu.")
+        print("To push this personalized plan to your Intervals.icu & COROS calendar, run:")
+        print("  intervals-plan plan-next --apply")
+        return
+
+    print("\nApplying dynamic plan to Intervals.icu...")
+    res = sync_mgr.apply_sync(events, cycle_start.isoformat(), cycle_end.isoformat(), force=args.force)
+    print(f"✅ Dynamic Plan Applied Successfully! (Status: {res['status']})")
+    print(f"  - Created Events:  {res['created']}")
+    print(f"  - Updated Events:  {res['updated']}")
+    print(f"  - Total Verified:  {res['total_verified']}")
+    print(f"  - Safety Backup:   {res['backup_path']}")
+    print("\n⌚ COROS Sync:")
+    print("  - Workouts for the rolling 7-day window are queued and will sync to your COROS app/watch automatically.")
 
 
 def handle_coros_status(cfg: Config) -> None:
@@ -447,6 +683,12 @@ def main() -> None:
         handle_sync(cfg, args)
     elif args.subcommand == "adapt":
         handle_adapt(cfg, args)
+    elif args.subcommand == "analyze":
+        handle_analyze(cfg, args)
+    elif args.subcommand == "profile":
+        handle_profile(cfg, args)
+    elif args.subcommand == "plan-next":
+        handle_plan_next(cfg, args)
     elif args.subcommand == "manifest":
         manifest_file = cfg.data_dir / "manifest.json"
         if manifest_file.is_file():

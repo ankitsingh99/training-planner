@@ -147,11 +147,31 @@ class IntervalsClient:
         return True
 
     def get_wellness(self, date_str: str) -> Optional[Dict[str, Any]]:
-        """Fetch wellness metrics (resting HR, HRV, sleep, fatigue) for a date."""
+        """Fetch wellness metrics (resting HR, HRV, sleep, fatigue) for a single date."""
         try:
             return self._request("GET", f"/athlete/{self.athlete_id}/wellness/{date_str}")
         except IntervalsAPIError:
             return None
+
+    def get_wellness_range(self, start_date: str, end_date: str) -> List[Dict[str, Any]]:
+        """Fetch wellness metrics across a date range (YYYY-MM-DD)."""
+        try:
+            res = self._request(
+                "GET",
+                f"/athlete/{self.athlete_id}/wellness",
+                query_params={"oldest": start_date, "newest": end_date},
+            )
+            return res if isinstance(res, list) else []
+        except IntervalsAPIError:
+            return []
+
+    def get_sport_settings(self) -> List[Dict[str, Any]]:
+        """Fetch athlete sport-specific settings (LTHR, max HR, FTP, pace zones)."""
+        try:
+            res = self._request("GET", f"/athlete/{self.athlete_id}/sport-settings")
+            return res if isinstance(res, list) else []
+        except IntervalsAPIError:
+            return []
 
     def get_activities(self, start_date: str, end_date: str) -> List[Dict[str, Any]]:
         """Fetch completed activities in the date range."""
