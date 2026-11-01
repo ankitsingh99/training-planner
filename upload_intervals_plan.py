@@ -98,44 +98,73 @@ def calc_duration(step_or_list):
 
 def run_workout(week):
     reps, work_min, recovery_sec, label = RUNS[week]
+    recovery_m = recovery_sec // 60
+    recovery_s = recovery_sec % 60
+    rec_str = f"{recovery_m}m{recovery_s}s" if recovery_s else f"{recovery_m}m"
+
     steps = [
         duration_step(
             12 * 60,
-            "Warm up very easily; build gradually",
+            "Warmup",
             {"start": 65, "end": 80, "units": "%lthr"},
         ),
         {
             "reps": reps,
-            "text": label + " — hard but repeatable, approximately 5K effort",
+            "text": f"{reps}x {label}",
             "steps": [
-                duration_step(work_min * 60, "Hard interval; even effort"),
-                duration_step(recovery_sec, "Easy jog or walk recovery"),
+                duration_step(work_min * 60, "5K Effort (RPE 8-9)"),
+                duration_step(recovery_sec, "Easy Recovery"),
             ],
         },
-        duration_step(9 * 60, "Easy cool-down"),
+        duration_step(9 * 60, "Cooldown"),
     ]
+    coaching_guidance = (
+        "Target: 5K race effort (RPE 8-9). "
+        "Pacing: Keep reps smooth and even; do not sprint rep 1. "
+        "HR lags on short reps, so pace by effort. "
+        "Walk or jog slowly between reps to fully recover."
+    )
+    desc = (
+        f"{coaching_guidance}\n\n"
+        f"Warmup\n"
+        f"- 12m ramp 65-80% LTHR Warmup\n\n"
+        f"{reps}x\n"
+        f"- {work_min}m 100-112% LTHR 5K Effort (RPE 8-9)\n"
+        f"- {rec_str} 60-70% LTHR Easy Recovery\n\n"
+        f"Cooldown\n"
+        f"- 9m 60-70% LTHR Cooldown\n"
+    )
     return {
         "start_date_local": None,
         "category": "WORKOUT",
         "type": "Run",
-        "name": f"W{week+1} quality run — {label}",
-        "description": "Run by effort, not pace. Keep repetitions consistent; do not sprint the first interval. HR may lag during short reps.",
+        "name": f"W{week+1} quality run - {label}",
+        "description": desc,
         "moving_time": calc_duration(steps),
-        "workout_doc": {"description": "VO2-oriented run intervals", "steps": steps},
+        "workout_doc": {"description": coaching_guidance, "steps": steps},
     }
 
 
 def easy_ride(week):
     mins = EASY_RIDE_MIN[week]
-    steps = [duration_step(mins * 60, "Steady conversational aerobic ride; HR 131–148 bpm")]
+    steps = [duration_step(mins * 60, "Zone 2 Steady")]
+    coaching_guidance = (
+        f"Target: Conversational Zone 2 (HR 131-148 bpm). "
+        f"Pacing: True talk-test effort: speak full sentences easily. "
+        f"Back off if HR drifts. Tuesday is gym rest day to protect hypertrophy."
+    )
+    desc = (
+        f"{coaching_guidance}\n\n"
+        f"- {mins}m 60-72% LTHR Zone 2 Steady\n"
+    )
     return {
         "category": "WORKOUT",
         "type": "Ride",
-        "name": f"W{week+1} easy aerobic ride — {mins} min",
-        "description": f"{mins} minutes conversational Zone 2. Keep HR approximately 131–148 bpm; back off if it drifts or the legs feel heavy. This should feel easy.",
+        "name": f"W{week+1} easy aerobic ride - {mins} min",
+        "description": desc,
         "moving_time": calc_duration(steps),
         "workout_doc": {
-            "description": "Easy aerobic endurance",
+            "description": coaching_guidance,
             "steps": steps,
         },
     }
@@ -148,49 +177,79 @@ def optional_bike(week):
     if week in (1, 2, 5):
         sets, reps, work, rest, label = spec
         steps = [
-            duration_step(10 * 60, "Warm up gradually"),
+            duration_step(10 * 60, "Warmup"),
             {
                 "reps": sets,
-                "text": label + " — repeat sets",
+                "text": f"{sets}x Sets",
                 "steps": [
                     {
                         "reps": reps,
-                        "text": "Interval block",
+                        "text": f"{reps}x ({work}s Hard / {rest}s Easy)",
                         "steps": [
-                            duration_step(work, "Hard, controlled effort; RPE 8–9"),
-                            duration_step(rest, "Very easy spinning"),
+                            duration_step(work, "Microburst (RPE 8-9)"),
+                            duration_step(rest, "Spin Recovery"),
                         ],
                     },
-                    duration_step(5 * 60, "Easy spin between blocks"),
+                    duration_step(5 * 60, "Set Break Spin"),
                 ],
             },
-            duration_step(8 * 60, "Easy cool-down"),
+            duration_step(8 * 60, "Cooldown"),
         ]
+        coaching_guidance = (
+            f"Target: High-cadence VO2 microbursts (95-105 rpm, RPE 8-9). "
+            f"Hard effort on reps, light spin between. Spin 5m easy between sets. "
+            f"OPTIONAL: skip or swap to easy spin if weekend ride is hard."
+        )
+        desc = (
+            f"{coaching_guidance}\n\n"
+            f"Warmup\n"
+            f"- 10m ramp 50-75% LTHR Warmup\n\n"
+            f"{sets}x\n"
+            f"{reps}x\n"
+            f"- {work}s 115-125% LTHR Microburst (RPE 8-9)\n"
+            f"- {rest}s 50-60% LTHR Spin Recovery\n\n"
+            f"- 5m 50-60% LTHR Set Break Spin\n\n"
+            f"Cooldown\n"
+            f"- 8m 50% LTHR Cooldown\n"
+        )
     else:
         reps, work, rest, label = spec
+        work_m = work // 60
+        rest_m = rest // 60
         steps = [
-            duration_step(10 * 60, "Warm up gradually"),
+            duration_step(10 * 60, "Warmup"),
             {
                 "reps": reps,
-                "text": label,
+                "text": f"{reps}x {label}",
                 "steps": [
-                    duration_step(work, "Hard but repeatable; RPE 8–9"),
-                    duration_step(rest, "Very easy spinning"),
+                    duration_step(work, "Hard VO2 (RPE 8-9)"),
+                    duration_step(rest, "Spin Recovery"),
                 ],
             },
-            duration_step(8 * 60, "Easy cool-down"),
+            duration_step(8 * 60, "Cooldown"),
         ]
+        coaching_guidance = (
+            f"Target: Sustained VO2 intervals (RPE 8-9). "
+            f"Even, controlled power across all reps. Spin easily to recover. "
+            f"OPTIONAL: do only if fresh and weekend club ride is moderate; skip if ride is hard."
+        )
+        desc = (
+            f"{coaching_guidance}\n\n"
+            f"Warmup\n"
+            f"- 10m ramp 50-75% LTHR Warmup\n\n"
+            f"{reps}x\n"
+            f"- {work_m}m 105-115% LTHR Hard VO2 (RPE 8-9)\n"
+            f"- {rest_m}m 50-60% LTHR Spin Recovery\n\n"
+            f"Cooldown\n"
+            f"- 8m 50% LTHR Cooldown\n"
+        )
     return {
         "category": "WORKOUT",
         "type": "Ride",
-        "name": f"W{week+1} OPTIONAL bike VO2 — {spec[-1]}",
-        "description": (
-            "OPTIONAL, not an extra obligation. Do this only if the weekend club ride "
-            "will be easy/moderate and recovery is good. If the club ride is hard, skip "
-            "this session entirely. Keep efforts repeatable, not all-out."
-        ),
+        "name": f"W{week+1} OPTIONAL bike VO2 - {spec[-1]}",
+        "description": desc,
         "moving_time": calc_duration(steps),
-        "workout_doc": {"description": "Optional bike VO2 intervals", "steps": steps},
+        "workout_doc": {"description": coaching_guidance, "steps": steps},
     }
 
 

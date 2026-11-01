@@ -23,13 +23,16 @@ class AdaptiveEngine:
             if ev.external_id and target_thu_ext_id in ev.external_id:
                 # Replace high-intensity VO2 bike intervals with an easy recovery spin
                 easy_steps = [
-                    create_step(30 * 60, "Easy recovery spin; high cadence, minimal resistance")
+                    create_step(30 * 60, "Recovery Spin", hr_start=50, hr_end=60)
                 ]
+                coaching_guidance = (
+                    "Target: Active recovery and metabolic flush. "
+                    "Substituted due to hard weekend club ride. "
+                    "Keep resistance light and cadence high (85-95 rpm) to promote blood flow without fatigue."
+                )
                 desc = (
-                    "🎯 Focus: Active recovery & metabolic flush.\n"
-                    "💡 How to execute: Substituted due to hard weekend club ride. Keep resistance minimal and cadence high (85-95 rpm). "
-                    "This session is designed to promote blood flow and tissue healing without CNS or muscular fatigue.\n\n"
-                    "- 30m 50-60% LTHR Active recovery spin; high cadence, minimal resistance\n"
+                    f"{coaching_guidance}\n\n"
+                    f"- 30m 50-60% LTHR Recovery Spin\n"
                 )
                 converted = IntervalsEvent(
                     start_date_local=ev.start_date_local,
@@ -39,7 +42,7 @@ class AdaptiveEngine:
                     description=desc,
                     moving_time=calc_duration(easy_steps),
                     external_id=ev.external_id,
-                    workout_doc=WorkoutDoc(description="Active recovery spin", steps=easy_steps),
+                    workout_doc=WorkoutDoc(description=coaching_guidance, steps=easy_steps),
                 )
                 adapted.append(converted)
             else:
@@ -78,17 +81,27 @@ class AdaptiveEngine:
                 curr_mins = (ev.moving_time or 2400) // 60
                 new_mins = max(20, curr_mins + delta_minutes)
                 steps = [
-                    create_step(new_mins * 60, f"Steady conversational aerobic ride; {new_mins} min")
+                    create_step(new_mins * 60, "Zone 2 Steady", hr_start=60, hr_end=72)
                 ]
+                coaching_guidance = (
+                    f"Target: Conversational Zone 2 aerobic ride ({new_mins} min). "
+                    f"True talk-test effort: speak full sentences easily. "
+                    f"Back off if HR drifts or legs feel heavy."
+                )
+                desc = (
+                    f"{coaching_guidance}\n\n"
+                    f"- {new_mins}m 60-72% LTHR Zone 2 Steady\n"
+                )
+                name_prefix = ev.name.split("—")[0].split("-")[0].strip()
                 updated = IntervalsEvent(
                     start_date_local=ev.start_date_local,
                     category=ev.category,
                     type=ev.type,
-                    name=f"{ev.name.split('—')[0].strip()} — {new_mins} min",
-                    description=ev.description,
+                    name=f"{name_prefix} - {new_mins} min",
+                    description=desc,
                     moving_time=new_mins * 60,
                     external_id=ev.external_id,
-                    workout_doc=WorkoutDoc(description="Adjusted easy aerobic endurance", steps=steps),
+                    workout_doc=WorkoutDoc(description=coaching_guidance, steps=steps),
                 )
                 adapted.append(updated)
             else:

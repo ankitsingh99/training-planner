@@ -135,75 +135,82 @@ class PlanBuilder:
 
     def build_run_workout(self, week: WeekSpec, start_date: date) -> IntervalsEvent:
         steps = [
-            create_step(12 * 60, "Warm up very easily; build gradually", hr_start=65, hr_end=80),
+            create_step(12 * 60, "Warmup", hr_start=65, hr_end=80),
             create_repeat(
                 week.run_reps,
-                f"{week.run_label} — hard but repeatable, approximately 5K effort",
+                f"{week.run_reps}x {week.run_label}",
                 [
-                    create_step(week.run_work_min * 60, "Hard interval; even effort", hr_start=100, hr_end=112),
-                    create_step(week.run_recovery_sec, "Easy jog or walk recovery", hr_start=60, hr_end=70),
+                    create_step(week.run_work_min * 60, "5K Effort (RPE 8-9)", hr_start=100, hr_end=112),
+                    create_step(week.run_recovery_sec, "Easy Recovery", hr_start=60, hr_end=70),
                 ],
             ),
-            create_step(9 * 60, "Easy cool-down", hr_start=60, hr_end=70),
+            create_step(9 * 60, "Cooldown", hr_start=60, hr_end=70),
         ]
         duration = calc_duration(steps)
         recovery_m = week.run_recovery_sec // 60
         recovery_s = week.run_recovery_sec % 60
         rec_str = f"{recovery_m}m{recovery_s}s" if recovery_s else f"{recovery_m}m"
 
+        coaching_guidance = (
+            "Target: 5K race effort (RPE 8-9). "
+            "Pacing: Keep reps smooth and even; do not sprint rep 1. "
+            "HR lags on short reps, so pace by effort. "
+            "Walk or jog slowly between reps to fully recover."
+        )
+
         desc = (
-            f"🎯 Focus: VO2 max interval progression ({week.phase} phase).\n"
-            f"💡 How to execute: Run by effort (approx. 5K race pace / RPE 8–9). Keep repetitions consistent—do NOT sprint the first rep. "
-            f"Heart rate lags during short reps; trust your perceived effort. Recover completely with easy jogging or walking.\n\n"
+            f"{coaching_guidance}\n\n"
             f"Warmup\n"
-            f"- 12m ramp 65-80% LTHR Warm up very easily; build gradually\n\n"
+            f"- 12m ramp 65-80% LTHR Warmup\n\n"
             f"{week.run_reps}x\n"
-            f"- {week.run_work_min}m 100-112% LTHR Hard interval; even 5K effort (RPE 8-9)\n"
-            f"- {rec_str} 60-70% LTHR Easy jog or walk recovery\n\n"
+            f"- {week.run_work_min}m 100-112% LTHR 5K Effort (RPE 8-9)\n"
+            f"- {rec_str} 60-70% LTHR Easy Recovery\n\n"
             f"Cooldown\n"
-            f"- 9m 60-70% LTHR Easy cool-down jog / walk\n"
+            f"- 9m 60-70% LTHR Cooldown\n"
         )
 
         return IntervalsEvent(
             start_date_local=f"{start_date.isoformat()}T00:00:00",
             category="WORKOUT",
             type="Run",
-            name=f"W{week.week_number} quality run — {week.run_label}",
+            name=f"W{week.week_number} quality run - {week.run_label}",
             description=desc,
             moving_time=duration,
             external_id=f"{self.plan.config.prefix}-w{week.week_number}-mon-run",
-            workout_doc=WorkoutDoc(description="VO2-oriented run intervals", steps=steps),
+            workout_doc=WorkoutDoc(description=coaching_guidance, steps=steps),
         )
 
     def build_easy_ride(self, week: WeekSpec, start_date: date) -> IntervalsEvent:
         steps = [
             create_step(
                 week.easy_ride_min * 60,
-                f"Steady conversational aerobic ride; HR {self.plan.config.athlete_endurance_hr_min}–{self.plan.config.athlete_endurance_hr_max} bpm",
+                "Zone 2 Steady",
                 hr_start=60,
                 hr_end=72,
             )
         ]
         duration = calc_duration(steps)
 
+        coaching_guidance = (
+            f"Target: Conversational Zone 2 (HR {self.plan.config.athlete_endurance_hr_min}-{self.plan.config.athlete_endurance_hr_max} bpm). "
+            f"Pacing: True talk-test effort: speak full sentences easily. "
+            f"Back off if HR drifts. Tuesday is gym rest day to protect hypertrophy."
+        )
+
         desc = (
-            f"🎯 Focus: Aerobic base development & active recovery (Zone 2).\n"
-            f"💡 How to execute: True conversational effort (Talk Test). You should be able to speak in full sentences without gasping. "
-            f"Keep heart rate strictly in the endurance zone ({self.plan.config.athlete_endurance_hr_min}–{self.plan.config.athlete_endurance_hr_max} bpm). "
-            f"If heart rate drifts upward or legs feel heavy, back off immediately.\n\n"
-            f"⚠️ Gym Note: Tuesday is a dedicated gym rest day to ensure full muscular recovery for hypertrophy.\n\n"
-            f"- {week.easy_ride_min}m 60-72% LTHR Steady conversational Zone 2 (HR {self.plan.config.athlete_endurance_hr_min}-{self.plan.config.athlete_endurance_hr_max} bpm)\n"
+            f"{coaching_guidance}\n\n"
+            f"- {week.easy_ride_min}m 60-72% LTHR Zone 2 Steady\n"
         )
 
         return IntervalsEvent(
             start_date_local=f"{start_date.isoformat()}T00:00:00",
             category="WORKOUT",
             type="Ride",
-            name=f"W{week.week_number} easy aerobic ride — {week.easy_ride_min} min",
+            name=f"W{week.week_number} easy aerobic ride - {week.easy_ride_min} min",
             description=desc,
             moving_time=duration,
             external_id=f"{self.plan.config.prefix}-w{week.week_number}-tue-easy-ride",
-            workout_doc=WorkoutDoc(description="Easy aerobic endurance", steps=steps),
+            workout_doc=WorkoutDoc(description=coaching_guidance, steps=steps),
         )
 
     def build_optional_bike(self, week: WeekSpec, start_date: date) -> Optional[IntervalsEvent]:
@@ -211,7 +218,7 @@ class PlanBuilder:
         if not spec:
             return None
 
-        steps = [create_step(10 * 60, "Warm up gradually", hr_start=50, hr_end=75)]
+        steps = [create_step(10 * 60, "Warmup", hr_start=50, hr_end=75)]
         
         if spec.get("type") == "microburst":
             sets = spec["sets"]
@@ -223,34 +230,37 @@ class PlanBuilder:
 
             interval_block = create_repeat(
                 reps,
-                "Interval block",
+                f"{reps}x ({work}s Hard / {rest}s Easy)",
                 [
-                    create_step(work, "Hard, controlled effort; RPE 8–9", hr_start=110, hr_end=125),
-                    create_step(rest, "Very easy spinning", hr_start=50, hr_end=60),
+                    create_step(work, "Microburst (RPE 8-9)", hr_start=110, hr_end=125),
+                    create_step(rest, "Spin Recovery", hr_start=50, hr_end=60),
                 ],
             )
             set_block = create_repeat(
                 sets,
-                f"{label} — repeat sets",
-                [interval_block, create_step(set_rest, "Easy spin between blocks", hr_start=50, hr_end=60)],
+                f"{sets}x Sets",
+                [interval_block, create_step(set_rest, "Set Break Spin", hr_start=50, hr_end=60)],
             )
             steps.append(set_block)
+            steps.append(create_step(8 * 60, "Cooldown", hr_start=50, hr_end=60))
+
+            coaching_guidance = (
+                f"Target: High-cadence VO2 microbursts (95-105 rpm, RPE 8-9). "
+                f"Hard effort on reps, light spin between. Spin 5m easy between sets. "
+                f"OPTIONAL: skip or swap to easy spin if weekend ride is hard."
+            )
 
             desc = (
-                f"🎯 Focus: Anaerobic capacity & high-cadence VO2 microbursts ({label}).\n"
-                f"💡 How to execute: 30 seconds hard effort (cadence 95-105 rpm, RPE 8-9) alternating with brief recoveries. "
-                f"Take the full 5-minute easy spin between blocks.\n\n"
-                f"⚠️ Strictly Optional: Do this session ONLY if your legs feel fresh and the weekend club ride will be moderate. "
-                f"If the weekend ride is hard, skip this session or replace it with a 30-minute easy recovery spin.\n\n"
+                f"{coaching_guidance}\n\n"
                 f"Warmup\n"
-                f"- 10m ramp 50-75% LTHR Warm up gradually\n\n"
+                f"- 10m ramp 50-75% LTHR Warmup\n\n"
                 f"{sets}x\n"
                 f"{reps}x\n"
-                f"- {work}s 115-125% LTHR Hard, controlled effort (RPE 8-9)\n"
-                f"- {rest}s 50-60% LTHR Very easy spinning recovery\n\n"
-                f"- 5m 50-60% LTHR Easy spin between blocks\n\n"
+                f"- {work}s 115-125% LTHR Microburst (RPE 8-9)\n"
+                f"- {rest}s 50-60% LTHR Spin Recovery\n\n"
+                f"- 5m 50-60% LTHR Set Break Spin\n\n"
                 f"Cooldown\n"
-                f"- 8m 50% LTHR Easy cool-down\n"
+                f"- 8m 50% LTHR Cooldown\n"
             )
         else:
             reps = spec["reps"]
@@ -260,85 +270,97 @@ class PlanBuilder:
             steps.append(
                 create_repeat(
                     reps,
-                    label,
+                    f"{reps}x {label}",
                     [
-                        create_step(work, "Hard but repeatable; RPE 8–9", hr_start=105, hr_end=115),
-                        create_step(rest, "Very easy spinning", hr_start=50, hr_end=60),
+                        create_step(work, "Hard VO2 (RPE 8-9)", hr_start=105, hr_end=115),
+                        create_step(rest, "Spin Recovery", hr_start=50, hr_end=60),
                     ],
                 )
             )
+            steps.append(create_step(8 * 60, "Cooldown", hr_start=50, hr_end=60))
             work_m = work // 60
             rest_m = rest // 60
 
-            desc = (
-                f"🎯 Focus: Sustained aerobic power / VO2 intervals ({label}).\n"
-                f"💡 How to execute: Smooth, controlled high power (RPE 8-9). Aim for even power/effort across all reps—do not blow up on rep 1. "
-                f"Spin very lightly during recoveries to clear lactate.\n\n"
-                f"⚠️ Strictly Optional: Do this session ONLY if your legs feel fresh and the weekend club ride will be moderate. "
-                f"If the weekend ride is hard, skip this session entirely.\n\n"
-                f"Warmup\n"
-                f"- 10m ramp 50-75% LTHR Warm up gradually\n\n"
-                f"{reps}x\n"
-                f"- {work_m}m 105-115% LTHR Hard but repeatable interval (RPE 8-9)\n"
-                f"- {rest_m}m 50-60% LTHR Very easy spinning recovery\n\n"
-                f"Cooldown\n"
-                f"- 8m 50% LTHR Easy cool-down\n"
+            coaching_guidance = (
+                f"Target: Sustained VO2 intervals (RPE 8-9). "
+                f"Even, controlled power across all reps. Spin easily to recover. "
+                f"OPTIONAL: do only if fresh and weekend club ride is moderate; skip if ride is hard."
             )
 
-        steps.append(create_step(8 * 60, "Easy cool-down", hr_start=50, hr_end=60))
+            desc = (
+                f"{coaching_guidance}\n\n"
+                f"Warmup\n"
+                f"- 10m ramp 50-75% LTHR Warmup\n\n"
+                f"{reps}x\n"
+                f"- {work_m}m 105-115% LTHR Hard VO2 (RPE 8-9)\n"
+                f"- {rest_m}m 50-60% LTHR Spin Recovery\n\n"
+                f"Cooldown\n"
+                f"- 8m 50% LTHR Cooldown\n"
+            )
+
         duration = calc_duration(steps)
 
         return IntervalsEvent(
             start_date_local=f"{start_date.isoformat()}T00:00:00",
             category="WORKOUT",
             type="Ride",
-            name=f"W{week.week_number} OPTIONAL bike VO2 — {spec['label']}",
+            name=f"W{week.week_number} OPTIONAL bike VO2 - {spec['label']}",
             description=desc,
             moving_time=duration,
             external_id=f"{self.plan.config.prefix}-w{week.week_number}-thu-optional-bike",
-            workout_doc=WorkoutDoc(description="Optional bike VO2 intervals", steps=steps),
+            workout_doc=WorkoutDoc(description=coaching_guidance, steps=steps),
         )
 
     def build_club_ride_note(self, week: WeekSpec, start_date: date) -> IntervalsEvent:
         desc = (
-            f"🎯 Focus: Endurance volume, group skills, and social riding.\n"
-            f"📍 Route Target: Approximately 50 km, roughly 3 hours total time including coffee and regrouping stops.\n"
-            f"💡 Execution Guidelines: Group pace will vary. Stay tucked in the draft on headwinds/flats to conserve energy. "
-            f"Keep fueling (30-60g carbs/hour) and stay hydrated.\n\n"
-            f"⚠️ Replacement Rule: If the club ride turns hard (lots of surging/threshold climbing), "
-            f"it replaces Thursday's optional hard bike intervals. Move this reminder to Sunday if that is your group's ride day."
+            "Target: 50 km endurance ride (~3 hours total with stops). "
+            "Stay in the draft on flats and headwinds to save energy. "
+            "Fuel with 30-60g carbs/hr and hydrate. "
+            "Rule: If ride is hard with lots of surging, it replaces Thursday hard bike intervals. "
+            "Move this reminder to Sunday if that is your group ride day."
         )
         return IntervalsEvent(
             start_date_local=f"{start_date.isoformat()}T00:00:00",
             category="NOTE",
             type="Ride",
-            name=f"W{week.week_number} weekend club ride — flexible day",
+            name=f"W{week.week_number} weekend club ride - flexible day",
             description=desc,
             external_id=f"{self.plan.config.prefix}-w{week.week_number}-weekend-club-ride",
         )
 
     def build_5k_retest(self, week: WeekSpec, start_date: date) -> IntervalsEvent:
         steps = [
-            create_step(10 * 60, "Warm up easily; build gradually", hr_start=60, hr_end=75),
-            create_step(30 * 60, "5 km Time Trial — best sustainable effort", hr_start=100, hr_end=115),
-            create_step(10 * 60, "Easy jog/walk cool-down", hr_start=50, hr_end=60),
+            create_step(10 * 60, "Warmup", hr_start=60, hr_end=75),
+            create_repeat(
+                4,
+                "4x Strides",
+                [
+                    create_step(30, "Stride Acceleration", hr_start=100, hr_end=115),
+                    create_step(30, "Walk Recovery", hr_start=50, hr_end=60),
+                ],
+            ),
+            create_step(25 * 60, "5K Time Trial Retest", hr_start=100, hr_end=115),
+            create_step(10 * 60, "Cooldown", hr_start=50, hr_end=60),
         ]
         duration = calc_duration(steps)
 
+        coaching_guidance = (
+            "Target: Best sustainable 5 km race effort benchmark. "
+            "Pacing: Km 1-2 controlled threshold effort. Km 3-4 maintain rhythm through fatigue. "
+            "Km 5 progressive kick to finish. Complete warmup and strides first."
+        )
+
         desc = (
-            f"🏁 BENCHMARK RETEST: 5 km Time Trial (End of Block Assessment).\n"
-            f"🎯 Objective: Evaluate changes in VO2 max, threshold pace, and cardiovascular durability after 8 weeks.\n"
-            f"💡 Pacing Strategy: Break the 5 km into three parts:\n"
-            f"  - Km 1–2: Controlled, disciplined pacing at targeted 5K threshold effort. Do not sprint off the line.\n"
-            f"  - Km 3–4: Settle into high cognitive focus; maintain rhythm as fatigue sets in.\n"
-            f"  - Km 5: Progressively increase effort and finish strong.\n\n"
+            f"{coaching_guidance}\n\n"
             f"Warmup\n"
-            f"- 10m ramp 60-75% LTHR Warm up very easily\n"
-            f"- 4x 30s 100% LTHR Strides / gentle accelerations with 30s walk recovery\n\n"
-            f"5 km Time Trial\n"
-            f"- 5km 100-115% LTHR Best sustainable 5 km race effort\n\n"
+            f"- 10m ramp 60-75% LTHR Warmup\n\n"
+            f"4x\n"
+            f"- 30s 100-115% LTHR Stride Acceleration\n"
+            f"- 30s 50-60% LTHR Walk Recovery\n\n"
+            f"5K Time Trial\n"
+            f"- 5km 100-115% LTHR 5K Time Trial Retest\n\n"
             f"Cooldown\n"
-            f"- 10m 50-60% LTHR Easy cool-down walk and stretch\n"
+            f"- 10m 50-60% LTHR Cooldown\n"
         )
 
         return IntervalsEvent(
@@ -349,7 +371,7 @@ class PlanBuilder:
             description=desc,
             moving_time=duration,
             external_id=f"{self.plan.config.prefix}-w{week.week_number}-sat-5k-retest",
-            workout_doc=WorkoutDoc(description="5 km benchmark retest", steps=steps),
+            workout_doc=WorkoutDoc(description=coaching_guidance, steps=steps),
         )
 
     def build_all_events(self) -> List[IntervalsEvent]:

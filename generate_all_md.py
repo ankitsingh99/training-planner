@@ -7,8 +7,19 @@ Outputs by default to both PLAN.md and ALL_WORKOUTS.md.
 
 import argparse
 import pathlib
+import re
+import sys
 from datetime import datetime
-from upload_intervals_plan import make_events
+
+# Add src to path to import intervals_plan
+sys.path.insert(0, str(pathlib.Path(__file__).parent / "src"))
+
+try:
+    from intervals_plan.plan_builder import PlanBuilder, get_default_8wk_plan
+    USE_SRC_BUILDER = True
+except ImportError:
+    from upload_intervals_plan import make_events
+    USE_SRC_BUILDER = False
 
 
 def format_duration(seconds):
@@ -73,9 +84,9 @@ def build_markdown_document(events):
 
     for w in sorted(weeks.keys()):
         evs = weeks[w]
-        mon = next((f"{e['name'].split('—')[-1].strip()} ({format_duration(e.get('moving_time'))})" for e in evs if "mon-run" in e.get("external_id", "")), "Rest")
+        mon = next((f"{re.split(r'[-—:]', e['name'])[-1].strip()} ({format_duration(e.get('moving_time'))})" for e in evs if "mon-run" in e.get("external_id", "")), "Rest")
         tue = next((f"Zone 2 ({format_duration(e.get('moving_time'))})" for e in evs if "tue-easy-ride" in e.get("external_id", "")), "Rest")
-        thu = next((f"{e['name'].split('—')[-1].strip()} ({format_duration(e.get('moving_time'))})" for e in evs if "thu-optional-bike" in e.get("external_id", "")), "*Rest / Recovery*")
+        thu = next((f"{re.split(r'[-—:]', e['name'])[-1].strip()} ({format_duration(e.get('moving_time'))})" for e in evs if "thu-optional-bike" in e.get("external_id", "")), "*Rest / Recovery*")
         sat = next(("~50 km (~3h flexible)" for e in evs if "weekend-club-ride" in e.get("external_id", "")), "None")
         
         note = " (Deload)" if w == 4 else (" (Peak)" if w == 7 else (" (Taper)" if w == 8 else ""))
@@ -136,7 +147,12 @@ def main():
     )
     args = parser.parse_args()
 
-    events = make_events()
+    if USE_SRC_BUILDER:
+        builder = PlanBuilder(get_default_8wk_plan())
+        raw_events = builder.build_all_events()
+        events = [e.to_dict() for e in raw_events]
+    else:
+        events = make_events()
     content = build_markdown_document(events)
 
     if args.output:
