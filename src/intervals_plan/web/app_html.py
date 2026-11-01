@@ -342,6 +342,8 @@ def get_app_html() -> str:
     }
     .tag-run { background: rgba(6, 182, 212, 0.2); color: #38bdf8; }
     .tag-ride { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+    .tag-swim { background: rgba(14, 165, 233, 0.25); color: #38bdf8; }
+    .tag-brick { background: rgba(168, 85, 247, 0.25); color: #c084fc; }
     .tag-rest { background: rgba(107, 114, 128, 0.2); color: #9ca3af; }
     .tag-quality { background: rgba(244, 63, 94, 0.2); color: #fb7185; }
 
@@ -602,6 +604,32 @@ def get_app_html() -> str:
           </table>
         </div>
       </div>
+
+      <!-- Plan Compliance & Execution Card -->
+      <div class="card" style="margin-top: 1.5rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+          <div class="card-title" style="margin-bottom:0;">Plan Compliance & Execution (Rolling 28 Days)</div>
+          <span id="compRatingBadge" class="periodization-badge" style="background:rgba(16,185,129,0.2); color:var(--success);">Optimal</span>
+        </div>
+        <div class="grid-3" style="margin-bottom: 1rem;">
+          <div style="background:#111827; border:1px solid #1f2937; border-radius:6px; padding:0.75rem;">
+            <div style="font-size:0.75rem; color:var(--text-muted);">Execution Rate</div>
+            <div style="font-size:1.25rem; font-weight:700; color:#38bdf8;" id="compExecRate">--%</div>
+            <div style="font-size:0.6875rem; color:var(--text-muted);" id="compWorkoutsRatio">-- / -- workouts</div>
+          </div>
+          <div style="background:#111827; border:1px solid #1f2937; border-radius:6px; padding:0.75rem;">
+            <div style="font-size:0.75rem; color:var(--text-muted);">Volume Compliance</div>
+            <div style="font-size:1.25rem; font-weight:700; color:var(--success);" id="compVolRate">--%</div>
+            <div style="font-size:0.6875rem; color:var(--text-muted);" id="compVolHours">--h actual vs --h planned</div>
+          </div>
+          <div style="background:#111827; border:1px solid #1f2937; border-radius:6px; padding:0.75rem;">
+            <div style="font-size:0.75rem; color:var(--text-muted);">Load Compliance (TSS)</div>
+            <div style="font-size:1.25rem; font-weight:700; color:var(--accent);" id="compLoadRate">--%</div>
+            <div style="font-size:0.6875rem; color:var(--text-muted);" id="compTssValues">-- actual vs -- planned</div>
+          </div>
+        </div>
+        <div id="compObservations" style="font-size:0.8125rem; color:#d1d5db; line-height:1.5;"></div>
+      </div>
     </div>
 
     <!-- TAB 3: GOALS & ATHLETE PROFILE -->
@@ -614,6 +642,10 @@ def get_app_html() -> str:
               <label class="form-label">Primary Training Goal</label>
               <select id="profGoal" class="form-select">
                 <option value="dual_sport_hybrid">Dual-Sport Hybrid (Run & Bike)</option>
+                <option value="sprint_triathlon">Sprint Triathlon (750m / 20k / 5k)</option>
+                <option value="olympic_triathlon">Olympic Triathlon (1.5k / 40k / 10k)</option>
+                <option value="half_ironman_70_3">IRONMAN 70.3 (1.9k / 90k / 21.1k)</option>
+                <option value="full_ironman_140_6">IRONMAN 140.6 (3.8k / 180k / 42.2k)</option>
                 <option value="running">Running Focus (5k / 10k / Marathon)</option>
                 <option value="cycling">Cycling Focus (Road / Gravel / TT)</option>
                 <option value="general_fitness">General Aerobic Health</option>
@@ -670,10 +702,18 @@ def get_app_html() -> str:
             </div>
           </div>
 
-          <div class="grid-4" style="margin-top: 1.5rem;">
+          <div class="grid-3" style="margin-top: 1.5rem;">
             <div class="form-group">
               <label class="form-label">Run LTHR (bpm)</label>
               <input id="profLthrRun" type="number" class="form-input" value="182">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Bike FTP (Watts)</label>
+              <input id="profFtp" type="number" class="form-input" value="250">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Swim CSS (sec/100m)</label>
+              <input id="profCss" type="number" class="form-input" value="105">
             </div>
             <div class="form-group">
               <label class="form-label">Bike LTHR (bpm)</label>
@@ -684,8 +724,8 @@ def get_app_html() -> str:
               <input id="profMaxHr" type="number" class="form-input" value="200">
             </div>
             <div class="form-group">
-              <label class="form-label">Bike FTP (Watts)</label>
-              <input id="profFtp" type="number" class="form-input" value="250">
+              <label class="form-label">Pool Length (Meters)</label>
+              <input id="profPool" type="number" class="form-input" value="25">
             </div>
           </div>
 
@@ -820,6 +860,17 @@ def get_app_html() -> str:
         <p id="modalWorkoutDesc" style="font-size: 0.875rem; color: #d1d5db; line-height: 1.5;"></p>
       </div>
 
+      <!-- Nutrition & Fueling Box -->
+      <div id="modalFuelingBox" style="background:#1e293b; border:1px solid #334155; border-radius:8px; padding:1rem; margin-bottom: 1.25rem;">
+        <h4 style="font-size: 0.8125rem; text-transform:uppercase; color:var(--success); margin-bottom: 0.35rem;">Intra-Workout Fueling & Hydration Guidance</h4>
+        <p id="modalFuelingSummary" style="font-size:0.8125rem; color:#f3f4f6; margin-bottom:0.5rem;"></p>
+        <div style="display:flex; gap:1.5rem; font-size:0.8125rem; color:var(--text-muted); flex-wrap:wrap;">
+          <div>Carbs: <strong id="modalCarbs" style="color:#f59e0b;">--</strong></div>
+          <div>Fluids: <strong id="modalFluids" style="color:#38bdf8;">--</strong></div>
+          <div>Sodium: <strong id="modalSodium" style="color:#ec4899;">--</strong></div>
+        </div>
+      </div>
+
       <div style="margin-bottom: 1.25rem;">
         <h4 style="font-size: 0.8125rem; text-transform:uppercase; color:var(--accent); margin-bottom: 0.5rem;">Interval Step Breakdown</h4>
         <table class="table">
@@ -874,17 +925,19 @@ def get_app_html() -> str:
 
     async function loadDashboard() {
       try {
-        const [profRes, anaRes, coachRes, statusRes] = await Promise.all([
+        const [profRes, anaRes, coachRes, statusRes, compRes] = await Promise.all([
           fetch('/api/profile'),
           fetch('/api/analytics'),
           fetch('/api/coaching'),
-          fetch('/api/status')
+          fetch('/api/status'),
+          fetch('/api/compliance')
         ]);
 
         currentProfile = await profRes.json();
         currentAnalytics = await anaRes.json();
         const coach = await coachRes.json();
         const statusData = await statusRes.json();
+        const comp = await compRes.json();
 
         // Update Ecosystem status
         if (statusData) {
@@ -897,6 +950,41 @@ def get_app_html() -> str:
           if (tpStatusEl) {
             tpStatusEl.innerText = statusData.trainingpeaks_connected ? 'Connected' : 'Not Configured';
             tpStatusEl.style.color = statusData.trainingpeaks_connected ? 'var(--success)' : 'var(--text-muted)';
+          }
+        }
+
+        // Update Plan Compliance
+        if (comp) {
+          const elExec = document.getElementById('compExecRate');
+          if (elExec) elExec.innerText = comp.execution_rate_pct.toFixed(0) + '%';
+          const elRatio = document.getElementById('compWorkoutsRatio');
+          if (elRatio) elRatio.innerText = comp.completed_count + ' of ' + comp.planned_count + ' completed';
+          const elVol = document.getElementById('compVolRate');
+          if (elVol) elVol.innerText = comp.volume_compliance_pct.toFixed(0) + '%';
+          const elVolHrs = document.getElementById('compVolHours');
+          if (elVolHrs) elVolHrs.innerText = comp.actual_volume_hours.toFixed(1) + 'h act / ' + comp.planned_volume_hours.toFixed(1) + 'h plan';
+          const elLoad = document.getElementById('compLoadRate');
+          if (elLoad) elLoad.innerText = comp.load_compliance_pct.toFixed(0) + '%';
+          const elTss = document.getElementById('compTssValues');
+          if (elTss) elTss.innerText = comp.actual_load_tss.toFixed(0) + ' act / ' + comp.planned_load_tss.toFixed(0) + ' plan';
+
+          const rBadge = document.getElementById('compRatingBadge');
+          if (rBadge) {
+            rBadge.innerText = (comp.compliance_rating || 'OPTIMAL').replace('_', ' ');
+            if (comp.compliance_rating === 'OPTIMAL') {
+              rBadge.style.background = 'rgba(16,185,129,0.2)';
+              rBadge.style.color = 'var(--success)';
+            } else if (comp.compliance_rating === 'OVER_TRAINING_RISK') {
+              rBadge.style.background = 'rgba(239,68,68,0.2)';
+              rBadge.style.color = 'var(--danger)';
+            } else {
+              rBadge.style.background = 'rgba(245,158,11,0.2)';
+              rBadge.style.color = 'var(--warning)';
+            }
+          }
+          const obsDiv = document.getElementById('compObservations');
+          if (obsDiv && comp.coaching_observations) {
+            obsDiv.innerHTML = comp.coaching_observations.map(o => '<div style="margin-bottom:4px;">* ' + o + '</div>').join('');
           }
         }
 
@@ -980,6 +1068,8 @@ def get_app_html() -> str:
       document.getElementById('profLthrBike').value = p.lthr_bike || 182;
       document.getElementById('profMaxHr').value = p.max_hr || 200;
       document.getElementById('profFtp').value = p.ftp_bike || 250;
+      document.getElementById('profCss').value = p.swim_css_sec_100m || 105;
+      document.getElementById('profPool').value = p.pool_length_m || 25;
       document.getElementById('profConstraints').value = (p.constraints || []).join(', ');
       updatePeriodizationBadge();
     }
@@ -1025,6 +1115,8 @@ def get_app_html() -> str:
         lthr_bike: parseInt(document.getElementById('profLthrBike').value),
         max_hr: parseInt(document.getElementById('profMaxHr').value),
         ftp_bike: parseInt(document.getElementById('profFtp').value),
+        swim_css_sec_100m: parseInt(document.getElementById('profCss').value) || 105,
+        pool_length_m: parseInt(document.getElementById('profPool').value) || 25,
         constraints: constraints
       };
 
@@ -1136,7 +1228,9 @@ def get_app_html() -> str:
           let tagClass = 'tag-rest';
           if (evt.type === 'Run') tagClass = 'tag-run';
           else if (evt.type === 'Ride') tagClass = 'tag-ride';
-          if (evt.name && evt.name.includes('Quality')) tagClass = 'tag-quality';
+          else if (evt.type === 'Swim') tagClass = 'tag-swim';
+          else if (evt.type === 'Brick') tagClass = 'tag-brick';
+          if (evt.name && (evt.name.includes('Quality') || evt.name.includes('Intervals') || evt.name.includes('CSS') || evt.name.includes('SweetSpot'))) tagClass = 'tag-quality';
 
           card.innerHTML = `
             <span class="workout-tag ${tagClass}">${evt.type || 'Workout'}</span>
@@ -1160,6 +1254,20 @@ def get_app_html() -> str:
       document.getElementById('modalWorkoutTitle').innerText = evt.name;
       document.getElementById('modalWorkoutMeta').innerText = (evt.type || 'Workout') + ' • ' + (evt.start_date_local || '');
       document.getElementById('modalWorkoutDesc').innerText = evt.description || 'No detailed coaching notes.';
+
+      // Fetch intra-workout fueling recommendation
+      const durMins = Math.max(20, Math.round((evt.moving_time || 3600) / 60));
+      fetch('/api/fueling?duration=' + durMins + '&sport=' + encodeURIComponent(evt.type || 'Run') + '&intensity=moderate')
+        .then(r => r.json())
+        .then(f => {
+          if (f) {
+            document.getElementById('modalFuelingSummary').innerText = f.strategy_summary;
+            document.getElementById('modalCarbs').innerText = f.carbs_per_hour_g + ' g/hr (' + f.total_carbs_g + 'g total)';
+            document.getElementById('modalFluids').innerText = f.hydration_ml_per_hour + ' mL/hr (' + f.total_hydration_ml + 'mL total)';
+            document.getElementById('modalSodium').innerText = f.sodium_mg_per_hour + ' mg/hr (' + f.total_sodium_mg + 'mg total)';
+          }
+        })
+        .catch(() => {});
 
       const stepsTbody = document.getElementById('modalStepsTable');
       stepsTbody.innerHTML = '';

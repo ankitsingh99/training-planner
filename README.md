@@ -89,6 +89,15 @@ AdaptPulse integrates peer-reviewed exercise physiology and endurance training m
 - **Interactive Multi-Page Web UI (`adaptpulse ui`):**
   - Self-contained, responsive dashboard with zero external dependencies.
   - Interactive tabs for **Dashboard & Readiness**, **PMC Analysis & Seiler 80/20 Distribution**, **Goal Setting & Athlete Profile**, **Rolling Calendar with COROS Screen Simulation**, **Ecosystem Cloud Sync**, and **Multi-Platform Export Center**.
+- **Triathlon & Multi-Sport Adaptive Engine:**
+  - Full periodization for **Sprint**, **Olympic**, **IRONMAN 70.3**, **IRONMAN 140.6**, **Running** (5K to Marathon), and **Cycling** (Gran Fondo / TT).
+  - First-class support for **Critical Swim Speed (CSS)** intervals, stroke technique drills, and **Brick workouts** (bike immediately transitioning to run).
+- **Sports Science Intra-Workout Fueling & Hydration Calculator:**
+  - Evidence-based carbohydrate (g/hr), fluid (mL/hr), and sodium (mg/hr) prescriptions embedded in every workout based on duration and intensity (Jeukendrup & ACSM guidelines).
+- **Planned vs. Actual Plan Compliance Engine (`adaptpulse compliance`):**
+  - Evaluates execution score, volume compliance %, load compliance %, and flags overreaching or undertraining trends over rolling 7-28 days.
+- **Intelligent Post-Workout Session Debrief (`adaptpulse review-session`):**
+  - Analyzes Rate of Perceived Exertion (RPE 1-10), cardiac drift / aerobic decoupling (Pw:HR, Pa:HR), intensity discipline, and prescribes next-day recovery adaptations.
 - **Intelligent Sports Science Coaching Advisor (`adaptpulse coach`):**
   - Synthesizes telemetry, target event timeline, periodization phase, and personal constraints into clear, actionable microcycle guidance.
 - **Multi-Platform Workout Exporters (`adaptpulse export`):**
@@ -317,6 +326,48 @@ Validate TrainingPeaks Partner API connectivity, profile details, and active tra
 adaptpulse tp-status
 ```
 
+### 11. Plan Compliance & Execution Report
+
+Evaluate planned vs. actual training execution over rolling 7 to 28 days:
+
+```bash
+# Rolling 14-day compliance analysis (default)
+adaptpulse compliance
+
+# Rolling 28-day compliance analysis
+adaptpulse compliance --days 28
+
+# Output raw JSON
+adaptpulse compliance --json
+```
+
+Metrics calculated:
+- Volume Compliance % (Completed vs. Planned Duration)
+- Load Compliance % (Completed vs. Planned TSS)
+- Execution Score % (Workout timing, discipline, and completion adherence)
+- Missed workouts and unplanned training efforts breakdown
+
+### 12. Post-Workout Session Debrief & Aerobic Decoupling
+
+Conduct an immediate post-session debrief to evaluate intensity discipline, cardiac drift, and recovery guidance:
+
+```bash
+# Post-workout debrief with Borg RPE and perceived feeling
+adaptpulse review-session --duration 60 --rpe 7 --feeling strong
+
+# Debrief with aerobic decoupling (Pw:HR or Pa:HR cardiac drift %)
+adaptpulse review-session --duration 90 --rpe 8 --drift 6.2 --avg-hr 152 --feeling heavy
+
+# Output raw JSON
+adaptpulse review-session --duration 60 --rpe 6 --json
+```
+
+Guidance provided:
+- Aerobic decoupling analysis (< 5% indicates aerobic fitness; > 5% indicates drift/fatigue)
+- Intensity discipline audit against prescribed target zones
+- Next-day recovery adaptation recommendations
+- Evidence-based intra-workout fueling critique and next-session fueling adjustments
+
 ---
 
 ## Ecosystem Integration Guide
@@ -362,9 +413,13 @@ Run the automated test suite with coverage reporting:
 coverage run -m pytest && coverage report -m
 ```
 
-The test suite covers 112 unit, integration, and safety tests with **>95% test coverage (currently 96%)**:
+The test suite covers 133 unit, integration, and safety tests with **>95% test coverage (currently 96%)**:
 - TrainingPeaks API connector and OAuth token error redaction
 - Sports science analytics: ACWR sweet spot/danger zone, PMC (CTL/ATL/TSB), Seiler 80/20 polarization, and Plews/Kiviniemi autonomic readiness
+- Intra-workout fueling & hydration prescriptions (carbs g/hr, fluids mL/hr, sodium mg/hr)
+- Planned-vs-actual plan compliance engine (rolling volume and TSS adherence)
+- Post-workout session review and aerobic decoupling (Pw:HR / Pa:HR drift)
+- Multi-sport triathlon periodization (Sprint to 140.6, CSS swim threshold, Brick transitions)
 - Periodization phase calculation (Base, Build, Peak, Taper, Recovery)
 - Multi-platform workout exporters (Zwift .zwo XML, iCalendar .ics, JSON)
 - Embedded multi-page Web UI REST API and request handling

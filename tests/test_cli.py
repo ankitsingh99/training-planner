@@ -17,6 +17,7 @@ from intervals_plan.cli import (
     handle_adapt,
     handle_analyze,
     handle_coach,
+    handle_compliance,
     handle_coros_status,
     handle_delete_by_prefix,
     handle_doctor,
@@ -28,6 +29,7 @@ from intervals_plan.cli import (
     handle_plan_preview,
     handle_plan_validate,
     handle_profile,
+    handle_session_review,
     handle_sync,
     handle_tp_status,
     load_plan,
@@ -304,10 +306,10 @@ def test_handle_profile_cli(tmp_path: Path):
     p_file = tmp_path / "profile.json"
     cfg = Config(data_dir=tmp_path)
 
-    args_show = argparse.Namespace(show=True, edit=False, goal=None, hours=None, philosophy=None, horizon=None, race_dist=None)
+    args_show = argparse.Namespace(show=True, edit=False, goal=None, hours=None, philosophy=None, horizon=None, race_dist=None, css=None)
     handle_profile(cfg, args_show)
 
-    args_update = argparse.Namespace(show=False, edit=False, goal="running", hours=9.0, philosophy="pyramidal", horizon="2_weeks", race_dist="half_marathon")
+    args_update = argparse.Namespace(show=False, edit=False, goal="running", hours=9.0, philosophy="pyramidal", horizon="2_weeks", race_dist="half_marathon", css=102)
     handle_profile(cfg, args_update)
 
 
@@ -440,8 +442,59 @@ def test_cli_main_subcommand_dispatch():
         (["intervals-plan", "coach"], "handle_coach"),
         (["intervals-plan", "export"], "handle_export"),
         (["intervals-plan", "tp-status"], "handle_tp_status"),
+        (["intervals-plan", "compliance"], "handle_compliance"),
+        (["intervals-plan", "review-session"], "handle_session_review"),
     ]:
         with patch.object(sys, "argv", sub), \
              patch(f"intervals_plan.cli.{handler_name}") as mock_handler:
             main()
             mock_handler.assert_called_once()
+
+
+def test_handle_compliance_cli():
+    cfg = Config(api_key="test_key")
+    with patch("intervals_plan.cli.IntervalsClient") as mock_cls:
+        inst = MagicMock()
+        inst.list_events.return_value = [
+            IntervalsEvent(id="e1", start_date_local="2026-11-01T07:00:00", type="Run", moving_time=3600)
+        ]
+        inst.get_activities.return_value = []
+        mock_cls.return_value = inst
+
+        args_text = argparse.Namespace(days=28, json=False)
+        handle_compliance(cfg, args_text)
+
+        args_json = argparse.Namespace(days=28, json=True)
+        handle_compliance(cfg, args_json)
+
+        # Exception test
+        inst.list_events.side_effect = Exception("API error")
+        handle_compliance(cfg, args_text)
+
+
+def test_handle_session_review_cli():
+    args_text = argparse.Namespace(
+        name="Intervals Run",
+        sport="Run",
+        duration=45,
+        rpe=8,
+        feeling="strong",
+        avg_hr=165,
+        max_hr=180,
+        decoupling=3.2,
+        json=False,
+    )
+    handle_session_review(args_text)
+
+    args_json = argparse.Namespace(
+        name="Intervals Run",
+        sport="Run",
+        duration=45,
+        rpe=8,
+        feeling="strong",
+        avg_hr=165,
+        max_hr=180,
+        decoupling=3.2,
+        json=True,
+    )
+    handle_session_review(args_json)

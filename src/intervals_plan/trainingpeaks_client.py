@@ -164,3 +164,4 @@ class TrainingPeaksClient:
         """Delete a workout by ID."""
         self._request("DELETE", f"/v3/workouts/{workout_id}")
         return True
+

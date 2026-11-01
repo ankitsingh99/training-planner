@@ -178,3 +178,51 @@ class AthleteProfile:
             country=data.get("country"),
         )
 
+
+@dataclass
+class IntervalsActivity:
+    """Recorded activity entity from Intervals.icu, Strava, Garmin, or COROS."""
+
+    id: str
+    start_date_local: str = ""
+    type: str = "Run"
+    name: str = ""
+    moving_time: Optional[int] = None
+    elapsed_time: Optional[int] = None
+    icu_training_load: Optional[float] = None
+    average_heartrate: Optional[float] = None
+    max_heartrate: Optional[float] = None
+    average_watts: Optional[float] = None
+    distance: Optional[float] = None
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "id": self.id,
+            "start_date_local": self.start_date_local,
+            "type": self.type,
+            "name": self.name,
+            "moving_time": self.moving_time,
+            "elapsed_time": self.elapsed_time,
+            "icu_training_load": self.icu_training_load,
+            "average_heartrate": self.average_heartrate,
+            "max_heartrate": self.max_heartrate,
+            "average_watts": self.average_watts,
+            "distance": self.distance,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "IntervalsActivity":
+        return cls(
+            id=str(data.get("id", "")),
+            start_date_local=data.get("start_date_local", ""),
+            type=data.get("type", "Run"),
+            name=data.get("name", ""),
+            moving_time=data.get("moving_time"),
+            elapsed_time=data.get("elapsed_time"),
+            icu_training_load=data.get("icu_training_load"),
+            average_heartrate=data.get("average_heartrate"),
+            max_heartrate=data.get("max_heartrate"),
+            average_watts=data.get("average_watts"),
+            distance=data.get("distance"),
+        )
+

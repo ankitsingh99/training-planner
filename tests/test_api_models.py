@@ -2,7 +2,7 @@
 Tests for Intervals.icu API Data Models.
 """
 
-from intervals_plan.api_models import AthleteProfile, HRTarget, IntervalsEvent, WorkoutDoc, WorkoutStep
+from intervals_plan.api_models import AthleteProfile, HRTarget, IntervalsActivity, IntervalsEvent, WorkoutDoc, WorkoutStep
 
 
 def test_hr_target_serialization():
@@ -72,4 +72,22 @@ def test_athlete_profile_model():
     p = AthleteProfile(id="i999", name="Athlete", restingHR=48, lthr=178)
     assert p.id == "i999"
     assert p.restingHR == 48
+
+
+def test_intervals_activity_model():
+    act = IntervalsActivity(
+        id="act_123",
+        start_date_local="2026-11-01T07:00:00",
+        type="Run",
+        name="Morning 10k",
+        moving_time=3600,
+        icu_training_load=65.5,
+        average_heartrate=152.0,
+    )
+    d = act.to_dict()
+    assert d["id"] == "act_123"
+    assert d["icu_training_load"] == 65.5
+    restored = IntervalsActivity.from_dict(d)
+    assert restored.name == "Morning 10k"
+    assert restored.moving_time == 3600
 

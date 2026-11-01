@@ -11,6 +11,7 @@ from typing import Any, Dict, List, Optional
 from intervals_plan.analytics import RollingAnalysisReport
 from intervals_plan.api_models import HRTarget, IntervalsEvent, WorkoutDoc, WorkoutStep
 from intervals_plan.athlete_profile import AthleteProfileConfig
+from intervals_plan.fueling import calculate_fueling
 from intervals_plan.workout_schema import calc_duration, create_step
 
 
@@ -55,11 +56,13 @@ class DynamicRollingPlanner:
 
         for w_idx in range(weeks_to_plan):
             week_num = w_idx + 1
+            # Check mesocycle 4th-week deload (25% volume reduction to absorb adaptation)
+            week_hours = total_hours * 0.75 if (week_num % 4 == 0) else total_hours
             week_start = cycle_start + datetime.timedelta(days=w_idx * 7)
             week_events = self._build_week_schedule(
                 week_num=week_num,
                 week_start=week_start,
-                total_hours=total_hours,
+                total_hours=week_hours,
                 is_strained=is_strained,
                 readiness=readiness,
                 prefix=prefix,
@@ -91,6 +94,10 @@ class DynamicRollingPlanner:
 
         # Scale durations proportionally if weekly budget is higher (e.g. 8+ hours)
         scale = max(0.6, min(1.6, total_hours / 8.0))
+        goal_lower = self.profile.goal.lower()
+        is_triathlon = any(w in goal_lower for w in ["triathlon", "ironman"])
+        is_running_focus = goal_lower in ["running", "marathon", "half_marathon", "5k", "10k"]
+        is_cycling_focus = goal_lower in ["cycling", "bike", "gran_fondo"]
 
         # --- MONDAY: Rest / Regeneration ---
         mon_note = IntervalsEvent(
@@ -106,39 +113,120 @@ class DynamicRollingPlanner:
         )
         events.append(mon_note)
 
-        # --- TUESDAY: Run Quality (VO2max / 5K-10K intervals OR Aerobic Strides if strained) ---
-        if is_strained:
-            tue_event = self._build_strained_tuesday_run(week_num, tue, prefix, readiness)
+        if is_triathlon:
+            # Multi-sport schedule (Swim / Bike / Run / Brick)
+            # Tuesday: Run Quality / 5K-10K intervals
+            if is_strained:
+                events.append(self._build_strained_tuesday_run(week_num, tue, prefix, readiness))
+            else:
+                events.append(self._build_quality_tuesday_run(week_num, tue, prefix, scale))
+
+            # Wednesday: Swim CSS Threshold
+            events.append(self._build_swim_threshold(week_num, wed, prefix, scale))
+
+            # Thursday: Bike Quality or Recovery Spin
+            if is_strained:
+                events.append(self._build_strained_thursday_bike(week_num, thu, prefix, readiness))
+            else:
+                events.append(self._build_quality_thursday_bike(week_num, thu, prefix, scale))
+
+            # Friday: Swim Aerobic Base & Technique
+            events.append(self._build_swim_aerobic(week_num, fri, prefix, scale))
+
+            # Saturday: Long Ride + Transition Brick Run
+            events.append(self._build_brick_session(week_num, sat, prefix, scale, is_strained))
+
+            # Sunday: Long Aerobic Run
+            sun_dur_mins = int(round(70 * (0.85 if is_strained else 1.0) * scale))
+            events.append(self._build_long_run(week_num, sun, prefix, sun_dur_mins))
+
+        elif is_running_focus:
+            # Pure Running focus schedule
+            if is_strained:
+                events.append(self._build_strained_tuesday_run(week_num, tue, prefix, readiness))
+            else:
+                events.append(self._build_quality_tuesday_run(week_num, tue, prefix, scale))
+
+            # Wednesday: Aerobic Base Run
+            wed_dur_mins = int(round(50 * scale))
+            events.append(self._build_aerobic_run(week_num, wed, prefix, wed_dur_mins))
+
+            # Thursday: Threshold / Tempo Run or Aerobic Flush if strained
+            if is_strained:
+                events.append(self._build_aerobic_run(week_num, thu, prefix, int(round(40 * scale))))
+            else:
+                events.append(self._build_tempo_run(week_num, thu, prefix, int(round(50 * scale))))
+
+            # Friday: Easy Recovery Run
+            fri_dur_mins = int(round(35 * scale))
+            events.append(self._build_aerobic_run(week_num, fri, prefix, fri_dur_mins))
+
+            # Saturday: Steady Aerobic Run
+            sat_dur_mins = int(round(60 * scale))
+            events.append(self._build_aerobic_run(week_num, sat, prefix, sat_dur_mins))
+
+            # Sunday: Long Aerobic Run
+            sun_dur_mins = int(round(90 * (0.85 if is_strained else 1.0) * scale))
+            events.append(self._build_long_run(week_num, sun, prefix, sun_dur_mins))
+
+        elif is_cycling_focus:
+            # Pure Cycling focus schedule
+            if is_strained:
+                events.append(self._build_strained_thursday_bike(week_num, tue, prefix, readiness))
+            else:
+                events.append(self._build_quality_thursday_bike(week_num, tue, prefix, scale))
+
+            # Wednesday: Aerobic Base Spin
+            wed_dur_mins = int(round(65 * scale))
+            events.append(self._build_recovery_spin(week_num, wed, prefix, wed_dur_mins))
+
+            # Thursday: SweetSpot / Threshold Ride
+            if is_strained:
+                events.append(self._build_recovery_spin(week_num, thu, prefix, 45))
+            else:
+                events.append(self._build_cycling_threshold(week_num, thu, prefix, scale))
+
+            # Friday: Active Recovery Spin
+            fri_dur_mins = int(round(45 * scale))
+            events.append(self._build_recovery_spin(week_num, fri, prefix, fri_dur_mins))
+
+            # Saturday: Long Endurance Ride
+            sat_dur_mins = int(round(210 * (0.8 if is_strained else 1.0) * scale))
+            events.append(self._build_long_ride(week_num, sat, prefix, sat_dur_mins, is_strained))
+
+            # Sunday: Mixed Tempo Ride
+            sun_dur_mins = int(round(120 * scale))
+            events.append(self._build_long_ride(week_num, sun, prefix, sun_dur_mins, is_strained))
+
         else:
-            tue_event = self._build_quality_tuesday_run(week_num, tue, prefix, scale)
-        events.append(tue_event)
+            # Dual-Sport Hybrid (balanced running & cycling)
+            # Tuesday: Run Quality
+            if is_strained:
+                events.append(self._build_strained_tuesday_run(week_num, tue, prefix, readiness))
+            else:
+                events.append(self._build_quality_tuesday_run(week_num, tue, prefix, scale))
 
-        # --- WEDNESDAY: Aerobic Base Run (Zone 2 Conversational) ---
-        wed_dur_mins = int(round(50 * scale))
-        wed_event = self._build_aerobic_run(week_num, wed, prefix, wed_dur_mins)
-        events.append(wed_event)
+            # Wednesday: Aerobic Base Run
+            wed_dur_mins = int(round(50 * scale))
+            events.append(self._build_aerobic_run(week_num, wed, prefix, wed_dur_mins))
 
-        # --- THURSDAY: Bike Quality (Seiler 4x8m VO2/Sweet-Spot OR Recovery Spin if strained) ---
-        if is_strained:
-            thu_event = self._build_strained_thursday_bike(week_num, thu, prefix, readiness)
-        else:
-            thu_event = self._build_quality_thursday_bike(week_num, thu, prefix, scale)
-        events.append(thu_event)
+            # Thursday: Bike Quality
+            if is_strained:
+                events.append(self._build_strained_thursday_bike(week_num, thu, prefix, readiness))
+            else:
+                events.append(self._build_quality_thursday_bike(week_num, thu, prefix, scale))
 
-        # --- FRIDAY: Active Recovery Spin or Rest ---
-        fri_dur_mins = int(round(40 * scale))
-        fri_event = self._build_recovery_spin(week_num, fri, prefix, fri_dur_mins)
-        events.append(fri_event)
+            # Friday: Active Recovery Spin
+            fri_dur_mins = int(round(40 * scale))
+            events.append(self._build_recovery_spin(week_num, fri, prefix, fri_dur_mins))
 
-        # --- SATURDAY: Long Endurance Ride / Club Ride ---
-        sat_dur_mins = int(round(180 * (0.8 if is_strained else 1.0) * scale))
-        sat_event = self._build_long_ride(week_num, sat, prefix, sat_dur_mins, is_strained)
-        events.append(sat_event)
+            # Saturday: Long Endurance Ride
+            sat_dur_mins = int(round(180 * (0.8 if is_strained else 1.0) * scale))
+            events.append(self._build_long_ride(week_num, sat, prefix, sat_dur_mins, is_strained))
 
-        # --- SUNDAY: Long Aerobic Run ---
-        sun_dur_mins = int(round(75 * (0.85 if is_strained else 1.0) * scale))
-        sun_event = self._build_long_run(week_num, sun, prefix, sun_dur_mins)
-        events.append(sun_event)
+            # Sunday: Long Aerobic Run
+            sun_dur_mins = int(round(75 * (0.85 if is_strained else 1.0) * scale))
+            events.append(self._build_long_run(week_num, sun, prefix, sun_dur_mins))
 
         return events
 
@@ -273,6 +361,7 @@ class DynamicRollingPlanner:
             "- 3m 55-65% LTHR Active Spin\n"
             "- 12m 50-60% LTHR Cool-down Spin\n"
         )
+        day_code = date.strftime("%a").lower()
         return IntervalsEvent(
             start_date_local=f"{date.isoformat()}T06:30:00",
             category="WORKOUT",
@@ -280,7 +369,7 @@ class DynamicRollingPlanner:
             name=f"W{week_num} Seiler 4x8m Intervals",
             description=desc,
             moving_time=calc_duration(steps),
-            external_id=f"{prefix}-w{week_num}-thu-bike-quality-{date.isoformat()}",
+            external_id=f"{prefix}-w{week_num}-{day_code}-bike-quality-{date.isoformat()}",
             workout_doc=WorkoutDoc(description=coaching, steps=steps),
         )
 
@@ -288,6 +377,7 @@ class DynamicRollingPlanner:
         self, week_num: int, date: datetime.date, prefix: str, readiness: Any
     ) -> IntervalsEvent:
         """Recovery spin when fatigue is elevated."""
+        day_code = date.strftime("%a").lower()
         steps = [
             create_step(40 * 60, "Recovery Spin", hr_start=50, hr_end=60, p_start=45, p_end=55),
         ]
@@ -307,7 +397,7 @@ class DynamicRollingPlanner:
             name=f"W{week_num} Recovery Spin (Substituted)",
             description=desc,
             moving_time=calc_duration(steps),
-            external_id=f"{prefix}-w{week_num}-thu-bike-adapted-{date.isoformat()}",
+            external_id=f"{prefix}-w{week_num}-{day_code}-bike-adapted-{date.isoformat()}",
             workout_doc=WorkoutDoc(description=coaching, steps=steps),
         )
 
@@ -397,5 +487,185 @@ class DynamicRollingPlanner:
             description=desc,
             moving_time=calc_duration(steps),
             external_id=f"{prefix}-w{week_num}-sun-long-run-{date.isoformat()}",
+            workout_doc=WorkoutDoc(description=coaching, steps=steps),
+        )
+
+    def _build_swim_threshold(
+        self, week_num: int, date: datetime.date, prefix: str, scale: float
+    ) -> IntervalsEvent:
+        """Wednesday Swim Critical Swim Speed (CSS) threshold intervals."""
+        steps = [
+            create_step(6 * 60, "Warmup Swim", hr_start=60, hr_end=70),
+            create_step(4 * 60, "Technique Drills", hr_start=65, hr_end=75),
+            create_step(8 * 60, "5x 100m CSS Pace", hr_start=88, hr_end=95),
+            create_step(4 * 60, "Cooldown Easy", hr_start=55, hr_end=65),
+        ]
+        dur_mins = calc_duration(steps) // 60
+        fuel = calculate_fueling(dur_mins, sport="Swim", intensity="high")
+        coaching = (
+            f"Target: Lactate threshold and aerobic velocity development (CSS {self.profile.swim_css_sec_100m}s/100m). "
+            "Maintain high elbow catch, tight core rotation, and steady bilateral breathing. "
+            f"Fueling: {fuel.strategy_summary}"
+        )
+        desc = (
+            f"{coaching}\n\n"
+            "- 6m 60-70% LTHR Warmup Swim (300m)\n"
+            "- 4m 65-75% LTHR Technique Drills (Catch-up & Fingertip)\n"
+            "- 8m 88-95% LTHR 5x 100m CSS Pace (20s rest between 100s)\n"
+            "- 4m 55-65% LTHR Cooldown Easy (200m)\n"
+        )
+        return IntervalsEvent(
+            start_date_local=f"{date.isoformat()}T06:30:00",
+            category="WORKOUT",
+            type="Swim",
+            name=f"W{week_num} CSS Threshold Swim",
+            description=desc,
+            moving_time=calc_duration(steps),
+            external_id=f"{prefix}-w{week_num}-wed-swim-css-{date.isoformat()}",
+            workout_doc=WorkoutDoc(description=coaching, steps=steps),
+        )
+
+    def _build_swim_aerobic(
+        self, week_num: int, date: datetime.date, prefix: str, scale: float
+    ) -> IntervalsEvent:
+        """Friday continuous aerobic endurance and technique swim."""
+        steps = [
+            create_step(5 * 60, "Warmup Swim", hr_start=60, hr_end=68),
+            create_step(5 * 60, "Bilateral Drills", hr_start=65, hr_end=72),
+            create_step(18 * 60, "Zone 2 Continuous", hr_start=68, hr_end=78),
+            create_step(4 * 60, "Easy Cooldown", hr_start=55, hr_end=65),
+        ]
+        dur_mins = calc_duration(steps) // 60
+        fuel = calculate_fueling(dur_mins, sport="Swim", intensity="low")
+        coaching = (
+            f"Target: Aerobic stroke efficiency and feel for the water ({dur_mins} min). "
+            "Smooth, continuous Zone 2 pacing. Focus on minimizing drag and maintaining horizontal body position. "
+            f"Fueling: {fuel.strategy_summary}"
+        )
+        desc = (
+            f"{coaching}\n\n"
+            "- 5m 60-68% LTHR Warmup Swim\n"
+            "- 5m 65-72% LTHR Bilateral Drills (3-5-7 breathing pattern)\n"
+            "- 18m 68-78% LTHR Zone 2 Continuous Swim\n"
+            "- 4m 55-65% LTHR Easy Cooldown\n"
+        )
+        return IntervalsEvent(
+            start_date_local=f"{date.isoformat()}T06:30:00",
+            category="WORKOUT",
+            type="Swim",
+            name=f"W{week_num} Aerobic Base Swim",
+            description=desc,
+            moving_time=calc_duration(steps),
+            external_id=f"{prefix}-w{week_num}-fri-swim-aerobic-{date.isoformat()}",
+            workout_doc=WorkoutDoc(description=coaching, steps=steps),
+        )
+
+    def _build_brick_session(
+        self, week_num: int, date: datetime.date, prefix: str, scale: float, is_strained: bool
+    ) -> IntervalsEvent:
+        """Saturday Bike-to-Run Brick workout for multisport race-day transition."""
+        ride_mins = int(round(120 * scale * (0.85 if is_strained else 1.0)))
+        run_mins = int(round(20 * scale))
+        steps = [
+            create_step(15 * 60, "Warmup Spin", hr_start=55, hr_end=65),
+            create_step((ride_mins - 25) * 60, "Zone 2 Steady Ride", hr_start=68, hr_end=78, p_start=65, p_end=78),
+            create_step(10 * 60, "Spin Out T2 Prep", hr_start=60, hr_end=70),
+            create_step(run_mins * 60, "Transition Run", hr_start=75, hr_end=85),
+        ]
+        total_mins = ride_mins + run_mins
+        fuel = calculate_fueling(total_mins, sport="Brick", intensity="moderate")
+        coaching = (
+            f"Target: Multisport race simulation and neuromuscular adaptation ({total_mins} min). "
+            f"Ride {ride_mins} min in Zone 2, then immediately transition to a {run_mins} min off-the-bike run at target race pace. "
+            "Practice fast cadence (180 spm) off the bike to counteract heavy quads. "
+            f"Fueling: {fuel.strategy_summary}"
+        )
+        desc = (
+            f"{coaching}\n\n"
+            f"- 15m 55-65% LTHR Warmup Spin\n"
+            f"- {ride_mins - 25}m 68-78% LTHR Zone 2 Steady Ride\n"
+            "- 10m 60-70% LTHR Spin Out T2 Prep\n"
+            f"- {run_mins}m 75-85% LTHR Transition Run off the bike\n"
+        )
+        return IntervalsEvent(
+            start_date_local=f"{date.isoformat()}T06:00:00",
+            category="WORKOUT",
+            type="Brick",
+            name=f"W{week_num} Brick (Bike + Transition Run)",
+            description=desc,
+            moving_time=calc_duration(steps),
+            external_id=f"{prefix}-w{week_num}-sat-brick-{date.isoformat()}",
+            workout_doc=WorkoutDoc(description=coaching, steps=steps),
+        )
+
+    def _build_tempo_run(
+        self, week_num: int, date: datetime.date, prefix: str, dur_mins: int
+    ) -> IntervalsEvent:
+        """Thursday threshold / tempo run for running-focused microcycle."""
+        work_mins = max(15, dur_mins - 20)
+        steps = [
+            create_step(10 * 60, "Warmup Jog", hr_start=60, hr_end=72),
+            create_step(work_mins * 60, "Lactate Threshold", hr_start=88, hr_end=93),
+            create_step(10 * 60, "Cool-down Walk", hr_start=55, hr_end=65),
+        ]
+        fuel = calculate_fueling(dur_mins, sport="Run", intensity="moderate")
+        coaching = (
+            f"Target: Lactate clearance and threshold stamina ({work_mins} min at 88-93% LTHR). "
+            "Comfortably hard effort. Maintain steady rhythmic breathing (2:2 breathing pattern). "
+            f"Fueling: {fuel.strategy_summary}"
+        )
+        desc = (
+            f"{coaching}\n\n"
+            "- 10m 60-72% LTHR Warmup Jog\n"
+            f"- {work_mins}m 88-93% LTHR Lactate Threshold\n"
+            "- 10m 55-65% LTHR Cool-down Walk\n"
+        )
+        return IntervalsEvent(
+            start_date_local=f"{date.isoformat()}T06:30:00",
+            category="WORKOUT",
+            type="Run",
+            name=f"W{week_num} Threshold Tempo Run",
+            description=desc,
+            moving_time=calc_duration(steps),
+            external_id=f"{prefix}-w{week_num}-thu-tempo-run-{date.isoformat()}",
+            workout_doc=WorkoutDoc(description=coaching, steps=steps),
+        )
+
+    def _build_cycling_threshold(
+        self, week_num: int, date: datetime.date, prefix: str, scale: float
+    ) -> IntervalsEvent:
+        """Thursday SweetSpot / Over-Unders for cycling-focused microcycle."""
+        steps = [
+            create_step(15 * 60, "Warmup Spin", hr_start=55, hr_end=68, p_start=50, p_end=65),
+            create_step(10 * 60, "SweetSpot Rep 1", hr_start=88, hr_end=94, p_start=88, p_end=93),
+            create_step(4 * 60, "Spin Recovery", hr_start=55, hr_end=65, p_start=50, p_end=55),
+            create_step(10 * 60, "SweetSpot Rep 2", hr_start=88, hr_end=94, p_start=88, p_end=93),
+            create_step(4 * 60, "Spin Recovery", hr_start=55, hr_end=65, p_start=50, p_end=55),
+            create_step(10 * 60, "SweetSpot Rep 3", hr_start=88, hr_end=94, p_start=88, p_end=93),
+            create_step(10 * 60, "Cool-down Spin", hr_start=50, hr_end=60, p_start=45, p_end=55),
+        ]
+        dur_mins = calc_duration(steps) // 60
+        fuel = calculate_fueling(dur_mins, sport="Ride", intensity="high")
+        coaching = (
+            "Target: Aerobic power and SweetSpot muscular endurance (3x10 min at 88-93% FTP). "
+            "Keep cadence stable between 90-95 rpm. "
+            f"Fueling: {fuel.strategy_summary}"
+        )
+        desc = (
+            f"{coaching}\n\n"
+            "- 15m 55-68% LTHR Warmup Spin\n"
+            "- 3x\n"
+            "- 10m 88-94% LTHR SweetSpot Rep\n"
+            "- 4m 55-65% LTHR Spin Recovery\n"
+            "- 10m 50-60% LTHR Cool-down Spin\n"
+        )
+        return IntervalsEvent(
+            start_date_local=f"{date.isoformat()}T06:30:00",
+            category="WORKOUT",
+            type="Ride",
+            name=f"W{week_num} SweetSpot 3x10m Intervals",
+            description=desc,
+            moving_time=calc_duration(steps),
+            external_id=f"{prefix}-w{week_num}-thu-sweetspot-{date.isoformat()}",
             workout_doc=WorkoutDoc(description=coaching, steps=steps),
         )

@@ -37,6 +37,14 @@ class AthleteProfileConfig:
     max_hr: int = 200
     ftp_bike: int = 250
     resting_hr_baseline: Optional[int] = 50
+    # Swim benchmarks (Critical Swim Speed in seconds per 100m, e.g. 105s = 1:45/100m)
+    swim_css_sec_100m: int = 105
+    pool_length_m: int = 25
+    
+    # Multisport & Safety limits
+    max_quality_sessions_per_week: int = 2  # Shared cross-sport quality budget
+    target_carbs_per_hour_long: int = 60
+    target_fluids_per_hour_ml: int = 600
     
     # Life constraints & schedule notes (e.g. "no_thursday_bike", "achilles_niggle", "travel_weekend")
     constraints: List[str] = field(default_factory=list)

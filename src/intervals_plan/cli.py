@@ -17,6 +17,7 @@ from intervals_plan.athlete_profile import AthleteProfileConfig
 from intervals_plan.audit import AuditLogger
 from intervals_plan.backup import BackupManager
 from intervals_plan.coaching_advisor import CoachingAdvisor
+from intervals_plan.compliance import PlanComplianceEngine
 from intervals_plan.config import Config
 from intervals_plan.diff import calculate_diff
 from intervals_plan.exporters import PlanExporter
@@ -25,6 +26,7 @@ from intervals_plan.intervals_client import IntervalsAPIError, IntervalsClient
 from intervals_plan.plan_builder import PlanBuilder, get_default_8wk_plan
 from intervals_plan.plan_models import PlanConfig, TrainingPlan
 from intervals_plan.rolling_planner import DynamicRollingPlanner
+from intervals_plan.session_review import SessionReviewInput, SessionReviewer
 from intervals_plan.sync import SyncManager
 from intervals_plan.trainingpeaks_client import TrainingPeaksClient
 from intervals_plan.web.server import run_web_server
@@ -123,17 +125,32 @@ def build_parser() -> argparse.ArgumentParser:
     prof_p = subparsers.add_parser("profile", help="Manage athlete profile and adjustable training goals")
     prof_p.add_argument("--show", action="store_true", help="Display current profile and parameters")
     prof_p.add_argument("--edit", action="store_true", help="Interactively edit profile goals and constraints")
-    prof_p.add_argument("--goal", choices=["dual_sport_hybrid", "running", "cycling", "general_fitness"], help="Primary athletic goal")
+    prof_p.add_argument(
+        "--goal",
+        choices=[
+            "dual_sport_hybrid", "running", "cycling", "general_fitness",
+            "sprint_triathlon", "olympic_triathlon", "half_ironman_70_3", "full_ironman_140_6"
+        ],
+        help="Primary athletic goal"
+    )
     prof_p.add_argument("--hours", type=float, help="Target weekly commitment in hours (e.g. 8.0)")
     prof_p.add_argument("--philosophy", choices=["polarized_80_20", "pyramidal", "hrv_governed"], help="Training philosophy")
     prof_p.add_argument("--horizon", choices=["1_week", "2_weeks"], help="Dynamic planning horizon")
-    prof_p.add_argument("--race-dist", help="Target race distance (e.g. 10k, half_marathon)")
+    prof_p.add_argument("--race-dist", help="Target race distance (e.g. 10k, half_marathon, 70.3, olympic)")
+    prof_p.add_argument("--css", type=int, help="Critical Swim Speed in seconds per 100m (e.g. 105 for 1:45/100m)")
 
     # plan-next
     pnext_p = subparsers.add_parser("plan-next", help="Dynamically plan next 1 or 2 weeks based on 30-day data")
     pnext_p.add_argument("--weeks", type=int, choices=[1, 2], help="Number of weeks to plan (1 or 2)")
     pnext_p.add_argument("--hours", type=float, help="Override weekly training hours budget")
-    pnext_p.add_argument("--goal", choices=["dual_sport_hybrid", "running", "cycling", "general_fitness"], help="Override athletic goal")
+    pnext_p.add_argument(
+        "--goal",
+        choices=[
+            "dual_sport_hybrid", "running", "cycling", "general_fitness",
+            "sprint_triathlon", "olympic_triathlon", "half_ironman_70_3", "full_ironman_140_6"
+        ],
+        help="Override athletic goal"
+    )
     pnext_p.add_argument("--start-date", help="Cycle start date (YYYY-MM-DD, defaults to upcoming Monday)")
     pnext_p.add_argument("--dry-run", action="store_true", default=True, help="Preview plan without applying")
     pnext_p.add_argument("--apply", action="store_true", help="Apply planned workouts directly to Intervals.icu")
@@ -174,6 +191,23 @@ def build_parser() -> argparse.ArgumentParser:
     exp_all_p.add_argument("--format", choices=["zwo", "ics", "json", "all"], default="all", help="Output format")
     exp_all_p.add_argument("--out-dir", default="plans/export", help="Output directory path (default: plans/export)")
     exp_all_p.add_argument("--weeks", type=int, choices=[1, 2], default=1, help="Number of weeks to export")
+
+    # compliance
+    comp_p = subparsers.add_parser("compliance", help="Evaluate planned vs actual workout execution and compliance")
+    comp_p.add_argument("--days", type=int, default=28, help="Analysis lookback window in days (default: 28)")
+    comp_p.add_argument("--json", action="store_true", help="Output compliance evaluation in JSON format")
+
+    # review-session / debrief
+    rev_p = subparsers.add_parser("review-session", help="Debrief a completed workout with RPE and cardiac decoupling")
+    rev_p.add_argument("--name", default="Completed Workout", help="Workout name or title")
+    rev_p.add_argument("--sport", choices=["Run", "Ride", "Swim", "Brick"], default="Run", help="Discipline")
+    rev_p.add_argument("--duration", type=int, default=60, help="Duration in minutes")
+    rev_p.add_argument("--rpe", type=int, default=5, help="Rate of Perceived Exertion (1 to 10)")
+    rev_p.add_argument("--feeling", choices=["strong", "normal", "heavy_legs", "exhausted", "pain_or_niggle"], default="normal", help="Subjective feeling")
+    rev_p.add_argument("--avg-hr", type=int, default=None, help="Average heart rate (bpm)")
+    rev_p.add_argument("--max-hr", type=int, default=None, help="Maximum heart rate (bpm)")
+    rev_p.add_argument("--decoupling", type=float, default=None, help="Aerobic decoupling % drift (Pw:HR or Pa:HR)")
+    rev_p.add_argument("--json", action="store_true", help="Output debrief in JSON format")
 
     return parser
 
@@ -497,6 +531,9 @@ def handle_profile(cfg: Config, args: argparse.Namespace) -> None:
     if args.race_dist:
         profile.target_race_distance = args.race_dist
         updated = True
+    if getattr(args, "css", None) is not None:
+        profile.swim_css_sec_100m = args.css
+        updated = True
 
     if updated:
         profile.save(profile_path)
@@ -512,6 +549,7 @@ def handle_profile(cfg: Config, args: argparse.Namespace) -> None:
     print(f"  - Target Race/Event:    {profile.target_race_distance or 'None'}")
     print(f"  - Running LTHR:         {profile.lthr_run} bpm")
     print(f"  - Cycling FTP:          {profile.ftp_bike} W (LTHR: {profile.lthr_bike} bpm)")
+    print(f"  - Swim CSS (100m):      {profile.swim_css_sec_100m}s (Pool: {profile.pool_length_m}m)")
     print(f"  - Max Heart Rate:       {profile.max_hr} bpm")
     print(f"  - Resting HR Baseline:  {profile.resting_hr_baseline} bpm")
     print(f"  - Config File:          {profile_path}")
@@ -755,6 +793,86 @@ def handle_export(cfg: Config, args: argparse.Namespace) -> None:
         print(f"Exported {zwo_count} Zwift .zwo workout files to {out_dir}")
 
 
+def handle_compliance(cfg: Config, args: argparse.Namespace) -> None:
+    days = getattr(args, "days", 28)
+    client = IntervalsClient(api_key=cfg.api_key, athlete_id=cfg.athlete_id, base_url=cfg.base_url)
+    start_date = datetime.date.today() - datetime.timedelta(days=days)
+    end_date = datetime.date.today()
+
+    try:
+        events = client.list_events(start_date.isoformat(), end_date.isoformat())
+        activities = client.get_activities(start_date.isoformat(), end_date.isoformat())
+    except Exception as exc:
+        print(f"Error querying Intervals.icu data: {exc}")
+        return
+
+    engine = PlanComplianceEngine()
+    report = engine.evaluate(events, activities, start_date=start_date, end_date=end_date)
+
+    if getattr(args, "json", False):
+        print(json.dumps(report.to_dict(), indent=2))
+        return
+
+    print("\n" + "=" * 60)
+    print(" AdaptPulse Plan Compliance & Execution Report")
+    print("=" * 60)
+    print(f"Evaluation Window:      {report.start_date} to {report.end_date} ({report.days} days)")
+    print(f"Compliance Rating:      {report.compliance_rating}")
+    print(f"Execution Rate:         {report.execution_rate_pct:.1f}% ({report.completed_count}/{report.planned_count} workouts completed)")
+    print(f"Volume Compliance:      {report.volume_compliance_pct:.1f}% ({report.actual_volume_hours:.1f}h actual vs {report.planned_volume_hours:.1f}h planned)")
+    print(f"Training Load (TSS):    {report.load_compliance_pct:.1f}% ({report.actual_load_tss:.0f} actual vs {report.planned_load_tss:.0f} planned)")
+    print("-" * 60)
+    if report.missed_workouts:
+        print(f"Missed Workouts ({len(report.missed_workouts)}):")
+        for m in report.missed_workouts:
+            print(f"  - [{m['date']}] {m['sport']}: {m['name']} ({m['duration_min']}m)")
+    if report.unplanned_activities:
+        print(f"Unplanned Activities ({len(report.unplanned_activities)}):")
+        for u in report.unplanned_activities[:5]:
+            print(f"  - [{u['date']}] {u['sport']}: {u['name']} ({u['duration_min']}m, {u['tss']:.0f} TSS)")
+    print("-" * 60)
+    print("Coaching Observations:")
+    for obs in report.coaching_observations:
+        print(f"  * {obs}")
+    print("=" * 60 + "\n")
+
+
+def handle_session_review(args: argparse.Namespace) -> None:
+    inp = SessionReviewInput(
+        activity_name=args.name,
+        sport=args.sport,
+        duration_minutes=args.duration,
+        rpe=args.rpe,
+        feeling=args.feeling,
+        avg_hr=args.avg_hr,
+        max_hr=args.max_hr,
+        decoupling_pct=args.decoupling,
+    )
+    reviewer = SessionReviewer()
+    res = reviewer.review(inp)
+
+    if getattr(args, "json", False):
+        print(json.dumps(res.to_dict(), indent=2))
+        return
+
+    print("\n" + "=" * 60)
+    print(f" AdaptPulse Session Debrief: {res.activity_name}")
+    print("=" * 60)
+    print(f"Discipline:             {res.sport} ({res.duration_minutes} min)")
+    print(f"Execution Score:        {res.execution_score}/100")
+    print(f"Reported RPE:           {res.rpe}/10 (Borg CR10 Scale)")
+    print(f"Intensity Discipline:   {res.intensity_discipline}")
+    print(f"Aerobic Efficiency:     {res.aerobic_efficiency}")
+    print("-" * 60)
+    print(f"Next-Day Prescription:  {res.next_day_recommendation}")
+    print(f"Post-Workout Fueling:   {res.fueling_critique}")
+    print("-" * 60)
+    print("Coaching Feedback:")
+    for f in res.coaching_feedback:
+        print(f"  * {f}")
+    print("=" * 60 + "\n")
+
+
 def main() -> None:
     parser = build_parser()
     args = parser.parse_args()
@@ -853,6 +971,10 @@ def main() -> None:
         handle_coach(cfg, args)
     elif args.subcommand == "export":
         handle_export(cfg, args)
+    elif args.subcommand == "compliance":
+        handle_compliance(cfg, args)
+    elif args.subcommand == "review-session":
+        handle_session_review(args)
 
 
 if __name__ == "__main__":

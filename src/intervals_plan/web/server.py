@@ -13,12 +13,16 @@ import urllib.parse
 import webbrowser
 
 from intervals_plan.analytics import RollingMetricsAnalyzer
+from intervals_plan.api_models import IntervalsActivity
 from intervals_plan.athlete_profile import AthleteProfileConfig
 from intervals_plan.coaching_advisor import CoachingAdvisor
+from intervals_plan.compliance import PlanComplianceEngine
 from intervals_plan.config import Config
 from intervals_plan.exporters import PlanExporter
+from intervals_plan.fueling import calculate_fueling
 from intervals_plan.intervals_client import IntervalsClient
 from intervals_plan.rolling_planner import DynamicRollingPlanner
+from intervals_plan.session_review import SessionReviewInput, SessionReviewer
 from intervals_plan.web.app_html import get_app_html
 
 
@@ -157,6 +161,22 @@ class AdaptPulseRequestHandler(BaseHTTPRequestHandler):
                 self.wfile.write(json_str.encode("utf-8"))
                 return
 
+        # 8. Compliance API
+        if path == "/api/compliance":
+            days = int(query.get("days", [28])[0])
+            report = self._compute_compliance(days=days)
+            self._send_json(report.to_dict())
+            return
+
+        # 9. Fueling Calculator API
+        if path == "/api/fueling":
+            dur = int(query.get("duration", [60])[0])
+            sport = query.get("sport", ["Run"])[0]
+            intensity = query.get("intensity", ["moderate"])[0]
+            fuel = calculate_fueling(dur, sport, intensity)
+            self._send_json(fuel.to_dict())
+            return
+
         self._send_json({"error": "Endpoint not found"}, status=404)
 
     def do_POST(self) -> None:
@@ -204,6 +224,23 @@ class AdaptPulseRequestHandler(BaseHTTPRequestHandler):
             })
             return
 
+        # 4. Session Review Debrief
+        if path == "/api/review":
+            inp = SessionReviewInput(
+                activity_name=req_data.get("name", "Completed Session"),
+                sport=req_data.get("sport", "Run"),
+                duration_minutes=int(req_data.get("duration", 60)),
+                rpe=int(req_data.get("rpe", 5)),
+                feeling=req_data.get("feeling", "normal"),
+                avg_hr=req_data.get("avg_hr"),
+                max_hr=req_data.get("max_hr"),
+                decoupling_pct=req_data.get("decoupling"),
+            )
+            reviewer = SessionReviewer()
+            res = reviewer.review(inp)
+            self._send_json(res.to_dict())
+            return
+
         self._send_json({"error": "Endpoint not found"}, status=404)
 
     def _compute_report(self):
@@ -236,6 +273,52 @@ class AdaptPulseRequestHandler(BaseHTTPRequestHandler):
             {"start_date_local": "2026-10-29T07:00:00", "type": "Run", "moving_time": 3600, "icu_training_load": 65, "average_heartrate": 155},
         ]
         return analyzer.analyze_30d(sample_wellness, sample_activities)
+
+    def _compute_compliance(self, days: int = 28):
+        """Compute planned vs actual compliance report."""
+        engine = PlanComplianceEngine()
+        settings = Config.load()
+        today = datetime.date.today()
+        start = today - datetime.timedelta(days=days)
+
+        if settings.api_key and len(settings.api_key) > 5:
+            try:
+                client = IntervalsClient(settings)
+                events = client.list_events(start.isoformat(), today.isoformat())
+                acts = client.get_activities(start.isoformat(), today.isoformat())
+                return engine.evaluate(events, acts, start_date=start, end_date=today)
+            except Exception:
+                pass
+
+        # Robust offline fallback data
+        prof = AthleteProfileConfig.load()
+        report = self._compute_report()
+        planner = DynamicRollingPlanner(prof)
+        sample_planned = planner.generate_plan(report, start_date=start, weeks_to_plan=4)
+        sample_acts = [
+            IntervalsActivity(
+                id="act_1",
+                start_date_local=f"{(start + datetime.timedelta(days=1)).isoformat()}T07:00:00",
+                type="Run",
+                moving_time=2700,
+                icu_training_load=50,
+            ),
+            IntervalsActivity(
+                id="act_2",
+                start_date_local=f"{(start + datetime.timedelta(days=3)).isoformat()}T07:00:00",
+                type="Ride",
+                moving_time=4800,
+                icu_training_load=75,
+            ),
+            IntervalsActivity(
+                id="act_3",
+                start_date_local=f"{(start + datetime.timedelta(days=5)).isoformat()}T07:00:00",
+                type="Ride",
+                moving_time=9000,
+                icu_training_load=140,
+            ),
+        ]
+        return engine.evaluate(sample_planned, sample_acts, start_date=start, end_date=today)
 
     def _serialize_report(self, r) -> Dict[str, Any]:
         return {

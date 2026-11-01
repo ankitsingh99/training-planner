@@ -155,3 +155,50 @@ def test_rolling_planner_upcoming_monday_and_phases():
     events_peak = p_peak.generate_plan(report, start_date=datetime.date(2026, 11, 2), weeks_to_plan=1)
     assert len(events_peak) == 7
 
+
+def test_rolling_planner_triathlon_goal():
+    """Verify Swim and Brick generation for triathlon profiles."""
+    prof_tri = AthleteProfileConfig(goal="olympic_triathlon", weekly_hours=10.0, swim_css_sec_100m=100)
+    planner = DynamicRollingPlanner(prof_tri)
+    report = _make_dummy_report(is_strained=False)
+
+    events = planner.generate_plan(report, start_date=datetime.date(2026, 11, 2), weeks_to_plan=1)
+    assert len(events) == 7
+
+    # Wednesday is Swim CSS Threshold
+    wed = next(e for e in events if "wed" in (e.external_id or ""))
+    assert wed.type == "Swim"
+    assert "CSS Threshold Swim" in wed.name
+    assert "Fueling:" in wed.description
+
+    # Friday is Aerobic Swim
+    fri = next(e for e in events if "fri" in (e.external_id or ""))
+    assert fri.type == "Swim"
+    assert "Aerobic Base Swim" in fri.name
+
+    # Saturday is Brick session
+    sat = next(e for e in events if "sat" in (e.external_id or ""))
+    assert sat.type == "Brick"
+    assert "Brick" in sat.name
+
+
+def test_rolling_planner_running_and_cycling_goals():
+    report = _make_dummy_report(is_strained=False)
+
+    # Running focus
+    prof_run = AthleteProfileConfig(goal="running", weekly_hours=8.0)
+    p_run = DynamicRollingPlanner(prof_run)
+    events_run = p_run.generate_plan(report, start_date=datetime.date(2026, 11, 2), weeks_to_plan=1)
+    assert len(events_run) == 7
+    thu_run = next(e for e in events_run if "thu" in (e.external_id or ""))
+    assert "Threshold Tempo Run" in thu_run.name
+
+    # Cycling focus
+    prof_bike = AthleteProfileConfig(goal="cycling", weekly_hours=9.0)
+    p_bike = DynamicRollingPlanner(prof_bike)
+    events_bike = p_bike.generate_plan(report, start_date=datetime.date(2026, 11, 2), weeks_to_plan=1)
+    assert len(events_bike) == 7
+    thu_bike = next(e for e in events_bike if "thu" in (e.external_id or ""))
+    assert "SweetSpot" in thu_bike.name
+
+

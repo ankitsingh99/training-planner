@@ -119,7 +119,42 @@ def test_web_ui_endpoints():
             zwo_text = res.read().decode("utf-8")
             assert "<workout_file>" in zwo_text
 
-        # 11. OPTIONS test
+        # 11. Compliance API
+        with urllib.request.urlopen(f"{base_url}/api/compliance?days=28") as res:
+            assert res.status == 200
+            comp = json.loads(res.read().decode("utf-8"))
+            assert "compliance_rating" in comp
+            assert "execution_rate_pct" in comp
+
+        # 12. Fueling API
+        with urllib.request.urlopen(f"{base_url}/api/fueling?duration=90&sport=Ride&intensity=high") as res:
+            assert res.status == 200
+            fuel = json.loads(res.read().decode("utf-8"))
+            assert fuel["carbs_per_hour_g"] > 0
+            assert fuel["hydration_ml_per_hour"] > 0
+
+        # 13. Session Review API (POST)
+        review_post = json.dumps({
+            "name": "Tempo 10k",
+            "sport": "Run",
+            "duration": 50,
+            "rpe": 7,
+            "feeling": "strong",
+            "decoupling": 2.5
+        }).encode("utf-8")
+        rev_req = urllib.request.Request(
+            f"{base_url}/api/review",
+            data=review_post,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(rev_req) as res:
+            assert res.status == 200
+            review_res = json.loads(res.read().decode("utf-8"))
+            assert review_res["execution_score"] >= 80
+            assert review_res["intensity_discipline"] == "ON_TARGET"
+
+        # 14. OPTIONS test
         req_options = urllib.request.Request(f"{base_url}/api/profile", method="OPTIONS")
         with urllib.request.urlopen(req_options) as res:
             assert res.status == 200
