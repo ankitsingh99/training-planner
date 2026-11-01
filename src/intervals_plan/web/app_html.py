@@ -344,6 +344,7 @@ def get_app_html() -> str:
     .tag-ride { background: rgba(16, 185, 129, 0.2); color: #34d399; }
     .tag-swim { background: rgba(14, 165, 233, 0.25); color: #38bdf8; }
     .tag-brick { background: rgba(168, 85, 247, 0.25); color: #c084fc; }
+    .tag-duathlon { background: rgba(245, 158, 11, 0.25); color: #fbbf24; }
     .tag-rest { background: rgba(107, 114, 128, 0.2); color: #9ca3af; }
     .tag-quality { background: rgba(244, 63, 94, 0.2); color: #fb7185; }
 
@@ -647,16 +648,24 @@ def get_app_html() -> str:
         <form id="profileForm" onsubmit="saveProfile(event)" style="margin-top: 1.5rem;">
           <div class="grid-3">
             <div class="form-group">
-              <label class="form-label">Primary Training Goal</label>
+              <label class="form-label">Primary Training Goal / Discipline</label>
               <select id="profGoal" class="form-select">
-                <option value="dual_sport_hybrid">Dual-Sport Hybrid (Run & Bike)</option>
-                <option value="sprint_triathlon">Sprint Triathlon (750m / 20k / 5k)</option>
-                <option value="olympic_triathlon">Olympic Triathlon (1.5k / 40k / 10k)</option>
-                <option value="half_ironman_70_3">IRONMAN 70.3 (1.9k / 90k / 21.1k)</option>
-                <option value="full_ironman_140_6">IRONMAN 140.6 (3.8k / 180k / 42.2k)</option>
-                <option value="running">Running Focus (5k / 10k / Marathon)</option>
-                <option value="cycling">Cycling Focus (Road / Gravel / TT)</option>
-                <option value="general_fitness">General Aerobic Health</option>
+                <optgroup label="Single Discipline">
+                  <option value="running">Runner (5K, 10K, Half Marathon, Marathon, Ultra)</option>
+                  <option value="cycling">Cyclist (Road Race, Gran Fondo, Time Trial, Criterium)</option>
+                  <option value="swimming">Swimmer (CSS Threshold, Pool & Open Water Distance)</option>
+                </optgroup>
+                <optgroup label="Multisport & Transitions">
+                  <option value="duathlon">Duathlete (Run-Bike-Run Transitions & Brick Stamina)</option>
+                  <option value="sprint_triathlon">Triathlete: Sprint Triathlon (750m / 20k / 5k)</option>
+                  <option value="olympic_triathlon">Triathlete: Olympic Triathlon (1.5k / 40k / 10k)</option>
+                  <option value="half_ironman_70_3">Triathlete: IRONMAN 70.3 (1.9k / 90k / 21.1k)</option>
+                  <option value="full_ironman_140_6">Triathlete: IRONMAN 140.6 (3.8k / 180k / 42.2k)</option>
+                </optgroup>
+                <optgroup label="Hybrid & Longevity">
+                  <option value="dual_sport_hybrid">Dual-Sport Hybrid (Balanced Running & Cycling)</option>
+                  <option value="general_fitness">General Aerobic Fitness & Cardiovascular Longevity</option>
+                </optgroup>
               </select>
             </div>
 
@@ -1265,7 +1274,7 @@ def get_app_html() -> str:
           if (evt.type === 'Run') tagClass = 'tag-run';
           else if (evt.type === 'Ride') tagClass = 'tag-ride';
           else if (evt.type === 'Swim') tagClass = 'tag-swim';
-          else if (evt.type === 'Brick') tagClass = 'tag-brick';
+          else if (evt.type === 'Brick' || evt.type === 'Duathlon') tagClass = 'tag-brick';
           if (evt.name && (evt.name.includes('Quality') || evt.name.includes('Intervals') || evt.name.includes('CSS') || evt.name.includes('SweetSpot'))) tagClass = 'tag-quality';
 
           card.innerHTML = `

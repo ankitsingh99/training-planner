@@ -128,7 +128,7 @@ def build_parser() -> argparse.ArgumentParser:
     prof_p.add_argument(
         "--goal",
         choices=[
-            "dual_sport_hybrid", "running", "cycling", "general_fitness",
+            "dual_sport_hybrid", "running", "cycling", "swimming", "duathlon", "general_fitness",
             "sprint_triathlon", "olympic_triathlon", "half_ironman_70_3", "full_ironman_140_6"
         ],
         help="Primary athletic goal"
@@ -146,7 +146,7 @@ def build_parser() -> argparse.ArgumentParser:
     pnext_p.add_argument(
         "--goal",
         choices=[
-            "dual_sport_hybrid", "running", "cycling", "general_fitness",
+            "dual_sport_hybrid", "running", "cycling", "swimming", "duathlon", "general_fitness",
             "sprint_triathlon", "olympic_triathlon", "half_ironman_70_3", "full_ironman_140_6"
         ],
         help="Override athletic goal"
@@ -201,7 +201,7 @@ def build_parser() -> argparse.ArgumentParser:
     # review-session / debrief
     rev_p = subparsers.add_parser("review-session", help="Debrief a completed workout with RPE and cardiac decoupling")
     rev_p.add_argument("--name", default="Completed Workout", help="Workout name or title")
-    rev_p.add_argument("--sport", choices=["Run", "Ride", "Swim", "Brick"], default="Run", help="Discipline")
+    rev_p.add_argument("--sport", choices=["Run", "Ride", "Swim", "Brick", "Duathlon"], default="Run", help="Discipline")
     rev_p.add_argument("--duration", type=int, default=60, help="Duration in minutes")
     rev_p.add_argument("--rpe", type=int, default=5, help="Rate of Perceived Exertion (1 to 10)")
     rev_p.add_argument("--feeling", choices=["strong", "normal", "heavy_legs", "exhausted", "pain_or_niggle"], default="normal", help="Subjective feeling")

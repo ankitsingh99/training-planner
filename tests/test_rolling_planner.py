@@ -202,3 +202,65 @@ def test_rolling_planner_running_and_cycling_goals():
     assert "SweetSpot" in thu_bike.name
 
 
+def test_rolling_planner_swimming_goal():
+    """Verify Swim-specific schedule generation with speed, threshold, and long swim sets."""
+    report = _make_dummy_report(is_strained=False)
+    prof_swim = AthleteProfileConfig(goal="swimming", weekly_hours=7.0, swim_css_sec_100m=95)
+    planner = DynamicRollingPlanner(prof_swim)
+    events = planner.generate_plan(report, start_date=datetime.date(2026, 11, 2), weeks_to_plan=1)
+    assert len(events) == 7
+
+    # Tuesday is Speed Swim
+    tue = next(e for e in events if "tue" in (e.external_id or ""))
+    assert tue.type == "Swim"
+    assert "VO2max Speed Swim" in tue.name
+
+    # Wednesday is Aerobic Base Swim
+    wed = next(e for e in events if "wed" in (e.external_id or ""))
+    assert wed.type == "Swim"
+    assert "Aerobic Base Swim" in wed.name
+
+    # Thursday is CSS Threshold Swim
+    thu = next(e for e in events if "thu" in (e.external_id or ""))
+    assert thu.type == "Swim"
+    assert "CSS Threshold Swim" in thu.name
+
+    # Saturday is Long Aerobic Swim
+    sat = next(e for e in events if "sat" in (e.external_id or ""))
+    assert sat.type == "Swim"
+    assert "Long Aerobic Swim" in sat.name
+
+    # Strained swimming test
+    report_strained = _make_dummy_report(is_strained=True)
+    events_strained = planner.generate_plan(report_strained, start_date=datetime.date(2026, 11, 2), weeks_to_plan=1)
+    tue_strained = next(e for e in events_strained if "tue" in (e.external_id or ""))
+    assert "Technique & Recovery Swim" in tue_strained.name
+
+
+def test_rolling_planner_duathlon_goal():
+    """Verify Duathlon-specific schedule generation with run-bike brick transitions."""
+    report = _make_dummy_report(is_strained=False)
+    prof_duo = AthleteProfileConfig(goal="duathlon", weekly_hours=9.0)
+    planner = DynamicRollingPlanner(prof_duo)
+    events = planner.generate_plan(report, start_date=datetime.date(2026, 11, 2), weeks_to_plan=1)
+    assert len(events) == 7
+
+    # Tuesday: Run Quality
+    tue = next(e for e in events if "tue" in (e.external_id or ""))
+    assert tue.type == "Run"
+
+    # Thursday: Bike Quality
+    thu = next(e for e in events if "thu" in (e.external_id or ""))
+    assert thu.type == "Ride"
+    assert "SweetSpot" in thu.name
+
+    # Saturday: Brick transition
+    sat = next(e for e in events if "sat" in (e.external_id or ""))
+    assert sat.type == "Brick"
+
+    # Sunday: Long Run
+    sun = next(e for e in events if "sun" in (e.external_id or ""))
+    assert sun.type == "Run"
+
+
+

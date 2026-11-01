@@ -9,3 +9,4 @@ description: "Token discipline: locate before reading, cap tool output, local-co
 4. Wrap noisy commands: Use `tools/q.sh <command>` when running commands that produce extensive logs or test dumps.
 5. In LLM generation: Enforce strict max_tokens bounds (<= 400 tokens) and JSON mode to prevent conversational fluff.
 6. Report concise summaries and diffs, not duplicated whole files.
+

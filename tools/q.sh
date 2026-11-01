@@ -11,3 +11,4 @@ grep -nEi 'error|fail|traceback|warning|assert|exception' "$log" | head -n 25 | 
 echo "--- tail ---"
 tail -n 15 "$log" | cut -c1-240
 exit $code
+

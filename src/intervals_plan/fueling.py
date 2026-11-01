@@ -101,11 +101,11 @@ def calculate_fueling(
                 "Avoid high-fiber, high-fat, or concentrated solids while running.",
                 "Target 500-600 mL fluids per hour; adjust upward in hot conditions.",
             ]
-        elif sport_normalized in ["Brick", "Multisport"]:
+        elif sport_normalized in ["Brick", "Multisport", "Duathlon"]:
             carbs_hr = 65
             hydro_hr = 650
             sodium_hr = 550
-            summary = "Brick transition fueling: 70g carbs/hr on bike; shift to gels/fluids on transition run."
+            summary = "Multisport/Duathlon fueling: 65-70g carbs/hr on bike; shift to gels/fluids on transition run."
             recs = [
                 "Front-load nutrition on the bike leg where digestion is easiest.",
                 "Take a gel with 150 mL water 10 minutes before transitioning to the run.",
@@ -143,11 +143,11 @@ def calculate_fueling(
                 "Do not drink carbohydrate drink simultaneously with concentrated gels to avoid hypertonic GI distress.",
                 "Electrolyte salt caps recommended if running in temperature > 24 C (75 F).",
             ]
-        elif sport_normalized in ["Brick", "Multisport"]:
+        elif sport_normalized in ["Brick", "Multisport", "Duathlon"]:
             carbs_hr = 75
             hydro_hr = 700
             sodium_hr = 650
-            summary = "Long brick simulation: 80g/hr on bike downshifted to 50g/hr on run."
+            summary = "Long brick/duathlon simulation: 80g/hr on bike downshifted to 50g/hr on run."
             recs = [
                 "Complete the bike leg fully hydrated and carb-saturated.",
                 "Downshift carb intake in the final 15 minutes of the bike to let stomach settle.",

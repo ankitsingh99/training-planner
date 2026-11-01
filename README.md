@@ -86,25 +86,32 @@ AdaptPulse integrates peer-reviewed exercise physiology and endurance training m
 
 ## Key Features
 
+- **One-Stop Adaptive Training Suite for 5 Core Disciplines:**
+  - **Runners:** Periodization for 5K, 10K, Half Marathon, Marathon, and Ultra distances. VO2max track repeats, lactate threshold tempo runs, recovery runs, and progressive long runs.
+  - **Cyclists:** Structured plans for Road Race, Gran Fondo, Time Trial, and Criterium. SweetSpot intervals, over-under threshold work, recovery spins, and weekend long endurance rides.
+  - **Swimmers:** Critical Swim Speed (CSS) threshold pacing (pace/100m), VO2max speed sets (50m fast), continuous aerobic endurance sets, and stroke technique drills.
+  - **Duathletes:** Dedicated Run-Bike-Run and Bike-to-Run brick transition workouts conditioning neuromuscular turnover off the bike, paired with threshold runs and cycling.
+  - **Triathletes:** Multi-sport periodization across Sprint, Olympic, IRONMAN 70.3, and IRONMAN 140.6 distances balancing swim, bike, run, and brick workouts.
+  - **Hybrid & Fitness Athletes:** Dual-sport hybrid balance and cardiovascular health routines.
 - **Interactive Multi-Page Web UI (`adaptpulse ui`):**
   - Self-contained, responsive dashboard with zero external dependencies.
   - Interactive tabs for **Dashboard & Readiness**, **PMC Analysis & Seiler 80/20 Distribution**, **Goal Setting & Athlete Profile**, **Rolling Calendar with COROS Screen Simulation**, **Ecosystem Cloud Sync**, and **Multi-Platform Export Center**.
-- **Triathlon & Multi-Sport Adaptive Engine:**
-  - Full periodization for **Sprint**, **Olympic**, **IRONMAN 70.3**, **IRONMAN 140.6**, **Running** (5K to Marathon), and **Cycling** (Gran Fondo / TT).
-  - First-class support for **Critical Swim Speed (CSS)** intervals, stroke technique drills, and **Brick workouts** (bike immediately transitioning to run).
 - **Sports Science Intra-Workout Fueling & Hydration Calculator:**
-  - Evidence-based carbohydrate (g/hr), fluid (mL/hr), and sodium (mg/hr) prescriptions embedded in every workout based on duration and intensity (Jeukendrup & ACSM guidelines).
+  - Evidence-based carbohydrate (g/hr), fluid (mL/hr), and sodium (mg/hr) prescriptions embedded in every workout based on duration, discipline, and metabolic intensity (Jeukendrup & ACSM guidelines).
 - **Planned vs. Actual Plan Compliance Engine (`adaptpulse compliance`):**
   - Evaluates execution score, volume compliance %, load compliance %, and flags overreaching or undertraining trends over rolling 7-28 days.
 - **Intelligent Post-Workout Session Debrief (`adaptpulse review-session`):**
   - Analyzes Rate of Perceived Exertion (RPE 1-10), cardiac drift / aerobic decoupling (Pw:HR, Pa:HR), intensity discipline, and prescribes next-day recovery adaptations.
-- **Intelligent Sports Science Coaching Advisor (`adaptpulse coach`):**
-  - Synthesizes telemetry, target event timeline, periodization phase, and personal constraints into clear, actionable microcycle guidance.
+- **Token-Lean OpenRouter AI Coaching Integration (`adaptpulse coach --ai`):**
+  - Dynamic discovery of zero-cost `:free` models (`openrouter/free`, `google/gemma-4-31b-it:free`).
+  - Persistent local SQLite response cache providing **0-token, 0-cost, instant responses** on repeated queries.
+  - Compact prompt construction (<50 tokens input) and strict output token caps (<=400 tokens).
 - **Multi-Platform Workout Exporters (`adaptpulse export`):**
   - Export planned workouts directly to **Zwift (.zwo XML)**, **iCalendar (.ics)** for Google/Apple Calendar, and machine-readable JSON.
 - **Dynamic Rolling 1-2 Week Planner (`plan-next`):**
   - Generates workout plans customized to your target weekly hours (e.g., 6h, 8h, 12h) and primary goals.
   - Automatically calculates periodization phase (**Base**, **Build**, **Peak**, **Taper**, or **Post-Race Recovery**) based on your target race date.
+  - Mesocycle 4-week wave periodization with automated Week 4 deloading (~25% volume drop).
   - Respects life constraints (injuries, busy days, travel weekends).
 - **Automated Bio-Adaptation (`adapt --auto`):**
   - Identifies acute cardiac or autonomic stress (e.g. resting heart rate spikes after weekend club rides) and swaps demanding intervals for low-stress aerobic recovery.
@@ -439,7 +446,8 @@ Run the automated test suite with coverage reporting:
 coverage run -m pytest && coverage report -m
 ```
 
-The test suite covers 144 unit, integration, and safety tests with **>95% test coverage (currently 96%)**:
+The test suite covers 146 unit, integration, and safety tests with **>95% test coverage (currently 96%)**:
+- Specialized microcycles for Runners, Cyclists, Swimmers, Duathletes, and Triathletes
 - Token-lean OpenRouter client with local SQLite disk response cache and zero-cost `:free` enforcement
 - Repository token audit, always-on context weighting, and code structure symbol mapping
 - TrainingPeaks API connector and OAuth token error redaction

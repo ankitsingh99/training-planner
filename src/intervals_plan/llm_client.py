@@ -365,3 +365,4 @@ class OpenRouterClient:
         if last_error:
             raise last_error
         raise RuntimeError("No available free models succeeded.")
+
