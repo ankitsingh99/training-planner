@@ -163,7 +163,7 @@ def main():
 
     for target in targets:
         target.write_text(content, encoding="utf-8")
-        print(f"✅ Generated {target.name} ({len(events)} workouts included).")
+        print(f" Generated {target.name} ({len(events)} workouts included).")
 
 
 if __name__ == "__main__":

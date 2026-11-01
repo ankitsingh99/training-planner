@@ -129,3 +129,29 @@ def test_rolling_planner_two_weeks():
     assert len(w1_events) == 7
     assert len(w2_events) == 7
 
+
+def test_rolling_planner_upcoming_monday_and_phases():
+    # 1. From Wednesday (2026-11-04)
+    wed = datetime.date(2026, 11, 4)
+    mon = DynamicRollingPlanner.get_upcoming_monday(wed)
+    assert mon == datetime.date(2026, 11, 9)
+
+    # 2. Taper phase
+    prof_taper = AthleteProfileConfig(
+        target_race_date=(datetime.date(2026, 11, 2) + datetime.timedelta(days=7)).isoformat(),
+        weekly_hours=8.0,
+    )
+    p_taper = DynamicRollingPlanner(prof_taper)
+    report = _make_dummy_report(is_strained=False)
+    events_taper = p_taper.generate_plan(report, start_date=datetime.date(2026, 11, 2), weeks_to_plan=1)
+    assert len(events_taper) == 7
+
+    # 3. Peak phase
+    prof_peak = AthleteProfileConfig(
+        target_race_date=(datetime.date(2026, 11, 2) + datetime.timedelta(days=21)).isoformat(),
+        weekly_hours=8.0,
+    )
+    p_peak = DynamicRollingPlanner(prof_peak)
+    events_peak = p_peak.generate_plan(report, start_date=datetime.date(2026, 11, 2), weeks_to_plan=1)
+    assert len(events_peak) == 7
+

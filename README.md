@@ -1,194 +1,356 @@
-# Intervals.icu Adaptive Training Plan Tool & Sports Science Suite
+# AdaptPulse
 
-A reliable, safe, CLI-first adaptive training suite for [Intervals.icu](https://intervals.icu).
+> **Sports Science Powered Adaptive Training Suite & Dynamic Rolling Planner for Intervals.icu**
 
-Combines **real-time body analytics (HRV, resting HR, sleep, wellness)** and **completed workout data** to dynamically plan and adapt your next 1 or 2 weeks of training. Grounded in peer-reviewed sports science research: **Stephen Seiler's 80/20 Polarized Model**, **Tim Gabbett's Acute:Chronic Workload Ratio (ACWR)**, **Coggan/Banister Performance Management (CTL/ATL/TSB)**, and **Kiviniemi/Plews HRV & Resting Heart Rate Autonomic Decision Trees**.
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![Code Style: Strict](https://img.shields.io/badge/safety-dry--run%20by%20default-green.svg)](#safety-architecture)
 
-Coordinates seamlessly with **COROS** watches/bike computers, **Strava**, and **Hevy** strength training.
+AdaptPulse bridges the gap between static training plans and real-world human physiology. Instead of following rigid multi-week spreadsheets that ignore life stress, poor sleep, or unexpected fatigue, AdaptPulse dynamically evaluates rolling 30-day biometrics (HRV, resting heart rate, sleep) and completed workout data to generate or adjust personalized training plans for the upcoming 1 to 2 weeks.
+
+It natively syncs structured workouts to [Intervals.icu](https://intervals.icu), which distributes them directly to **COROS**, **Garmin**, **Apple Watch**, and syncs completed efforts back via **Strava** and **Hevy**.
+
+---
+
+## Core Scientific Foundations
+
+AdaptPulse integrates peer-reviewed exercise physiology and endurance training models:
+
+1. **Stephen Seiler's 80/20 Polarized Model:**
+   - Tracks polarization across low-intensity aerobic base (Zone 1/2), threshold "black hole" fatigue, and high-intensity interval training (HIIT).
+2. **Tim Gabbett's Acute:Chronic Workload Ratio (ACWR):**
+   - Compares acute workload (7-day rolling fatigue) to chronic workload (28-day rolling fitness).
+   - Flags danger zones (`> 1.5`) to prevent soft-tissue injuries while identifying optimal training sweet spots (`0.8 - 1.3`).
+3. **Banister & Coggan Performance Management Chart (PMC):**
+   - Continuously computes Chronic Training Load (CTL / Fitness), Acute Training Load (ATL / Fatigue), and Training Stress Balance (TSB / Form).
+4. **Kiviniemi / Plews Autonomic Nervous System Decision Trees:**
+   - Interprets morning Heart Rate Variability (HRV rMSSD) and Resting Heart Rate (RHR) shifts relative to an athlete's 30-day baseline.
+   - Automatically downgrades high-intensity interval days to active recovery or aerobic flushing when parasympathetic exhaustion or sympathetic strain is detected.
+
+---
+
+## System Architecture & Data Flow
+
+```text
+               +-------------------------------------------+
+               |        Wearables & Hardware Inputs        |
+               |  (COROS Watch, Garmin, Polar, Oura/Whoop) |
+               +-------------------------------------------+
+                                     |
+                                     v
+               +-------------------------------------------+
+               |          Intervals.icu Data Hub           |
+               |   - Wellness (HRV, RHR, Sleep, Fatigue)   |
+               |   - Activities (HR Zones, Power, TSS)     |
+               +-------------------------------------------+
+                                     |
+                                     v
+               +-------------------------------------------+
+               |                 AdaptPulse                |
+               |                                           |
+               |   [1] Analytics Engine                    |
+               |       * ACWR, CTL/ATL/TSB, 80/20 Pol.     |
+               |       * Autonomic Readiness Tree          |
+               |                                           |
+               |   [2] Athlete Profile Config              |
+               |       * Goal: Hybrid, Running, Cycling    |
+               |       * Weekly Time Commitment (Hours)    |
+               |       * Periodization Philosophy          |
+               |                                           |
+               |   [3] Dynamic Rolling Planner             |
+               |       * Builds 1-2 week target schedule   |
+               |       * Generates COROS-compliant cues    |
+               |                                           |
+               |   [4] Guarded Sync Engine                 |
+               |       * Dry-run preview by default        |
+               |       * Pre-sync automatic backups        |
+               |       * Read-back validation              |
+               +-------------------------------------------+
+                                     |
+                                     v
+               +-------------------------------------------+
+               |          Intervals.icu Calendar           |
+               +-------------------------------------------+
+                                     |
+                 +-------------------+-------------------+
+                 |                                       |
+                 v                                       v
+   +---------------------------+           +---------------------------+
+   |   COROS Device Calendar   |           |    Third-Party Platforms  |
+   |   - Plain ASCII cues      |           |    - Strava (Social/Runs) |
+   |   - <= 20 char step text  |           |    - Hevy (Strength)      |
+   +---------------------------+           +---------------------------+
+```
 
 ---
 
 ## Key Features
 
-- **Rolling 30-Day Physiological & Training Load Analytics (`analyze`):**
-  - **Performance Management Chart (PMC):** Real-time Fitness (CTL), Fatigue (ATL), and Form (TSB).
-  - **Acute:Chronic Workload Ratio (ACWR):** Evaluates injury risk and workload progression using Tim Gabbett's "Sweet Spot" (0.8–1.3) vs. Danger Zone (>1.5).
-  - **Autonomic Nervous System & Recovery:** Tracks 30-day baseline resting HR and HRV. Automatically detects acute sympathetic strain (e.g. resting HR spike after hard weekend rides).
-  - **Intensity Polarization:** Evaluates actual time in Stephen Seiler's 3-zone model (low aerobic base vs. moderate grey zone vs. high-intensity intervals).
-- **Personalized Rolling Training Planner (`plan-next`):**
-  - Synthesizes 30-day body data and completed workouts to plan the next **1 or 2 weeks**.
-  - Dynamically scales volume to your weekly time commitment (e.g. **8+ hours/week**).
-  - **Auto-Adapts Intensity to Recovery:** Automatically substitutes high-intensity VO2 intervals with active recovery spins or aerobic flushes whenever elevated fatigue or resting HR spikes are detected.
-  - Fully compatible with COROS watches (plain ASCII, short <=20 character step cues, complete coaching notes).
-- **Configurable Athlete Profile & Training Goals (`profile`):**
-  - Interactive prompts and CLI flags to adjust your primary athletic goal (dual-sport hybrid, running, cycling, general fitness), weekly commitment hours, training philosophy (80/20 polarized, pyramidal, HRV-governed), and planning horizon.
-- **Safety First & Guarded Mutations:**
-  - **Dry-run by default:** Every mutation command (`plan-next`, `sync`, `events delete`, `adapt`) defaults to preview mode.
-  - Requires explicit `--apply` to update Intervals.icu.
-  - Single deletion requires `--confirm-delete`. Bulk deletion requires typing an exact confirmation phrase.
-  - Pre-flight diff checking and read-back verification on all remote mutations.
-  - Automatic timestamped backups saved in `data/backups/`.
-- **Security & Privacy:**
-  - Zero credential leakage: API keys and authorization headers masked across all CLI outputs and logs.
+- **Interactive Multi-Page Web UI (`adaptpulse ui`):**
+  - Self-contained, responsive dashboard with zero external dependencies.
+  - Interactive tabs for **Dashboard & Readiness**, **PMC Analysis & Seiler 80/20 Distribution**, **Goal Setting & Athlete Profile**, **Rolling Calendar with COROS Screen Simulation**, **Ecosystem Cloud Sync**, and **Multi-Platform Export Center**.
+- **Intelligent Sports Science Coaching Advisor (`adaptpulse coach`):**
+  - Synthesizes telemetry, target event timeline, periodization phase, and personal constraints into clear, actionable microcycle guidance.
+- **Multi-Platform Workout Exporters (`adaptpulse export`):**
+  - Export planned workouts directly to **Zwift (.zwo XML)**, **iCalendar (.ics)** for Google/Apple Calendar, and machine-readable JSON.
+- **Dynamic Rolling 1-2 Week Planner (`plan-next`):**
+  - Generates workout plans customized to your target weekly hours (e.g., 6h, 8h, 12h) and primary goals.
+  - Automatically calculates periodization phase (**Base**, **Build**, **Peak**, **Taper**, or **Post-Race Recovery**) based on your target race date.
+  - Respects life constraints (injuries, busy days, travel weekends).
+- **Automated Bio-Adaptation (`adapt --auto`):**
+  - Identifies acute cardiac or autonomic stress (e.g. resting heart rate spikes after weekend club rides) and swaps demanding intervals for low-stress aerobic recovery.
+- **Hardware & COROS Compatibility Built-in:**
+  - Standardized workout format stripped of non-ASCII characters and markdown formatting to guarantee flawless rendering on COROS watches and head units (<=20 char cues).
+- **Guarded Mutations & Safety:**
+  - Dry-run by default on every mutating command.
+  - Requires explicit `--apply` to push changes to remote calendars.
+  - Single deletion protected with `--confirm-delete`. Bulk deletion requires an exact confirmation phrase.
+  - Automatic timestamped JSON backups created under `data/backups/` before any write operation.
+  - Audit logging of every operation in `data/audit.log`.
 
 ---
 
-## Installation & Setup
+## Installation
 
-1. **Clone & Setup Environment:**
-   ```bash
-   git clone https://github.com/ankitsingh99/training-planner.git
-   cd training-planner
-   python3 -m venv .venv
-   source .venv/bin/activate
-   pip install -e .
-   ```
+### Prerequisites
+- Python 3.11 or higher
+- Intervals.icu account with an API key
 
-2. **Configure API Credentials:**
-   Copy `.env.example` to `.env` and set your key:
-   ```bash
-   cp .env.example .env
-   ```
-   In `.env`:
-   ```dotenv
-   INTERVALS_API_KEY=your_key_here
-   ```
+### Setup
 
-3. **Verify Connection & Diagnostics:**
-   ```bash
-   intervals-plan doctor
-   ```
+```bash
+# Clone the repository
+git clone https://github.com/ankitsingh99/training-planner.git
+cd training-planner
+
+# Create virtual environment
+python3 -m venv .venv
+source .venv/bin/activate
+
+# Install in editable mode
+pip install -e .
+```
+
+Both `adaptpulse` and `intervals-plan` CLI commands are registered.
+
+### Configuration
+
+Copy `.env.example` to `.env`:
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` with your Intervals.icu credentials:
+
+```dotenv
+INTERVALS_API_KEY=your_api_key_here
+INTERVALS_ATHLETE_ID=0       # Use '0' or 'iXXXXX' for your own account
+INTERVALS_BASE_URL=https://intervals.icu/api/v1
+```
+
+Verify your setup:
+
+```bash
+adaptpulse doctor
+```
 
 ---
 
-## Complete Training Suite CLI Reference
+## CLI Reference & Workflows
 
-### 1. Physiological Analytics & Training Load
+### 1. Interactive Multi-Page Web UI
+
+Launch the embedded sports science Web UI dashboard:
+
 ```bash
-intervals-plan analyze              # Run 30-day rolling analysis (CTL/ATL/TSB, ACWR, Resting HR, Seiler 80/20)
-intervals-plan analyze --days 60    # Analyze over 60-day window
-intervals-plan analyze --json       # Output machine-readable JSON metrics
+# Launch server and automatically open browser at http://127.0.0.1:8080/
+adaptpulse ui
+
+# Specify custom port without opening browser
+adaptpulse ui --port 9000 --no-browser
 ```
 
-### 2. Athlete Goals & Profile Configuration
+Features included in the Web UI:
+- **Dashboard & Readiness:** Autonomic HRV/RHR delta, ACWR gauge, PMC balance card, coach briefing.
+- **Analysis & PMC:** Interactive SVG PMC curves (CTL/ATL/TSB) and Stephen Seiler 80/20 polarization bar.
+- **Goals & Profile:** Set target event name/date/distance, calculate periodization phase, adjust weekly hours, benchmarks, and constraints.
+- **Calendar & Plan:** Day-by-day interactive workout cards, step-by-step interval drawer, and COROS watch display simulation.
+- **Ecosystem & Sync:** Live connection indicators, recent backups list, and sync history.
+- **Export Center:** One-click download of `.zwo` (Zwift), `.ics` (iCalendar), and `.json` files.
+
+### 2. Intelligent Sports Science Coaching Briefing
+
+Get personalized advice on periodization, race-phase focus, and autonomic readiness:
+
 ```bash
-intervals-plan profile --show       # View current goal, weekly hours, benchmarks, and philosophy
-intervals-plan profile --edit       # Interactively edit goals, hours, or periodization model
-intervals-plan profile --hours 9.0  # Adjust weekly training budget via CLI flag
-intervals-plan profile --goal running --horizon 2_weeks
+# Full coaching guidance in formatted text
+adaptpulse coach
+
+# Output machine-readable JSON
+adaptpulse coach --json
 ```
 
-### 3. Dynamic Rolling Plan Generator
+### 3. Multi-Platform Exporters
+
+Export workouts to external platforms and calendar applications:
+
 ```bash
-intervals-plan plan-next            # Preview next week's personalized plan (Dry Run)
-intervals-plan plan-next --weeks 2  # Plan next 2 weeks (14 days)
-intervals-plan plan-next --apply    # Commit personalized plan to Intervals.icu & queue for COROS
-intervals-plan plan-next --hours 8.5 --apply --force
+# Export all formats (Zwift .zwo XML, iCalendar .ics, and JSON) to plans/export/
+adaptpulse export
+
+# Export only Zwift files for next 2 weeks
+adaptpulse export --format zwo --weeks 2 --out-dir plans/zwift/
+
+# Export iCalendar file for Google/Apple Calendar
+adaptpulse export --format ics --out-dir plans/calendar/
+```
+
+### 4. Physiological & Training Load Analytics
+
+Analyze your rolling 30-day physiological state:
+
+```bash
+# Full 30-day rolling analysis
+adaptpulse analyze
+
+# Custom analysis window
+adaptpulse analyze --days 45
+
+# Output raw JSON for automation or scripting
+adaptpulse analyze --json
+```
+
+Output includes:
+- Performance Management Chart: CTL (Fitness), ATL (Fatigue), TSB (Form)
+- Acute:Chronic Workload Ratio (ACWR) and sweet-spot validation
+- Autonomic readiness score (HRV baseline vs. acute RHR shift)
+- Intensity distribution (Zone 1/2 base vs. Zone 3 tempo vs. Zone 4/5 HIIT)
+
+### 5. Athlete Profile Configuration
+
+Configure your training focus, weekly time budget, and preferred periodization:
+
+```bash
+# Display active profile settings
+adaptpulse profile --show
+
+# Interactively configure goals, hours, and horizon
+adaptpulse profile --edit
+
+# Quick update via command-line flags
+adaptpulse profile --hours 9.5 --goal running --horizon 2_weeks
+```
+
+### 3. Dynamic Rolling Plan Generation
+
+Build structured workouts tailored to your current fitness and recovery status:
+
+```bash
+# Dry-run: preview the plan for next week without writing to Intervals.icu
+adaptpulse plan-next
+
+# Preview a 2-week block with a custom hourly budget
+adaptpulse plan-next --weeks 2 --hours 10.0
+
+# Apply plan to Intervals.icu calendar (read-back verified)
+adaptpulse plan-next --apply
+
+# Force update, overwriting any conflicting managed events
+adaptpulse plan-next --apply --force
 ```
 
 ### 4. Adaptive Adjustments
+
+React to unexpected fatigue or schedule interruptions:
+
 ```bash
-intervals-plan adapt --auto         # Auto-detect fatigue from 30d wellness/activities and adapt schedule
-intervals-plan adapt --club-ride-hard --week 1 --apply  # Manually substitute recovery spin for hard ride
+# Automatically inspect biometrics and modify upcoming scheduled workouts
+adaptpulse adapt --auto --apply
+
+# Manually substitute an intense workout after an exhausting weekend ride
+adaptpulse adapt --club-ride-hard --week 1 --apply
 ```
 
-### 5. Calendar Events & Guarded Deletion
+### 5. Calendar Management & Safe Deletion
+
+Safely inspect, clean up, or restore calendar events:
+
 ```bash
-intervals-plan events list --from 2026-11-02 --to 2026-11-15 # List live events
-intervals-plan events show <EVENT_ID>                        # View complete event JSON
-intervals-plan events delete <EVENT_ID> --confirm-delete     # Delete single event
-intervals-plan events delete-by-prefix dynamic --confirm-phrase "DELETE 7 EVENTS"
-intervals-plan events restore <BACKUP_FILE> --apply          # Restore from data/backups/
+# List events in a date window
+adaptpulse events list --from 2026-11-01 --to 2026-11-30
+
+# Inspect a specific event
+adaptpulse events show <EVENT_ID>
+
+# Delete a single managed event
+adaptpulse events delete <EVENT_ID> --confirm-delete
+
+# Delete events matching a prefix with typed confirmation phrase
+adaptpulse events delete-by-prefix dynamic --confirm-phrase "DELETE 7 EVENTS"
+
+# Restore from a previous backup
+adaptpulse events restore data/backups/backup_20261101_193116_presync.json --apply
 ```
 
-### 6. COROS Watch Connection Status
+### 6. COROS Watch Integration Status
+
+Validate device communication and structured workout sync status:
+
 ```bash
-intervals-plan coros-status         # Check live COROS cloud connection and workout upload status
+adaptpulse coros-status
 ```
 
 ---
 
-## Running the Automated Test Suite
+## Ecosystem Integration Guide
 
-Run all unit, integration, and sports science analytics tests:
-```bash
-pytest
-```
-*Result: 40 passing tests covering schema, ACWR sweet spot & danger zone calculations, autonomic readiness, Seiler 80/20 distribution, dynamic periodization, and guarded deletion.*
+### 1. COROS Watches & Bike Computers
+1. In the **COROS App**, navigate to **Profile** > **Settings** > **3rd Party Apps**.
+2. Select **Intervals.icu** and authorize.
+3. Workouts uploaded by AdaptPulse sync straight to your watch calendar with target HR and pace zones.
 
-### 6. Audit Trail & Manifest
-```bash
-intervals-plan manifest show        # View local sync manifest state
-intervals-plan audit list           # View recent operations log
-```
+### 2. Strava (Activity Feed)
+1. In **Intervals.icu**, go to **Settings** > **Connections**.
+2. Connect your **Strava** account. Completed runs, rides, and outdoor activities automatically flow into Intervals.icu to update your rolling CTL/ATL and ACWR metrics.
 
-### 7. Wearable Ecosystem Research
-```bash
-intervals-plan watch-research       # Comparison of Galaxy Watch, Watchletic, COROS, ZonePace
-```
+### 3. Hevy (Strength Training)
+1. Connect **Hevy** to **Strava** via **Settings** > **Integrations** in the Hevy app.
+2. Resistance training workouts sync to Strava as `WeightTraining` and forward to Intervals.icu, ensuring your full training stress profile is captured.
 
 ---
 
-## 8-Week Training Plan Architecture
+## Safety Architecture
 
-| Week | Monday (Quality Run) | Tuesday (Aerobic Ride) | Thursday (Optional Bike) | Weekend (Club Ride) |
-| :--- | :--- | :--- | :--- | :--- |
-| **Week 1 (Progression)** | 5 x 3 min (48m 30s) | Zone 2 (40m) | 4 x 4 min (46m) | ~50 km Club Ride |
-| **Week 2 (Progression)** | 4 x 4 min (49m) | Zone 2 (45m) | 2 x (10 x 30s / 30s) (48m) | ~50 km Club Ride |
-| **Week 3 (Progression)** | 5 x 4 min (56m) | Zone 2 (50m) | 3 x (10 x 30s / 30s) (63m) | ~50 km Club Ride |
-| **Week 4 (Deload)** | Deload: 4 x 3 min (45m) | Zone 2 (35m) | *Rest / Recovery* | ~50 km Club Ride |
-| **Week 5 (Progression)** | 4 x 5 min (55m) | Zone 2 (55m) | 5 x 4 min (53m) | ~50 km Club Ride |
-| **Week 6 (Progression)** | 5 x 4 min (53m 30s) | Zone 2 (60m) | 3 x (13 x 30s / 15s) (62m) | ~50 km Club Ride |
-| **Week 7 (Peak)** | 6 x 4 min (63m) | Zone 2 (60m) | 4 x 6 min (58m) | ~50 km Club Ride |
-| **Week 8 (Taper)** | Taper: 3 x 3 min (39m) | Zone 2 (40m) | *Rest / Recovery* | **5 km Time Trial Retest** |
+AdaptPulse follows strict rules to protect athlete training history:
 
-- **Week 4 Deload Resolution:** High-intensity Thursday bike intervals are omitted to absorb fatigue and promote muscle recovery.
-- **Week 8 Retest Resolution:** Explicit 5 km Time Trial scheduled to measure threshold and VO2 max progression.
+- **Dry-run First:** No remote mutation occurs without the `--apply` flag.
+- **Unmanaged Event Protection:** Only events created by AdaptPulse (or explicitly matching managed prefixes) can be modified or deleted. External workouts and manual entries remain untouched.
+- **Activity Immutability:** Completed/recorded activities are never modified or deleted.
+- **Pre-sync Backups:** A full snapshot of existing calendar events is saved to `data/backups/` before any create, update, or delete action.
+- **Audit Trail:** Every mutating action is recorded in `data/audit.log` with timestamps, operation types, and target IDs.
+- **Credential Masking:** API tokens and authorization headers are sanitized and masked in all console outputs and log files.
 
 ---
 
-## Ecosystem Integration (COROS + Strava + Hevy)
+## Development & Testing
 
-```text
-       ┌───────────────────────────────┐
-       │   Intervals.icu (Core Hub)    │
-       │   - 8-Week Training Calendar  │
-       │   - Fatigue (ATL) & Form (TSB)│
-       └───┬───────────────────────▲───┘
-           │ 1. Pushes planned     │ 2. Pulls completed
-           │    workouts to watch  │    runs / rides
-           ▼                       │
-       ┌───────────┐         ┌─────┴─────┐
-       │   COROS   ├────────►│  Strava   │
-       │   Watch   │ Syncs   │ (Social)  │
-       └───────────┘ runs    └─────▲─────┘
-                                   │ Syncs gym routines
-                             ┌─────┴─────┐
-                             │   Hevy    │
-                             │ (Strength)│
-                             └───────────┘
-```
+Run the automated test suite with coverage reporting:
 
-1. **COROS Watch (Endurance Workouts)**:
-   - In **COROS App** $\rightarrow$ **Profile** $\rightarrow$ **Settings** $\rightarrow$ **3rd Party Apps** $\rightarrow$ Connect **Intervals.icu**.
-   - Your planned workouts will sync directly onto your COROS device calendar.
-2. **Strava (Social & Activity Hub)**:
-   - In **Intervals.icu Settings** $\rightarrow$ **Connections** $\rightarrow$ Connect **Strava**.
-3. **Hevy (Strength Workouts)**:
-   - In **Hevy App** $\rightarrow$ **Settings** $\rightarrow$ **Integrations** $\rightarrow$ Connect **Strava**.
-   - Gym workouts upload to Strava as `WeightTraining` and sync automatically to Intervals.icu.
-
----
-
-## Running the Automated Test Suite
-
-Run all unit, integration, and safety tests:
 ```bash
-pytest
+coverage run -m pytest && coverage report -m
 ```
-*Result: 28 passing tests covering schema, duration recursion, diff detection, conflict handling, secret masking, and guarded deletion.*
+
+The test suite covers 96 unit, integration, and safety tests with **>95% test coverage**:
+- Sports science analytics: ACWR sweet spot/danger zone, PMC (CTL/ATL/TSB), Seiler 80/20 polarization, and Plews/Kiviniemi autonomic readiness
+- Periodization phase calculation (Base, Build, Peak, Taper, Recovery)
+- Multi-platform workout exporters (Zwift .zwo XML, iCalendar .ics, JSON)
+- Embedded multi-page Web UI REST API and request handling
+- Schema validation, duration recursion, and COROS hardware display formatting
+- Guarded deletions, atomic pre-sync backups, and secret token redaction
 
 ---
 
 ## License
-MIT License.
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

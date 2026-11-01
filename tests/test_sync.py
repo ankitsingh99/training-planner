@@ -1,5 +1,5 @@
 """
-Unit tests for SyncManager: diff, manifest update, and read-back verification.
+Unit tests for SyncManager: diff, manifest update, read-back verification, and error handling.
 """
 
 from pathlib import Path
@@ -8,6 +8,7 @@ from unittest.mock import MagicMock
 import unittest
 
 from intervals_plan.api_models import IntervalsEvent
+from intervals_plan.diff import compute_event_hash
 from intervals_plan.sync import SyncManager
 
 
@@ -25,7 +26,6 @@ class TestSync(unittest.TestCase):
         desired = [
             IntervalsEvent(start_date_local="2026-11-02T00:00:00", name="Run", external_id="test-1", moving_time=1800)
         ]
-        # Live matches desired
         live = [
             IntervalsEvent(start_date_local="2026-11-02T00:00:00", name="Run", external_id="test-1", moving_time=1800, id=101)
         ]
@@ -39,8 +39,6 @@ class TestSync(unittest.TestCase):
         desired = [
             IntervalsEvent(start_date_local="2026-11-02T00:00:00", name="Run New", external_id="test-1", moving_time=1800)
         ]
-        # First list: empty (new)
-        # Second list (post-write read-back): contains event with ID 202
         saved_live = [
             IntervalsEvent(start_date_local="2026-11-02T00:00:00", name="Run New", external_id="test-1", moving_time=1800, id=202)
         ]
@@ -51,10 +49,48 @@ class TestSync(unittest.TestCase):
         self.assertEqual(res["status"], "SUCCESS")
         self.assertEqual(res["created"], 1)
 
-        # Verify manifest recorded the verified event ID
         manifest = self.sync_mgr.load_manifest()
         self.assertIn("test-1", manifest["records"])
         self.assertEqual(manifest["records"]["test-1"]["intervals_id"], 202)
+
+    def test_corrupt_manifest_loads_empty(self):
+        manifest_file = self.data_dir / "manifest.json"
+        manifest_file.parent.mkdir(parents=True, exist_ok=True)
+        manifest_file.write_text("corrupted json {", encoding="utf-8")
+        data = self.sync_mgr.load_manifest()
+        self.assertEqual(data["records"], {})
+
+    def test_conflict_raises_error_without_force(self):
+        desired = [
+            IntervalsEvent(start_date_local="2026-11-02T00:00:00", name="Original", external_id="test-1")
+        ]
+        live = [
+            IntervalsEvent(start_date_local="2026-11-02T00:00:00", name="Edited on Web", external_id="test-1", id=101)
+        ]
+        # Manifest has original hash
+        self.sync_mgr.save_manifest({
+            "records": {
+                "test-1": {
+                    "intervals_id": 101,
+                    "last_known_hash": compute_event_hash(desired[0]),
+                }
+            }
+        })
+        self.mock_client.list_events.return_value = live
+
+        with self.assertRaises(RuntimeError):
+            self.sync_mgr.apply_sync(desired, "2026-11-02", "2026-11-08", force=False)
+
+    def test_unverified_events_raises_error(self):
+        desired = [
+            IntervalsEvent(start_date_local="2026-11-02T00:00:00", name="Ghost Workout", external_id="test-missing")
+        ]
+        # First list is empty, write occurs, but second list is still empty (read-back failed)
+        self.mock_client.list_events.side_effect = [[], []]
+        self.mock_client.bulk_upsert_events.return_value = []
+
+        with self.assertRaises(RuntimeError):
+            self.sync_mgr.apply_sync(desired, "2026-11-02", "2026-11-08")
 
 
 if __name__ == "__main__":

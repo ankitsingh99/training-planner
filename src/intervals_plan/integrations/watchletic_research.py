@@ -62,7 +62,7 @@ def print_watch_research() -> None:
     print("=" * 70 + "\n")
 
     for item in WATCH_ECOSYSTEM_RESEARCH["comparison"]:
-        print(f"▶ {item['app_or_platform']} ({item['tier']})")
+        print(f" {item['app_or_platform']} ({item['tier']})")
         print(f"  - Intervals.icu Sync:    {item['intervals_sync']}")
         print(f"  - Structured Execution:  {item['structured_execution']}")
         print(f"  - Recording & Export:    {item['recording_and_export']}")

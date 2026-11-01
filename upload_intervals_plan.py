@@ -359,7 +359,7 @@ def main():
             events_to_upload = [e for e in events if e.get("external_id") not in existing_ext_ids]
             if not events_to_upload:
                 print(
-                    f"\n✅ All {len(events)} events are already present on your Intervals.icu calendar!\n"
+                    f"\n All {len(events)} events are already present on your Intervals.icu calendar!\n"
                     "No duplicate workouts created. Upload skipped.\n"
                     "Tip: Run with '--force' to overwrite / re-upload the existing workouts."
                 )
@@ -397,7 +397,7 @@ def main():
     except urllib.error.URLError as exc:
         sys.exit(f"Could not reach Intervals.icu: {exc}")
 
-    print(f"\n✅ Intervals.icu accepted the upload! Returned {len(result)} event records.")
+    print(f"\n Intervals.icu accepted the upload! Returned {len(result)} event records.")
     print("First few uploaded events:")
     for event in result[:5]:
         print(f" - {event.get('start_date_local')} | {event.get('name')} | ID: {event.get('id')}")

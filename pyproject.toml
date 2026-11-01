@@ -3,9 +3,9 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "intervals-plan"
-version = "0.2.0"
-description = "Adaptive 8-week run & bike training plan tool for Intervals.icu"
+name = "adaptpulse"
+version = "0.3.0"
+description = "Sports science powered adaptive training suite and dynamic rolling planner for Intervals.icu"
 readme = "README.md"
 requires-python = ">=3.11"
 authors = [{ name = "Ashish Singh" }]
@@ -18,9 +18,11 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0",
+    "pytest-cov>=4.0",
 ]
 
 [project.scripts]
+adaptpulse = "intervals_plan.cli:main"
 intervals-plan = "intervals_plan.cli:main"
 
 [tool.setuptools.packages.find]

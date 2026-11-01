@@ -4,9 +4,10 @@ Allows full customization of goals, weekly hours, intensity distribution, and sc
 """
 
 from dataclasses import asdict, dataclass, field
+import datetime
 import json
 import pathlib
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 
 @dataclass
@@ -26,6 +27,7 @@ class AthleteProfileConfig:
     planning_horizon: str = "1_week"
     
     # Event / Target race specifics (optional)
+    target_event_name: Optional[str] = None
     target_race_distance: Optional[str] = "10k"
     target_race_date: Optional[str] = None
     
@@ -36,6 +38,9 @@ class AthleteProfileConfig:
     ftp_bike: int = 250
     resting_hr_baseline: Optional[int] = 50
     
+    # Life constraints & schedule notes (e.g. "no_thursday_bike", "achilles_niggle", "travel_weekend")
+    constraints: List[str] = field(default_factory=list)
+
     # Preferred weekly schedule slots
     # day-of-week (0=Mon, 6=Sun) or name: session role
     schedule_preference: Dict[str, str] = field(default_factory=lambda: {
@@ -52,6 +57,39 @@ class AthleteProfileConfig:
     max_safe_acwr: float = 1.35
     max_ctl_ramp_per_week: float = 6.0
     rhr_alert_elevation_bpm: int = 4
+
+    def get_periodization_phase(self, current_date: Optional[datetime.date] = None) -> Tuple[str, Optional[int]]:
+        """
+        Determine periodization phase based on target race date:
+        - > 8 weeks out: 'base'
+        - 4 to 8 weeks out: 'build'
+        - 2 to 4 weeks out: 'peak'
+        - 0 to 2 weeks out: 'taper'
+        - < 0 weeks: 'recovery'
+        - No date: 'maintenance'
+        Returns: (phase_name, weeks_remaining)
+        """
+        if not self.target_race_date:
+            return "maintenance", None
+
+        try:
+            target = datetime.date.fromisoformat(self.target_race_date)
+            today = current_date or datetime.date.today()
+            days_out = (target - today).days
+            weeks_out = max(0, days_out // 7)
+
+            if days_out < 0:
+                return "recovery", -1
+            elif weeks_out <= 2:
+                return "taper", weeks_out
+            elif weeks_out <= 4:
+                return "peak", weeks_out
+            elif weeks_out <= 8:
+                return "build", weeks_out
+            else:
+                return "base", weeks_out
+        except Exception:
+            return "maintenance", None
 
     @classmethod
     def default(cls) -> "AthleteProfileConfig":

@@ -16,14 +16,17 @@ from intervals_plan.api_models import IntervalsEvent
 from intervals_plan.athlete_profile import AthleteProfileConfig
 from intervals_plan.audit import AuditLogger
 from intervals_plan.backup import BackupManager
+from intervals_plan.coaching_advisor import CoachingAdvisor
 from intervals_plan.config import Config
 from intervals_plan.diff import calculate_diff
+from intervals_plan.exporters import PlanExporter
 from intervals_plan.integrations.watchletic_research import print_watch_research
 from intervals_plan.intervals_client import IntervalsAPIError, IntervalsClient
 from intervals_plan.plan_builder import PlanBuilder, get_default_8wk_plan
 from intervals_plan.plan_models import PlanConfig, TrainingPlan
 from intervals_plan.rolling_planner import DynamicRollingPlanner
 from intervals_plan.sync import SyncManager
+from intervals_plan.web.server import run_web_server
 from intervals_plan.workout_schema import format_duration
 
 
@@ -152,6 +155,22 @@ def build_parser() -> argparse.ArgumentParser:
     # coros-status
     subparsers.add_parser("coros-status", help="Check live COROS connection and workout sync status")
 
+    # ui
+    ui_p = subparsers.add_parser("ui", help="Launch interactive multi-page Web UI dashboard")
+    ui_p.add_argument("--host", default="127.0.0.1", help="Host interface (default: 127.0.0.1)")
+    ui_p.add_argument("--port", type=int, default=8080, help="Port to serve Web UI on (default: 8080)")
+    ui_p.add_argument("--no-browser", action="store_true", help="Do not open browser automatically")
+
+    # coach
+    coach_p = subparsers.add_parser("coach", help="Get intelligent coaching guidance based on biometrics & goals")
+    coach_p.add_argument("--json", action="store_true", help="Output coaching guidance in JSON format")
+
+    # export
+    exp_all_p = subparsers.add_parser("export", help="Export workouts to Zwift (.zwo), iCalendar (.ics), or JSON")
+    exp_all_p.add_argument("--format", choices=["zwo", "ics", "json", "all"], default="all", help="Output format")
+    exp_all_p.add_argument("--out-dir", default="plans/export", help="Output directory path (default: plans/export)")
+    exp_all_p.add_argument("--weeks", type=int, choices=[1, 2], default=1, help="Number of weeks to export")
+
     return parser
 
 
@@ -187,39 +206,39 @@ def load_plan(plan_file: Optional[str] = None) -> TrainingPlan:
 
 
 def handle_doctor(cfg: Config) -> None:
-    print("\n🔍 Running Intervals.icu Diagnostics...\n")
+    print("\n Running Intervals.icu Diagnostics...\n")
     print(f"System:")
     print(f"  - Python Version: {sys.version.split()[0]}")
     print(f"  - Data Directory: {cfg.data_dir} (exists: {cfg.data_dir.exists()})")
     print(f"  - Config Summary:\n{cfg.summary()}\n")
 
     if not cfg.api_key:
-        print("❌ Status: INTERVALS_API_KEY is not configured in .env or environment.")
+        print(" Status: INTERVALS_API_KEY is not configured in .env or environment.")
         return
 
     client = IntervalsClient(api_key=cfg.api_key, athlete_id=cfg.athlete_id, base_url=cfg.base_url)
     res = client.doctor()
     if res.get("status") == "HEALTHY":
-        print(f"✅ API Connectivity: HEALTHY")
+        print(f" API Connectivity: HEALTHY")
         print(f"  - Athlete ID:     {res['athlete_id']}")
         print(f"  - Athlete Name:   {res['name']}")
         print(f"  - Timezone:       {res['timezone']}")
         print(f"  - Resting HR:     {res['resting_hr']} bpm")
         print(f"  - LTHR:           {res['lthr']} bpm")
     else:
-        print(f"❌ API Connectivity Error: {res.get('error')}")
+        print(f" API Connectivity Error: {res.get('error')}")
 
 
 def handle_plan_validate(args: argparse.Namespace) -> None:
     plan = load_plan(args.file)
     errors = plan.validate()
     if errors:
-        print(f"\n❌ Plan validation failed with {len(errors)} error(s):")
+        print(f"\n Plan validation failed with {len(errors)} error(s):")
         for err in errors:
             print(f"  - {err}")
         sys.exit(1)
     else:
-        print(f"\n✅ Plan '{plan.title}' validated successfully!")
+        print(f"\n Plan '{plan.title}' validated successfully!")
         print(f"  - Weeks: {plan.config.total_weeks}")
         print(f"  - Start Date: {plan.config.start_date}")
         print(f"  - W4 Deload Bike: {'Included' if plan.config.include_w4_bike else 'Omitted (Restorative)'}")
@@ -231,7 +250,7 @@ def handle_plan_preview(args: argparse.Namespace) -> None:
     builder = PlanBuilder(plan)
     events = builder.build_all_events()
 
-    print(f"\n📋 Plan Preview: {plan.title}")
+    print(f"\n Plan Preview: {plan.title}")
     print(f"Total Events: {len(events)} (Range: {plan.config.start_date} onwards)\n")
     print("| Week | Monday (Quality Run) | Tuesday (Aerobic Ride) | Thursday (Optional Bike) | Weekend (Club Ride) |")
     print("| :--- | :--- | :--- | :--- | :--- |")
@@ -249,11 +268,17 @@ def handle_plan_preview(args: argparse.Namespace) -> None:
 def handle_events_list(cfg: Config, args: argparse.Namespace) -> None:
     client = IntervalsClient(api_key=cfg.api_key, athlete_id=cfg.athlete_id, base_url=cfg.base_url)
     events = client.list_events(args.from_date, args.to_date)
-    print(f"\n📅 Found {len(events)} events between {args.from_date} and {args.to_date}:")
+    print(f"\n Found {len(events)} events between {args.from_date} and {args.to_date}:")
     for ev in events:
         ext_tag = f" [{ev.external_id}]" if ev.external_id else ""
         sport_str = str(ev.type or ev.category or "Note")
         print(f"  - ID: {str(ev.id or 'None'):<9} | {ev.start_date_local} | {sport_str:<5} | {ev.name}{ext_tag}")
+
+
+def handle_events_show(cfg: Config, args: argparse.Namespace) -> None:
+    client = IntervalsClient(api_key=cfg.api_key, athlete_id=cfg.athlete_id, base_url=cfg.base_url)
+    ev = client.get_event(args.event_id)
+    print(json.dumps(ev.to_dict(), indent=2))
 
 
 def handle_sync(cfg: Config, args: argparse.Namespace) -> None:
@@ -268,7 +293,7 @@ def handle_sync(cfg: Config, args: argparse.Namespace) -> None:
     end_date = "2026-12-27"
 
     diff, live_events = sync_mgr.preview_sync(events, start_date, end_date)
-    print("\n🔄 Synchronization Diff:")
+    print("\n Synchronization Diff:")
     print(diff.summary())
 
     if not args.apply:
@@ -278,7 +303,7 @@ def handle_sync(cfg: Config, args: argparse.Namespace) -> None:
 
     print("\nApplying synchronization...")
     res = sync_mgr.apply_sync(events, start_date, end_date, force=args.force)
-    print(f"✅ Sync Finished: Status = {res['status']}")
+    print(f" Sync Finished: Status = {res['status']}")
     print(f"  - Created:  {res['created']}")
     print(f"  - Updated:  {res['updated']}")
     print(f"  - Verified: {res['total_verified']}")
@@ -290,10 +315,10 @@ def handle_events_delete(cfg: Config, args: argparse.Namespace) -> None:
     try:
         ev = client.get_event(args.event_id)
     except IntervalsAPIError as exc:
-        print(f"❌ Error fetching event {args.event_id}: {exc}")
+        print(f" Error fetching event {args.event_id}: {exc}")
         return
 
-    print(f"\n⚠️  Target Event for Deletion:")
+    print(f"\n  Target Event for Deletion:")
     print(f"  - ID:          {ev.id}")
     print(f"  - Name:        {ev.name}")
     print(f"  - Date:        {ev.start_date_local}")
@@ -309,7 +334,7 @@ def handle_events_delete(cfg: Config, args: argparse.Namespace) -> None:
     backup_path = backup_mgr.create_backup([ev], tag=f"predelete_id_{ev.id}")
 
     client.delete_event(args.event_id)
-    print(f"✅ Event {args.event_id} successfully deleted! (Backup saved to {backup_path})")
+    print(f" Event {args.event_id} successfully deleted! (Backup saved to {backup_path})")
 
     audit = AuditLogger(cfg.data_dir / "audit.log")
     audit.log("DELETE_EVENT", [str(ev.id)], "SUCCESS", {"name": ev.name, "backup": str(backup_path)})
@@ -320,7 +345,7 @@ def handle_delete_by_prefix(cfg: Config, args: argparse.Namespace) -> None:
     live_events = client.list_events(args.from_date, args.to_date)
     matching = [e for e in live_events if e.external_id and e.external_id.startswith(args.prefix)]
 
-    print(f"\n⚠️  Bulk Deletion Preview:")
+    print(f"\n  Bulk Deletion Preview:")
     print(f"Prefix: '{args.prefix}'")
     print(f"Matching Managed Events Found: {len(matching)}")
     for e in matching[:5]:
@@ -344,7 +369,7 @@ def handle_delete_by_prefix(cfg: Config, args: argparse.Namespace) -> None:
             client.delete_event(e.id)
             deleted_count += 1
 
-    print(f"\n✅ Bulk deleted {deleted_count} events from Intervals.icu!")
+    print(f"\n Bulk deleted {deleted_count} events from Intervals.icu!")
     print(f"Backup saved to: {backup_path}")
 
     audit = AuditLogger(cfg.data_dir / "audit.log")
@@ -367,13 +392,13 @@ def handle_adapt(cfg: Config, args: argparse.Namespace) -> None:
         report = analyzer.analyze_30d(wellness, activities)
         if report.readiness.rhr_elevated or report.readiness.readiness_state in ["ELEVATED_FATIGUE", "RECOVERY_MANDATORY"]:
             rhr_delta_str = f"{report.readiness.rhr_delta:+.1f}" if report.readiness.rhr_delta is not None else "N/A"
-            print(f"⚠️  Elevated strain detected (RHR delta: {rhr_delta_str} bpm, Form: {report.readiness.tsb:+.1f}).")
+            print(f"  Elevated strain detected (RHR delta: {rhr_delta_str} bpm, Form: {report.readiness.tsb:+.1f}).")
             print("Action: Auto-substituting Week 1 Thursday high-intensity bike intervals with recovery spin...")
             events = AdaptiveEngine.adapt_for_hard_club_ride(events, args.week)
         else:
-            print("✅ Physiological markers are stable. No emergency downshift needed.")
+            print(" Physiological markers are stable. No emergency downshift needed.")
     elif args.club_ride_hard:
-        print(f"\n🏃 Adaptive Trigger: Hard weekend club ride indicated for Week {args.week}.")
+        print(f"\n Adaptive Trigger: Hard weekend club ride indicated for Week {args.week}.")
         print("Action: Suppressing Thursday's high-intensity bike intervals with an active recovery spin...")
         events = AdaptiveEngine.adapt_for_hard_club_ride(events, args.week)
 
@@ -390,7 +415,7 @@ def handle_adapt(cfg: Config, args: argparse.Namespace) -> None:
     client = IntervalsClient(api_key=cfg.api_key, athlete_id=cfg.athlete_id, base_url=cfg.base_url)
     sync_mgr = SyncManager(client=client, data_dir=cfg.data_dir, managed_prefix=plan.config.prefix)
     res = sync_mgr.apply_sync(events, plan.config.start_date, "2026-12-27", force=True)
-    print(f"✅ Applied adaptive modification to Intervals.icu calendar! ({res['status']})")
+    print(f" Applied adaptive modification to Intervals.icu calendar! ({res['status']})")
 
 
 def handle_analyze(cfg: Config, args: argparse.Namespace) -> None:
@@ -400,7 +425,7 @@ def handle_analyze(cfg: Config, args: argparse.Namespace) -> None:
     end_date = datetime.date.today()
     start_date = end_date - datetime.timedelta(days=args.days)
 
-    print(f"\n📊 Fetching rolling {args.days}-day wellness and activity data from Intervals.icu...")
+    print(f"\n Fetching rolling {args.days}-day wellness and activity data from Intervals.icu...")
     wellness_records = client.get_wellness_range(start_date.isoformat(), end_date.isoformat())
     activities = client.get_activities(start_date.isoformat(), end_date.isoformat())
 
@@ -422,7 +447,7 @@ def handle_profile(cfg: Config, args: argparse.Namespace) -> None:
     profile = AthleteProfileConfig.load(profile_path)
 
     if args.edit:
-        print("\n⚙️  Interactive Athlete Profile Configuration:")
+        print("\n  Interactive Athlete Profile Configuration:")
         print("Press Enter to keep current values in [brackets].\n")
         
         goal_input = input(f"Primary Goal [{profile.goal}] (dual_sport_hybrid/running/cycling/general_fitness): ").strip()
@@ -449,7 +474,7 @@ def handle_profile(cfg: Config, args: argparse.Namespace) -> None:
             profile.target_race_distance = race_input
 
         profile.save(profile_path)
-        print("\n✅ Athlete profile updated successfully!")
+        print("\n Athlete profile updated successfully!")
 
     # Check CLI flag updates
     updated = False
@@ -471,10 +496,10 @@ def handle_profile(cfg: Config, args: argparse.Namespace) -> None:
 
     if updated:
         profile.save(profile_path)
-        print("✅ Profile updated with CLI parameters!")
+        print(" Profile updated with CLI parameters!")
 
     # Display profile summary
-    print("\n📋 Current Athlete Profile & Preferences:")
+    print("\n Current Athlete Profile & Preferences:")
     print("=" * 55)
     print(f"  - Primary Goal:         {profile.goal}")
     print(f"  - Target Weekly Hours:  {profile.weekly_hours:.1f} hours/week")
@@ -509,7 +534,7 @@ def handle_plan_next(cfg: Config, args: argparse.Namespace) -> None:
 
     cycle_end = cycle_start + datetime.timedelta(days=weeks * 7 - 1)
 
-    print(f"\n🔮 Generating Dynamic Rolling Plan ({weeks} Week{'s' if weeks > 1 else ''})")
+    print(f"\n Generating Dynamic Rolling Plan ({weeks} Week{'s' if weeks > 1 else ''})")
     print(f"Cycle Window: {cycle_start.isoformat()} to {cycle_end.isoformat()}")
     print(f"Commitment:   {profile.weekly_hours:.1f} hours/week | Model: {profile.philosophy}")
 
@@ -531,7 +556,7 @@ def handle_plan_next(cfg: Config, args: argparse.Namespace) -> None:
     print(f"  - Fitness (CTL):   {report.readiness.ctl:.1f} | Fatigue (ATL): {report.readiness.atl:.1f} | Form (TSB): {report.readiness.tsb:+.1f}")
     print(f"  - ACWR Ratio:      {report.acwr.ratio:.2f} [{report.acwr.status}]")
     if report.readiness.recent_resting_hr:
-        rhr_status = "⚠️ ELEVATED" if report.readiness.rhr_elevated else "✅ STABLE"
+        rhr_status = " ELEVATED" if report.readiness.rhr_elevated else " STABLE"
         delta_str = f"{report.readiness.rhr_delta:+.1f} bpm" if report.readiness.rhr_delta is not None else "N/A"
         print(f"  - Resting HR:      {report.readiness.recent_resting_hr:.0f} bpm (Baseline: {report.readiness.resting_hr_baseline:.0f} bpm, Delta: {delta_str}) [{rhr_status}]")
     print(f"  - Readiness State: {report.readiness.readiness_state} (Score: {report.readiness.readiness_score}/100)")
@@ -547,7 +572,7 @@ def handle_plan_next(cfg: Config, args: argparse.Namespace) -> None:
         prefix=prefix,
     )
 
-    print(f"\n📅 Proposed Workout Schedule ({len(events)} Sessions):")
+    print(f"\n Proposed Workout Schedule ({len(events)} Sessions):")
     print("-" * 72)
     total_moving_secs = 0
     for ev in events:
@@ -562,7 +587,7 @@ def handle_plan_next(cfg: Config, args: argparse.Namespace) -> None:
     sync_mgr = SyncManager(client=client, data_dir=cfg.data_dir, managed_prefix=prefix)
     diff, _ = sync_mgr.preview_sync(events, cycle_start.isoformat(), cycle_end.isoformat())
 
-    print("\n🔄 Synchronization Diff:")
+    print("\n Synchronization Diff:")
     print(diff.summary())
 
     if not args.apply:
@@ -573,17 +598,17 @@ def handle_plan_next(cfg: Config, args: argparse.Namespace) -> None:
 
     print("\nApplying dynamic plan to Intervals.icu...")
     res = sync_mgr.apply_sync(events, cycle_start.isoformat(), cycle_end.isoformat(), force=args.force)
-    print(f"✅ Dynamic Plan Applied Successfully! (Status: {res['status']})")
+    print(f" Dynamic Plan Applied Successfully! (Status: {res['status']})")
     print(f"  - Created Events:  {res['created']}")
     print(f"  - Updated Events:  {res['updated']}")
     print(f"  - Total Verified:  {res['total_verified']}")
     print(f"  - Safety Backup:   {res['backup_path']}")
-    print("\n⌚ COROS Sync:")
+    print("\nCOROS Sync:")
     print("  - Workouts for the rolling 7-day window are queued and will sync to your COROS app/watch automatically.")
 
 
 def handle_coros_status(cfg: Config) -> None:
-    print("\n⌚ Checking COROS Cloud Connection & Sync Status...\n")
+    print("\nChecking COROS Cloud Connection & Sync Status...\n")
     client = IntervalsClient(api_key=cfg.api_key, athlete_id=cfg.athlete_id, base_url=cfg.base_url)
     try:
         ath = client._request("GET", f"/athlete/{cfg.athlete_id}")
@@ -595,22 +620,105 @@ def handle_coros_status(cfg: Config) -> None:
 
         print("Connection Details:")
         print(f"  - COROS User ID:        {user_id or 'Not Connected'}")
-        print(f"  - Upload Workouts:      {'✅ ENABLED' if upload_workouts else '❌ DISABLED'}")
-        print(f"  - Download Activities:  {'✅ ENABLED' if sync_acts else '❌ DISABLED'}")
-        print(f"  - Download Wellness:    {'✅ ENABLED' if download_wellness else '❌ DISABLED'}")
+        print(f"  - Upload Workouts:      {' ENABLED' if upload_workouts else ' DISABLED'}")
+        print(f"  - Download Activities:  {' ENABLED' if sync_acts else ' DISABLED'}")
+        print(f"  - Download Wellness:    {' ENABLED' if download_wellness else ' DISABLED'}")
         print(f"  - Last Cloud Push:      {last_upload or 'Never'}")
 
         if upload_workouts and user_id:
-            print("\n✅ Verification Successful: Intervals.icu is actively pushing workouts to COROS!")
+            print("\nVerification Successful: Intervals.icu is actively pushing workouts to COROS!")
             print("Note on COROS API Window:")
             print("  - COROS uses a rolling 7-day forward window.")
             print("  - All workouts for the upcoming 7 days (Week 1) are already pushed to your COROS calendar.")
             print("  - Open your COROS mobile app and sync with Bluetooth to push them to your COROS DURA / watch.")
         else:
-            print("\n⚠️  COROS is not configured to upload planned workouts in Intervals.icu.")
+            print("\nCOROS is not configured to upload planned workouts in Intervals.icu.")
             print("Please enable 'Upload planned workouts' under Intervals.icu -> Settings -> COROS.")
     except Exception as exc:
-        print(f"❌ Error querying COROS status: {exc}")
+        print(f"Error querying COROS status: {exc}")
+
+
+def handle_ui(args: argparse.Namespace) -> None:
+    """Launch the embedded interactive web application."""
+    run_web_server(
+        host=args.host,
+        port=args.port,
+        open_browser=not args.no_browser,
+    )
+
+
+def handle_coach(cfg: Config, args: argparse.Namespace) -> None:
+    """Evaluate training telemetry and output intelligent coaching guidance."""
+    prof = AthleteProfileConfig.load()
+    client = IntervalsClient(api_key=cfg.api_key, athlete_id=cfg.athlete_id, base_url=cfg.base_url)
+    today = datetime.date.today()
+    start = today - datetime.timedelta(days=29)
+
+    wellness = client.get_wellness_range(start.isoformat(), today.isoformat())
+    acts = client.list_events(start.isoformat(), today.isoformat())
+    act_dicts = [a.to_dict() for a in acts if a.category != "WORKOUT"]
+
+    analyzer = RollingMetricsAnalyzer(target_hours_profile=prof.weekly_hours, athlete_lthr=prof.lthr_run)
+    report = analyzer.analyze_30d(wellness, act_dicts)
+
+    advisor = CoachingAdvisor(prof)
+    advice = advisor.advise(report, current_date=today)
+
+    if args.json:
+        print(json.dumps(advice.to_dict(), indent=2))
+    else:
+        for line in advice.to_lines():
+            print(line)
+
+
+def handle_export(cfg: Config, args: argparse.Namespace) -> None:
+    """Export scheduled workouts to Zwift (.zwo), iCalendar (.ics), or JSON."""
+    prof = AthleteProfileConfig.load()
+    client = IntervalsClient(api_key=cfg.api_key, athlete_id=cfg.athlete_id, base_url=cfg.base_url)
+    today = datetime.date.today()
+    start = today - datetime.timedelta(days=29)
+
+    wellness = client.get_wellness_range(start.isoformat(), today.isoformat())
+    acts = client.list_events(start.isoformat(), today.isoformat())
+    act_dicts = [a.to_dict() for a in acts if a.category != "WORKOUT"]
+
+    analyzer = RollingMetricsAnalyzer(target_hours_profile=prof.weekly_hours, athlete_lthr=prof.lthr_run)
+    report = analyzer.analyze_30d(wellness, act_dicts)
+
+    planner = DynamicRollingPlanner(prof)
+    events = planner.generate_plan(report, weeks_to_plan=args.weeks)
+
+    out_dir = Path(args.out_dir)
+    fmt = args.format.lower()
+
+    if fmt == "all":
+        res = PlanExporter.export_all(events, out_dir)
+        print(f"Exported plan files to {out_dir}:")
+        print(f"  - iCalendar: {res.get('ics')}")
+        print(f"  - JSON Plan: {res.get('json')}")
+        if res.get("zwo_dir"):
+            print(f"  - Zwift Workouts: {res.get('zwo_count')} files in {res.get('zwo_dir')}")
+    elif fmt == "ics":
+        out_dir.mkdir(parents=True, exist_ok=True)
+        ics_path = out_dir / "training_plan.ics"
+        ics_path.write_text(PlanExporter.events_to_ics(events), encoding="utf-8")
+        print(f"Exported iCalendar to {ics_path}")
+    elif fmt == "json":
+        out_dir.mkdir(parents=True, exist_ok=True)
+        json_path = out_dir / "training_plan.json"
+        json_path.write_text(PlanExporter.events_to_json(events), encoding="utf-8")
+        print(f"Exported JSON plan to {json_path}")
+    elif fmt == "zwo":
+        out_dir.mkdir(parents=True, exist_ok=True)
+        zwo_count = 0
+        for i, ev in enumerate(events):
+            xml = PlanExporter.event_to_zwo(ev)
+            if xml:
+                clean_name = "".join(c if c.isalnum() or c in "._-" else "_" for c in (ev.name or f"ride_{i}"))
+                fpath = out_dir / f"{clean_name}.zwo"
+                fpath.write_text(xml, encoding="utf-8")
+                zwo_count += 1
+        print(f"Exported {zwo_count} Zwift .zwo workout files to {out_dir}")
 
 
 def main() -> None:
@@ -641,7 +749,7 @@ def main() -> None:
             out_str = json.dumps(evs, indent=2)
             if args.output:
                 Path(args.output).write_text(out_str, encoding="utf-8")
-                print(f"✅ Exported {len(evs)} events to {args.output}")
+                print(f" Exported {len(evs)} events to {args.output}")
             else:
                 print(out_str)
         elif args.plan_command == "reschedule":
@@ -655,16 +763,14 @@ def main() -> None:
                 client = IntervalsClient(api_key=cfg.api_key, athlete_id=cfg.athlete_id, base_url=cfg.base_url)
                 sync_mgr = SyncManager(client=client, data_dir=cfg.data_dir, managed_prefix=plan.config.prefix)
                 sync_mgr.apply_sync(events, plan.config.start_date, "2026-12-27", force=True)
-                print("✅ Applied reschedule to Intervals.icu!")
+                print(" Applied reschedule to Intervals.icu!")
             else:
                 print("[DRY RUN] Rescheduled successfully in memory. Pass '--apply' to update live calendar.")
     elif args.subcommand == "events":
         if args.events_command == "list":
             handle_events_list(cfg, args)
         elif args.events_command == "show":
-            client = IntervalsClient(api_key=cfg.api_key, athlete_id=cfg.athlete_id, base_url=cfg.base_url)
-            ev = client.get_event(args.event_id)
-            print(json.dumps(ev.to_dict(), indent=2))
+            handle_events_show(cfg, args)
         elif args.events_command == "delete":
             handle_events_delete(cfg, args)
         elif args.events_command == "delete-by-prefix":
@@ -676,7 +782,7 @@ def main() -> None:
             if args.apply:
                 client = IntervalsClient(api_key=cfg.api_key, athlete_id=cfg.athlete_id, base_url=cfg.base_url)
                 client.bulk_upsert_events(events)
-                print(f"✅ Restored {len(events)} events to Intervals.icu!")
+                print(f" Restored {len(events)} events to Intervals.icu!")
             else:
                 print("[DRY RUN] Pass '--apply' to restore these events to Intervals.icu.")
     elif args.subcommand == "sync":
@@ -698,13 +804,19 @@ def main() -> None:
     elif args.subcommand == "audit":
         audit = AuditLogger(cfg.data_dir / "audit.log")
         entries = audit.list_entries(limit=20)
-        print(f"\n📜 Recent Audit Log Entries ({len(entries)}):")
+        print(f"\n Recent Audit Log Entries ({len(entries)}):")
         for ent in entries:
             print(f"  - [{ent['timestamp']}] {ent['action']} | Status: {ent['status']} | Targets: {len(ent['target_ids'])}")
     elif args.subcommand == "watch-research":
         print_watch_research()
     elif args.subcommand == "coros-status":
         handle_coros_status(cfg)
+    elif args.subcommand == "ui":
+        handle_ui(args)
+    elif args.subcommand == "coach":
+        handle_coach(cfg, args)
+    elif args.subcommand == "export":
+        handle_export(cfg, args)
 
 
 if __name__ == "__main__":

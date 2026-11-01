@@ -45,6 +45,13 @@ class DynamicRollingPlanner:
         total_hours = report.readiness.target_next_week_hours
         readiness = report.readiness
         is_strained = readiness.rhr_elevated or readiness.readiness_state in ["ELEVATED_FATIGUE", "RECOVERY_MANDATORY"]
+        
+        # Check periodization phase and life constraints
+        phase, weeks_out = self.profile.get_periodization_phase(cycle_start)
+        if phase == "taper":
+            total_hours = max(4.0, total_hours * 0.65)
+        elif phase == "peak":
+            total_hours = total_hours * 1.05
 
         for w_idx in range(weeks_to_plan):
             week_num = w_idx + 1

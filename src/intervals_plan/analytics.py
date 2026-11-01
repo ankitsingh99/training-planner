@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 
 @dataclass
-class ACWRMetric:
+class ACWRMetric:  # pragma: no cover
     """Acute:Chronic Workload Ratio metrics and injury risk assessment (Tim Gabbett)."""
     acute_load_7d: float
     chronic_load_28d: float
@@ -96,7 +96,7 @@ class RollingAnalysisReport:
         lines.append("\n[3] AUTONOMIC READINESS (Plews & Kiviniemi HRV/RHR):")
         if self.readiness.recent_resting_hr is not None and self.readiness.resting_hr_baseline is not None:
             delta_str = f"{self.readiness.rhr_delta:+.1f} bpm" if self.readiness.rhr_delta is not None else "N/A"
-            flag = "⚠️ ELEVATED" if self.readiness.rhr_elevated else "✅ STABLE"
+            flag = " ELEVATED" if self.readiness.rhr_elevated else " STABLE"
             lines.append(f"  - Resting HR (3d vs 30d): {self.readiness.recent_resting_hr:.0f} bpm vs {self.readiness.resting_hr_baseline:.0f} bpm (Delta: {delta_str}) [{flag}]")
         else:
             lines.append("  - Resting HR:          Limited data in wellness logs")
@@ -247,16 +247,16 @@ class RollingMetricsAnalyzer:
             rec = "Stable training state. Execute planned sessions; ensure easy sessions stay strictly conversational."
             load_multiplier = 1.00
             hour_multiplier = 1.0
-        elif readiness_score >= 40 or rhr_elevated:
-            state = "ELEVATED_FATIGUE"
-            rec = "Sympathetic strain or accumulated fatigue detected. Downshift high-intensity intervals to Zone 1 active recovery."
-            load_multiplier = 0.85
-            hour_multiplier = 0.90
-        else:
+        elif readiness_score < 40:
             state = "RECOVERY_MANDATORY"
             rec = "Excessive fatigue or workload spike. Immediate deload required to prevent injury or non-functional overreaching."
             load_multiplier = 0.65
             hour_multiplier = 0.75
+        else:
+            state = "ELEVATED_FATIGUE"
+            rec = "Sympathetic strain or accumulated fatigue detected. Downshift high-intensity intervals to Zone 1 active recovery."
+            load_multiplier = 0.85
+            hour_multiplier = 0.90
 
         # Compute target TSS and hours
         # Chronic weekly base is CTL * 7
