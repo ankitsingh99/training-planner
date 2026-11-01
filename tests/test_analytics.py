@@ -191,6 +191,11 @@ def test_analyze_30d_end_to_end_and_summary_lines():
     report = analyzer.analyze_30d(wellness, activities, end_date_str=end_str)
     assert report.total_activities == 3
     assert report.total_moving_hours > 0
+    assert len(report.daily_series) == 30
+    assert "ctl" in report.daily_series[-1]
+    assert "tsb" in report.daily_series[-1]
+    assert "acwr_ratio" in report.daily_series[-1]
+    assert "sports" in report.daily_series[-1]
 
     lines = report.summary_lines()
     assert len(lines) > 20

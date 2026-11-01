@@ -419,9 +419,47 @@ def get_app_html() -> str:
       height: 280px;
       background: #0f172a;
       border-radius: 8px;
-      padding: 1rem;
+      padding: 0.75rem 1rem;
       border: 1px solid var(--card-border);
       position: relative;
+    }
+    .chart-box-compact {
+      width: 100%;
+      height: 200px;
+      background: #0f172a;
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      border: 1px solid var(--card-border);
+      position: relative;
+    }
+    .chart-tooltip {
+      position: absolute;
+      display: none;
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid #334155;
+      border-radius: 6px;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.75rem;
+      color: #f1f5f9;
+      pointer-events: none;
+      z-index: 50;
+      white-space: nowrap;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+      line-height: 1.4;
+    }
+    .chart-legend {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1.25rem;
+      margin-top: 0.75rem;
+      font-size: 0.75rem;
+    }
+    .chart-legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-weight: 600;
     }
 
     .table {
@@ -557,27 +595,83 @@ def get_app_html() -> str:
     <!-- TAB 2: ANALYSIS & PMC -->
     <div id="tab-analysis" class="tab-content">
       <div class="card" style="margin-bottom: 1.5rem;">
-        <div class="card-title">Performance Management Chart (Banister / Coggan PMC)</div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+          <div class="card-title" style="margin-bottom:0;">Performance Management Chart (Banister / Coggan PMC - Rolling 30 Days)</div>
+          <div style="font-size:0.8125rem; color:var(--text-muted);" id="pmcDateRange">Rolling 30-Day Timeseries</div>
+        </div>
         <div class="chart-box" id="pmcChartContainer">
+          <div class="chart-tooltip" id="pmcTooltip"></div>
           <svg id="pmcChartSvg" width="100%" height="100%" viewBox="0 0 800 240" preserveAspectRatio="none">
-            <!-- Background grid lines -->
-            <line x1="0" y1="60" x2="800" y2="60" stroke="#1f2937" stroke-dasharray="4"/>
-            <line x1="0" y1="120" x2="800" y2="120" stroke="#374151" stroke-dasharray="2"/>
-            <line x1="0" y1="180" x2="800" y2="180" stroke="#1f2937" stroke-dasharray="4"/>
-            <!-- Curves dynamically injected -->
-            <path id="ctlPath" d="M 0 140 Q 400 120 800 110" fill="none" stroke="#06b6d4" stroke-width="3"/>
-            <path id="atlPath" d="M 0 150 Q 400 100 800 90" fill="none" stroke="#f43f5e" stroke-width="2"/>
-            <path id="tsbPath" d="M 0 120 Q 400 130 800 140" fill="none" stroke="#10b981" stroke-width="2" stroke-dasharray="5"/>
           </svg>
         </div>
-        <div style="display:flex; justify-content:center; gap: 2rem; margin-top: 1rem; font-size: 0.8125rem;">
-          <span style="color:#06b6d4; font-weight:700;">— CTL (Fitness 42d)</span>
-          <span style="color:#f43f5e; font-weight:700;">— ATL (Fatigue 7d)</span>
-          <span style="color:#10b981; font-weight:700;">-- TSB (Form)</span>
+        <div class="chart-legend">
+          <span class="chart-legend-item" style="color:#06b6d4;">— CTL (Fitness 42d)</span>
+          <span class="chart-legend-item" style="color:#f43f5e;">— ATL (Fatigue 7d)</span>
+          <span class="chart-legend-item" style="color:#10b981;">-- TSB (Form = CTL - ATL)</span>
+          <span class="chart-legend-item" style="color:#64748b;">··· Baseline (TSB = 0)</span>
         </div>
       </div>
 
-      <div class="grid-2">
+      <!-- Grid 2: ACWR & RHR Trends -->
+      <div class="grid-2" style="margin-bottom: 1.5rem;">
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+            <div class="card-title" style="margin-bottom:0;">Acute:Chronic Workload Ratio (ACWR Trend)</div>
+            <span id="acwrRatioBadge" class="periodization-badge" style="background:rgba(16,185,129,0.2); color:var(--success);">Sweet Spot</span>
+          </div>
+          <div class="chart-box-compact" id="acwrChartContainer">
+            <div class="chart-tooltip" id="acwrTooltip"></div>
+            <svg id="acwrChartSvg" width="100%" height="100%" viewBox="0 0 450 180" preserveAspectRatio="none">
+            </svg>
+          </div>
+          <div class="chart-legend">
+            <span class="chart-legend-item" style="color:#38bdf8;">— ACWR Ratio</span>
+            <span class="chart-legend-item" style="color:#10b981;">■ Sweet Spot (0.8-1.3)</span>
+            <span class="chart-legend-item" style="color:#f59e0b;">■ Caution (1.3-1.5)</span>
+            <span class="chart-legend-item" style="color:#ef4444;">■ Danger (>1.5)</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+            <div class="card-title" style="margin-bottom:0;">Autonomic Recovery: Resting HR Trend</div>
+            <span id="rhrStrainBadge" class="periodization-badge" style="background:rgba(16,185,129,0.2); color:var(--success);">Autonomic Green</span>
+          </div>
+          <div class="chart-box-compact" id="rhrChartContainer">
+            <div class="chart-tooltip" id="rhrTooltip"></div>
+            <svg id="rhrChartSvg" width="100%" height="100%" viewBox="0 0 450 180" preserveAspectRatio="none">
+            </svg>
+          </div>
+          <div class="chart-legend">
+            <span class="chart-legend-item" style="color:#38bdf8;">● Daily Resting HR</span>
+            <span class="chart-legend-item" style="color:#94a3b8;">-- 30d Baseline</span>
+            <span class="chart-legend-item" style="color:#ef4444;">-- +4 bpm Strain Alert</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Daily Training Load & Volume (Stacked Discipline TSS) -->
+      <div class="card" style="margin-bottom: 1.5rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+          <div class="card-title" style="margin-bottom:0;">Daily Training Load & Volume (Stacked Discipline TSS)</div>
+          <div style="font-size:0.8125rem; color:var(--text-muted);" id="totalVolumeLoadSummary">-- hrs | -- TSS</div>
+        </div>
+        <div class="chart-box-compact" id="loadChartContainer">
+          <div class="chart-tooltip" id="loadTooltip"></div>
+          <svg id="loadChartSvg" width="100%" height="100%" viewBox="0 0 800 180" preserveAspectRatio="none">
+          </svg>
+        </div>
+        <div class="chart-legend">
+          <span class="chart-legend-item" style="color:#06b6d4;">■ Run</span>
+          <span class="chart-legend-item" style="color:#f59e0b;">■ Ride</span>
+          <span class="chart-legend-item" style="color:#38bdf8;">■ Swim</span>
+          <span class="chart-legend-item" style="color:#a855f7;">■ Brick/Duathlon</span>
+          <span class="chart-legend-item" style="color:#64748b;">■ Other</span>
+        </div>
+      </div>
+
+      <!-- Grid 2: Polarization & Discipline Breakdown -->
+      <div class="grid-2" style="margin-bottom: 1.5rem;">
         <div class="card">
           <div class="card-title">Stephen Seiler 80/20 Intensity Polarization</div>
           <div style="margin: 1.5rem 0;">
@@ -615,7 +709,7 @@ def get_app_html() -> str:
       </div>
 
       <!-- Plan Compliance & Execution Card -->
-      <div class="card" style="margin-top: 1.5rem;">
+      <div class="card" style="margin-bottom: 1.5rem;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
           <div class="card-title" style="margin-bottom:0;">Plan Compliance & Execution (Rolling 28 Days)</div>
           <span id="compRatingBadge" class="periodization-badge" style="background:rgba(16,185,129,0.2); color:var(--success);">Optimal</span>
@@ -638,6 +732,52 @@ def get_app_html() -> str:
           </div>
         </div>
         <div id="compObservations" style="font-size:0.8125rem; color:#d1d5db; line-height:1.5;"></div>
+      </div>
+
+      <!-- Post-Workout Aerobic Decoupling & Debrief Card -->
+      <div class="card">
+        <div class="card-title">Aerobic Decoupling & Post-Workout Session Debrief</div>
+        <p class="card-subtext" style="margin-bottom:1rem;">Evaluate cardiac drift (Pw:HR or Pa:HR % drift) and aerobic efficiency stability to adapt next-day recovery.</p>
+        <div class="grid-2">
+          <div>
+            <form id="reviewForm" onsubmit="submitSessionReview(event)">
+              <div class="form-group" style="margin-bottom:0.75rem;">
+                <label class="form-label">Sport Discipline</label>
+                <select id="revSport" class="form-select">
+                  <option value="Run">Run</option>
+                  <option value="Ride">Ride</option>
+                  <option value="Swim">Swim</option>
+                  <option value="Duathlon">Duathlon</option>
+                  <option value="Brick">Brick (Bike-to-Run)</option>
+                </select>
+              </div>
+              <div class="grid-2" style="margin-bottom:0.75rem;">
+                <div class="form-group">
+                  <label class="form-label">Duration (Minutes)</label>
+                  <input type="number" id="revDuration" class="form-input" value="60" min="10" max="480">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">RPE Exertion (1-10)</label>
+                  <input type="number" id="revRpe" class="form-input" value="6" min="1" max="10">
+                </div>
+              </div>
+              <div class="form-group" style="margin-bottom:0.75rem;">
+                <label class="form-label">Aerobic Decoupling / Cardiac Drift (% drift)</label>
+                <input type="number" step="0.1" id="revDecoupling" class="form-input" value="3.2" placeholder="e.g. 3.2">
+              </div>
+              <button type="submit" class="btn" style="width:100%;">Evaluate Aerobic Efficiency</button>
+            </form>
+          </div>
+          <div style="background:#0f172a; border:1px solid #1f2937; border-radius:8px; padding:1rem;">
+            <div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; font-weight:700; margin-bottom:0.5rem;">Aerobic Efficiency Gauge</div>
+            <div id="decouplingGaugeContainer" style="height:90px;">
+              <svg id="decouplingGaugeSvg" width="100%" height="100%" viewBox="0 0 350 90">
+              </svg>
+            </div>
+            <div id="decouplingVerdict" style="font-size:0.875rem; font-weight:700; color:var(--success); margin-top:0.5rem;">Optimal Base Coupling (&lt;5% drift)</div>
+            <div id="decouplingFeedback" style="font-size:0.75rem; color:#94a3b8; margin-top:4px; line-height:1.4;">Heart rate to output ratio remained stable across the session.</div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1032,6 +1172,31 @@ def get_app_html() -> str:
           } else if (a.status === 'SWEET_SPOT') {
             document.getElementById('acwrBarFill').style.background = 'var(--success)';
           }
+
+          const b = document.getElementById('acwrRatioBadge');
+          if (b) {
+            b.innerText = a.status.replace('_', ' ');
+            if (a.status === 'SWEET_SPOT') {
+              b.style.background = 'rgba(16,185,129,0.2)';
+              b.style.color = 'var(--success)';
+            } else if (a.status === 'DANGER_ZONE') {
+              b.style.background = 'rgba(239,68,68,0.2)';
+              b.style.color = 'var(--danger)';
+            } else {
+              b.style.background = 'rgba(245,158,11,0.2)';
+              b.style.color = 'var(--warning)';
+            }
+          }
+        }
+
+        if (currentAnalytics && currentAnalytics.readiness) {
+          const r = currentAnalytics.readiness;
+          const rBadge = document.getElementById('rhrStrainBadge');
+          if (rBadge) {
+            rBadge.innerText = r.rhr_elevated ? 'Autonomic Strain (+4 bpm)' : 'Autonomic Stable';
+            rBadge.style.background = r.rhr_elevated ? 'rgba(239,68,68,0.2)' : 'rgba(16,185,129,0.2)';
+            rBadge.style.color = r.rhr_elevated ? 'var(--danger)' : 'var(--success)';
+          }
         }
 
         // Coaching briefing
@@ -1184,6 +1349,20 @@ def get_app_html() -> str:
     function populateAnalysisTab(data) {
       if (!data) return;
 
+      const series = data.daily_series || [];
+
+      // Render all metric charts
+      renderPmcChart(series);
+      renderAcwrChart(series);
+      renderRhrChart(series, data.readiness ? data.readiness.resting_hr_baseline : null);
+      renderDailyLoadChart(series);
+      renderDecouplingGauge(3.2);
+
+      const sumEl = document.getElementById('totalVolumeLoadSummary');
+      if (sumEl) {
+        sumEl.innerText = (data.total_moving_hours || 0) + ' hrs | ' + (data.total_load_tss || 0) + ' TSS';
+      }
+
       // Intensity distribution
       if (data.intensity_distribution) {
         const d = data.intensity_distribution;
@@ -1212,6 +1391,553 @@ def get_app_html() -> str:
           `;
           tbody.appendChild(tr);
         }
+      }
+    }
+
+    function renderPmcChart(series) {
+      const svg = document.getElementById('pmcChartSvg');
+      if (!svg || !series || series.length === 0) return;
+
+      const w = 800, h = 240;
+      const padL = 45, padR = 25, padT = 20, padB = 30;
+      const pw = w - padL - padR;
+      const ph = h - padT - padB;
+
+      let allVals = [];
+      series.forEach(d => {
+        allVals.push(d.ctl, d.atl, d.tsb);
+      });
+      let minVal = Math.min(...allVals, -20);
+      let maxVal = Math.max(...allVals, 60);
+      const span = maxVal - minVal || 1;
+      minVal -= span * 0.05;
+      maxVal += span * 0.05;
+
+      const getX = (i) => padL + (i / (series.length - 1)) * pw;
+      const getY = (val) => padT + ph - ((val - minVal) / (maxVal - minVal)) * ph;
+      const y0 = getY(0);
+
+      let gridSvg = '';
+      const ySteps = 4;
+      for (let s = 0; s <= ySteps; s++) {
+        const val = minVal + (s / ySteps) * (maxVal - minVal);
+        const yPos = getY(val);
+        gridSvg += `<line x1="${padL}" y1="${yPos}" x2="${w - padR}" y2="${yPos}" stroke="#1f2937" stroke-dasharray="3"/>`;
+        gridSvg += `<text x="${padL - 8}" y="${yPos + 4}" fill="#6b7280" font-size="10" text-anchor="end">${Math.round(val)}</text>`;
+      }
+
+      if (y0 >= padT && y0 <= padT + ph) {
+        gridSvg += `<line x1="${padL}" y1="${y0}" x2="${w - padR}" y2="${y0}" stroke="#4b5563" stroke-width="1.5" stroke-dasharray="4"/>`;
+        gridSvg += `<text x="${w - padR + 4}" y="${y0 + 3}" fill="#9ca3af" font-size="10">0</text>`;
+      }
+
+      let dateSvg = '';
+      for (let i = 0; i < series.length; i += 5) {
+        const xPos = getX(i);
+        const dt = series[i].date ? series[i].date.slice(5) : '';
+        dateSvg += `<text x="${xPos}" y="${h - 10}" fill="#6b7280" font-size="10" text-anchor="middle">${dt}</text>`;
+      }
+      const lastX = getX(series.length - 1);
+      const lastDt = series[series.length - 1].date ? series[series.length - 1].date.slice(5) : '';
+      dateSvg += `<text x="${lastX}" y="${h - 10}" fill="#9ca3af" font-size="10" text-anchor="middle">${lastDt}</text>`;
+
+      const ctlPoints = series.map((d, i) => `${getX(i).toFixed(1)},${getY(d.ctl).toFixed(1)}`).join(' L ');
+      const atlPoints = series.map((d, i) => `${getX(i).toFixed(1)},${getY(d.atl).toFixed(1)}`).join(' L ');
+      const tsbPoints = series.map((d, i) => `${getX(i).toFixed(1)},${getY(d.tsb).toFixed(1)}`).join(' L ');
+
+      const tsbAreaPoints = `M ${getX(0).toFixed(1)},${y0.toFixed(1)} L ` +
+        series.map((d, i) => `${getX(i).toFixed(1)},${getY(d.tsb).toFixed(1)}`).join(' L ') +
+        ` L ${getX(series.length - 1).toFixed(1)},${y0.toFixed(1)} Z`;
+
+      svg.innerHTML = `
+        <defs>
+          <linearGradient id="tsbGradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#10b981" stop-opacity="0.25"/>
+            <stop offset="100%" stop-color="#f43f5e" stop-opacity="0.15"/>
+          </linearGradient>
+        </defs>
+        ${gridSvg}
+        ${dateSvg}
+        <path d="${tsbAreaPoints}" fill="url(#tsbGradient)"/>
+        <path d="M ${ctlPoints}" fill="none" stroke="#06b6d4" stroke-width="2.5" stroke-linecap="round"/>
+        <path d="M ${atlPoints}" fill="none" stroke="#f43f5e" stroke-width="2" stroke-linecap="round"/>
+        <path d="M ${tsbPoints}" fill="none" stroke="#10b981" stroke-width="2" stroke-dasharray="4" stroke-linecap="round"/>
+        <line id="pmcCrosshair" x1="0" y1="${padT}" x2="0" y2="${padT + ph}" stroke="#94a3b8" stroke-dasharray="2" opacity="0"/>
+      `;
+
+      const container = document.getElementById('pmcChartContainer');
+      const tooltip = document.getElementById('pmcTooltip');
+      if (container && tooltip) {
+        container.onmousemove = function(e) {
+          const rect = container.getBoundingClientRect();
+          const mouseX = e.clientX - rect.left;
+          const relX = (mouseX / rect.width) * w;
+          if (relX < padL || relX > w - padR) {
+            tooltip.style.display = 'none';
+            const ch = document.getElementById('pmcCrosshair');
+            if (ch) ch.setAttribute('opacity', '0');
+            return;
+          }
+          const frac = (relX - padL) / pw;
+          const idx = Math.min(series.length - 1, Math.max(0, Math.round(frac * (series.length - 1))));
+          const pt = series[idx];
+          const ptX = getX(idx);
+
+          const ch = document.getElementById('pmcCrosshair');
+          if (ch) {
+            ch.setAttribute('x1', ptX);
+            ch.setAttribute('x2', ptX);
+            ch.setAttribute('opacity', '0.7');
+          }
+
+          tooltip.style.display = 'block';
+          tooltip.style.left = Math.min(rect.width - 160, Math.max(10, mouseX - 60)) + 'px';
+          tooltip.style.top = '15px';
+          tooltip.innerHTML = `
+            <div style="font-weight:700; color:#fff; border-bottom:1px solid #334155; padding-bottom:2px; margin-bottom:4px;">${pt.date}</div>
+            <div style="color:#06b6d4;">CTL (Fitness): <strong>${pt.ctl}</strong></div>
+            <div style="color:#f43f5e;">ATL (Fatigue): <strong>${pt.atl}</strong></div>
+            <div style="color:#10b981;">TSB (Form): <strong>${(pt.tsb >= 0 ? '+' : '') + pt.tsb}</strong></div>
+            <div style="color:#94a3b8; font-size:0.7rem; margin-top:2px;">Daily Load: ${pt.load_tss} TSS</div>
+          `;
+        };
+        container.onmouseleave = function() {
+          tooltip.style.display = 'none';
+          const ch = document.getElementById('pmcCrosshair');
+          if (ch) ch.setAttribute('opacity', '0');
+        };
+      }
+    }
+
+    function renderAcwrChart(series) {
+      const svg = document.getElementById('acwrChartSvg');
+      if (!svg || !series || series.length === 0) return;
+
+      const w = 450, h = 180;
+      const padL = 40, padR = 20, padT = 15, padB = 25;
+      const pw = w - padL - padR;
+      const ph = h - padT - padB;
+
+      const minVal = 0.0;
+      const maxVal = 2.0;
+      const getX = (i) => padL + (i / (series.length - 1)) * pw;
+      const getY = (val) => padT + ph - (Math.min(maxVal, Math.max(minVal, val)) / maxVal) * ph;
+
+      const y1_5 = getY(1.5);
+      const y1_3 = getY(1.3);
+      const y0_8 = getY(0.8);
+      const y0_0 = getY(0.0);
+
+      let zonesSvg = `
+        <rect x="${padL}" y="${padT}" width="${pw}" height="${y1_5 - padT}" fill="rgba(239, 68, 68, 0.15)"/>
+        <rect x="${padL}" y="${y1_5}" width="${pw}" height="${y1_3 - y1_5}" fill="rgba(245, 158, 11, 0.15)"/>
+        <rect x="${padL}" y="${y1_3}" width="${pw}" height="${y0_8 - y1_3}" fill="rgba(16, 185, 129, 0.15)"/>
+        <rect x="${padL}" y="${y0_8}" width="${pw}" height="${y0_0 - y0_8}" fill="rgba(100, 116, 139, 0.08)"/>
+
+        <line x1="${padL}" y1="${y1_5}" x2="${w - padR}" y2="${y1_5}" stroke="#ef4444" stroke-width="1" stroke-dasharray="3"/>
+        <line x1="${padL}" y1="${y1_3}" x2="${w - padR}" y2="${y1_3}" stroke="#f59e0b" stroke-width="1" stroke-dasharray="3"/>
+        <line x1="${padL}" y1="${y0_8}" x2="${w - padR}" y2="${y0_8}" stroke="#10b981" stroke-width="1" stroke-dasharray="3"/>
+        
+        <text x="${padL - 6}" y="${y1_5 + 3}" fill="#ef4444" font-size="9" text-anchor="end">1.5</text>
+        <text x="${padL - 6}" y="${y1_3 + 3}" fill="#f59e0b" font-size="9" text-anchor="end">1.3</text>
+        <text x="${padL - 6}" y="${y0_8 + 3}" fill="#10b981" font-size="9" text-anchor="end">0.8</text>
+        <text x="${padL - 6}" y="${y0_0 + 3}" fill="#6b7280" font-size="9" text-anchor="end">0.0</text>
+      `;
+
+      let dateSvg = '';
+      for (let i = 0; i < series.length; i += 7) {
+        const xPos = getX(i);
+        const dt = series[i].date ? series[i].date.slice(5) : '';
+        dateSvg += `<text x="${xPos}" y="${h - 8}" fill="#6b7280" font-size="9" text-anchor="middle">${dt}</text>`;
+      }
+      const lastX = getX(series.length - 1);
+      const lastDt = series[series.length - 1].date ? series[series.length - 1].date.slice(5) : '';
+      dateSvg += `<text x="${lastX}" y="${h - 8}" fill="#9ca3af" font-size="9" text-anchor="middle">${lastDt}</text>`;
+
+      const ratioPoints = series.map((d, i) => `${getX(i).toFixed(1)},${getY(d.acwr_ratio).toFixed(1)}`).join(' L ');
+
+      svg.innerHTML = `
+        ${zonesSvg}
+        ${dateSvg}
+        <path d="M ${ratioPoints}" fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round"/>
+        <line id="acwrCrosshair" x1="0" y1="${padT}" x2="0" y2="${padT + ph}" stroke="#94a3b8" stroke-dasharray="2" opacity="0"/>
+      `;
+
+      const container = document.getElementById('acwrChartContainer');
+      const tooltip = document.getElementById('acwrTooltip');
+      if (container && tooltip) {
+        container.onmousemove = function(e) {
+          const rect = container.getBoundingClientRect();
+          const mouseX = e.clientX - rect.left;
+          const relX = (mouseX / rect.width) * w;
+          if (relX < padL || relX > w - padR) {
+            tooltip.style.display = 'none';
+            const ch = document.getElementById('acwrCrosshair');
+            if (ch) ch.setAttribute('opacity', '0');
+            return;
+          }
+          const frac = (relX - padL) / pw;
+          const idx = Math.min(series.length - 1, Math.max(0, Math.round(frac * (series.length - 1))));
+          const pt = series[idx];
+          const ptX = getX(idx);
+
+          const ch = document.getElementById('acwrCrosshair');
+          if (ch) {
+            ch.setAttribute('x1', ptX);
+            ch.setAttribute('x2', ptX);
+            ch.setAttribute('opacity', '0.7');
+          }
+
+          let statusColor = '#10b981', statusTxt = 'Sweet Spot';
+          if (pt.acwr_ratio > 1.5) { statusColor = '#ef4444'; statusTxt = 'Danger Zone'; }
+          else if (pt.acwr_ratio > 1.3) { statusColor = '#f59e0b'; statusTxt = 'Elevated Load'; }
+          else if (pt.acwr_ratio < 0.8) { statusColor = '#64748b'; statusTxt = 'Under-training'; }
+
+          tooltip.style.display = 'block';
+          tooltip.style.left = Math.min(rect.width - 150, Math.max(10, mouseX - 60)) + 'px';
+          tooltip.style.top = '15px';
+          tooltip.innerHTML = `
+            <div style="font-weight:700; color:#fff; border-bottom:1px solid #334155; padding-bottom:2px; margin-bottom:4px;">${pt.date}</div>
+            <div style="color:#38bdf8;">ACWR Ratio: <strong>${pt.acwr_ratio.toFixed(2)}</strong></div>
+            <div style="color:${statusColor}; font-size:0.7rem;">Status: ${statusTxt}</div>
+          `;
+        };
+        container.onmouseleave = function() {
+          tooltip.style.display = 'none';
+          const ch = document.getElementById('acwrCrosshair');
+          if (ch) ch.setAttribute('opacity', '0');
+        };
+      }
+    }
+
+    function renderRhrChart(series, baseline) {
+      const svg = document.getElementById('rhrChartSvg');
+      if (!svg || !series || series.length === 0) return;
+
+      const w = 450, h = 180;
+      const padL = 40, padR = 20, padT = 15, padB = 25;
+      const pw = w - padL - padR;
+      const ph = h - padT - padB;
+
+      const rhrs = series.map(d => d.resting_hr).filter(v => v !== null && v !== undefined && v > 30);
+      const baseVal = baseline || (rhrs.length ? (rhrs.reduce((a, b) => a + b, 0) / rhrs.length) : 50);
+      const minVal = Math.min(baseVal - 8, rhrs.length ? Math.min(...rhrs) - 3 : 40);
+      const maxVal = Math.max(baseVal + 10, rhrs.length ? Math.max(...rhrs) + 3 : 65);
+
+      const getX = (i) => padL + (i / (series.length - 1)) * pw;
+      const getY = (val) => padT + ph - ((val - minVal) / (maxVal - minVal || 1)) * ph;
+
+      const yBase = getY(baseVal);
+      const yStrain = getY(baseVal + 4.0);
+
+      let gridSvg = `
+        <line x1="${padL}" y1="${yBase}" x2="${w - padR}" y2="${yBase}" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4"/>
+        <text x="${w - padR - 5}" y="${yBase - 4}" fill="#94a3b8" font-size="9" text-anchor="end">Base: ${Math.round(baseVal)} bpm</text>
+
+        <line x1="${padL}" y1="${yStrain}" x2="${w - padR}" y2="${yStrain}" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="3"/>
+        <text x="${w - padR - 5}" y="${yStrain - 4}" fill="#ef4444" font-size="9" text-anchor="end">+4 bpm Strain</text>
+
+        <text x="${padL - 6}" y="${yBase + 3}" fill="#94a3b8" font-size="9" text-anchor="end">${Math.round(baseVal)}</text>
+        <text x="${padL - 6}" y="${yStrain + 3}" fill="#ef4444" font-size="9" text-anchor="end">${Math.round(baseVal + 4)}</text>
+      `;
+
+      let dateSvg = '';
+      for (let i = 0; i < series.length; i += 7) {
+        const xPos = getX(i);
+        const dt = series[i].date ? series[i].date.slice(5) : '';
+        dateSvg += `<text x="${xPos}" y="${h - 8}" fill="#6b7280" font-size="9" text-anchor="middle">${dt}</text>`;
+      }
+      const lastX = getX(series.length - 1);
+      const lastDt = series[series.length - 1].date ? series[series.length - 1].date.slice(5) : '';
+      dateSvg += `<text x="${lastX}" y="${h - 8}" fill="#9ca3af" font-size="9" text-anchor="middle">${lastDt}</text>`;
+
+      const validPoints = [];
+      series.forEach((d, i) => {
+        if (d.resting_hr) {
+          validPoints.push({ x: getX(i), y: getY(d.resting_hr), hr: d.resting_hr, idx: i, date: d.date });
+        }
+      });
+
+      let linePath = '';
+      if (validPoints.length > 1) {
+        linePath = 'M ' + validPoints.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' L ');
+      }
+
+      let dotsSvg = '';
+      validPoints.forEach(p => {
+        const isElevated = p.hr >= baseVal + 4.0;
+        const color = isElevated ? '#ef4444' : '#10b981';
+        dotsSvg += `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3.5" fill="${color}" stroke="#0f172a" stroke-width="1"/>`;
+      });
+
+      svg.innerHTML = `
+        ${gridSvg}
+        ${dateSvg}
+        ${linePath ? `<path d="${linePath}" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round"/>` : ''}
+        ${dotsSvg}
+        <line id="rhrCrosshair" x1="0" y1="${padT}" x2="0" y2="${padT + ph}" stroke="#94a3b8" stroke-dasharray="2" opacity="0"/>
+      `;
+
+      const container = document.getElementById('rhrChartContainer');
+      const tooltip = document.getElementById('rhrTooltip');
+      if (container && tooltip) {
+        container.onmousemove = function(e) {
+          const rect = container.getBoundingClientRect();
+          const mouseX = e.clientX - rect.left;
+          const relX = (mouseX / rect.width) * w;
+          if (relX < padL || relX > w - padR) {
+            tooltip.style.display = 'none';
+            const ch = document.getElementById('rhrCrosshair');
+            if (ch) ch.setAttribute('opacity', '0');
+            return;
+          }
+          const frac = (relX - padL) / pw;
+          const idx = Math.min(series.length - 1, Math.max(0, Math.round(frac * (series.length - 1))));
+          const pt = series[idx];
+          const ptX = getX(idx);
+
+          const ch = document.getElementById('rhrCrosshair');
+          if (ch) {
+            ch.setAttribute('x1', ptX);
+            ch.setAttribute('x2', ptX);
+            ch.setAttribute('opacity', '0.7');
+          }
+
+          if (!pt.resting_hr) {
+            tooltip.style.display = 'none';
+            return;
+          }
+
+          const delta = (pt.resting_hr - baseVal);
+          const isElevated = delta >= 4.0;
+
+          tooltip.style.display = 'block';
+          tooltip.style.left = Math.min(rect.width - 150, Math.max(10, mouseX - 60)) + 'px';
+          tooltip.style.top = '15px';
+          tooltip.innerHTML = `
+            <div style="font-weight:700; color:#fff; border-bottom:1px solid #334155; padding-bottom:2px; margin-bottom:4px;">${pt.date}</div>
+            <div style="color:#38bdf8;">Resting HR: <strong>${Math.round(pt.resting_hr)} bpm</strong></div>
+            <div style="color:${isElevated ? '#ef4444' : '#10b981'}; font-size:0.7rem;">Delta: ${(delta >= 0 ? '+' : '') + delta.toFixed(1)} bpm [${isElevated ? 'STRAIN' : 'STABLE'}]</div>
+          `;
+        };
+        container.onmouseleave = function() {
+          tooltip.style.display = 'none';
+          const ch = document.getElementById('rhrCrosshair');
+          if (ch) ch.setAttribute('opacity', '0');
+        };
+      }
+    }
+
+    function renderDailyLoadChart(series) {
+      const svg = document.getElementById('loadChartSvg');
+      if (!svg || !series || series.length === 0) return;
+
+      const w = 800, h = 180;
+      const padL = 45, padR = 25, padT = 15, padB = 25;
+      const pw = w - padL - padR;
+      const ph = h - padT - padB;
+
+      const maxLoad = Math.max(100, Math.max(...series.map(d => d.load_tss || 0)) * 1.15);
+      const getX = (i) => padL + (i / series.length) * pw;
+      const barW = Math.max(4, (pw / series.length) * 0.75);
+      const getY = (val) => padT + ph - (Math.min(maxLoad, val) / maxLoad) * ph;
+      const y0 = padT + ph;
+
+      let gridSvg = '';
+      const ySteps = 3;
+      for (let s = 0; s <= ySteps; s++) {
+        const val = (s / ySteps) * maxLoad;
+        const yPos = getY(val);
+        gridSvg += `<line x1="${padL}" y1="${yPos}" x2="${w - padR}" y2="${yPos}" stroke="#1f2937" stroke-dasharray="3"/>`;
+        gridSvg += `<text x="${padL - 8}" y="${yPos + 4}" fill="#6b7280" font-size="10" text-anchor="end">${Math.round(val)}</text>`;
+      }
+
+      const sportColors = {
+        'Run': '#06b6d4',
+        'Ride': '#f59e0b',
+        'Swim': '#38bdf8',
+        'Brick': '#a855f7',
+        'Duathlon': '#a855f7',
+        'Other': '#64748b'
+      };
+
+      let barsSvg = '';
+      series.forEach((d, i) => {
+        const bx = getX(i) + (pw / series.length - barW) / 2;
+        const sports = d.sports || {};
+        let currentY = y0;
+
+        const sportEntries = Object.entries(sports);
+        if (sportEntries.length > 0 && d.load_tss > 0) {
+          sportEntries.forEach(([sp, load]) => {
+            const segH = (load / maxLoad) * ph;
+            const color = sportColors[sp] || sportColors['Other'];
+            barsSvg += `<rect x="${bx.toFixed(1)}" y="${(currentY - segH).toFixed(1)}" width="${barW.toFixed(1)}" height="${segH.toFixed(1)}" fill="${color}" rx="1"/>`;
+            currentY -= segH;
+          });
+        } else if (d.load_tss > 0) {
+          const segH = (d.load_tss / maxLoad) * ph;
+          barsSvg += `<rect x="${bx.toFixed(1)}" y="${(currentY - segH).toFixed(1)}" width="${barW.toFixed(1)}" height="${segH.toFixed(1)}" fill="#06b6d4" rx="1"/>`;
+        } else {
+          barsSvg += `<circle cx="${(bx + barW / 2).toFixed(1)}" cy="${(y0 - 2).toFixed(1)}" r="1.5" fill="#334155"/>`;
+        }
+      });
+
+      let dateSvg = '';
+      for (let i = 0; i < series.length; i += 5) {
+        const bx = getX(i) + (pw / series.length) / 2;
+        const dt = series[i].date ? series[i].date.slice(5) : '';
+        dateSvg += `<text x="${bx}" y="${h - 8}" fill="#6b7280" font-size="10" text-anchor="middle">${dt}</text>`;
+      }
+
+      svg.innerHTML = `
+        ${gridSvg}
+        ${dateSvg}
+        ${barsSvg}
+      `;
+
+      const container = document.getElementById('loadChartContainer');
+      const tooltip = document.getElementById('loadTooltip');
+      if (container && tooltip) {
+        container.onmousemove = function(e) {
+          const rect = container.getBoundingClientRect();
+          const mouseX = e.clientX - rect.left;
+          const relX = (mouseX / rect.width) * w;
+          if (relX < padL || relX > w - padR) {
+            tooltip.style.display = 'none';
+            return;
+          }
+          const frac = (relX - padL) / pw;
+          const idx = Math.min(series.length - 1, Math.max(0, Math.floor(frac * series.length)));
+          const pt = series[idx];
+
+          let sportLines = '';
+          if (pt.sports && Object.keys(pt.sports).length > 0) {
+            sportLines = Object.entries(pt.sports).map(([sp, val]) =>
+              `<div style="font-size:0.7rem; color:${sportColors[sp] || '#94a3b8'};">• ${sp}: <strong>${val} TSS</strong></div>`
+            ).join('');
+          }
+
+          tooltip.style.display = 'block';
+          tooltip.style.left = Math.min(rect.width - 160, Math.max(10, mouseX - 60)) + 'px';
+          tooltip.style.top = '15px';
+          tooltip.innerHTML = `
+            <div style="font-weight:700; color:#fff; border-bottom:1px solid #334155; padding-bottom:2px; margin-bottom:4px;">${pt.date}</div>
+            <div style="color:#06b6d4;">Total Load: <strong>${pt.load_tss} TSS</strong></div>
+            <div style="color:#f1f5f9; font-size:0.7rem;">Moving Time: ${pt.moving_hours} hrs</div>
+            ${sportLines ? `<div style="margin-top:4px; border-top:1px dashed #334155; padding-top:2px;">${sportLines}</div>` : ''}
+          `;
+        };
+        container.onmouseleave = function() {
+          tooltip.style.display = 'none';
+        };
+      }
+    }
+
+    function renderDecouplingGauge(pct) {
+      const svg = document.getElementById('decouplingGaugeSvg');
+      if (!svg) return;
+
+      const val = pct !== null && pct !== undefined ? parseFloat(pct) : 3.5;
+      const w = 350, h = 90;
+      const padL = 20, padR = 20;
+      const barY = 32, barH = 16, barW = w - padL - padR;
+
+      const maxScale = 12.0;
+      const getX = (v) => padL + (Math.min(maxScale, Math.max(0, v)) / maxScale) * barW;
+
+      const x3 = getX(3.0);
+      const x5 = getX(5.0);
+      const x7_5 = getX(7.5);
+      const x12 = getX(12.0);
+
+      const markerX = getX(val);
+
+      let verdict = 'Optimal Base Coupling (<5% drift)';
+      let verdictColor = 'var(--success)';
+      let feedback = 'Heart rate to output ratio remained stable across the session.';
+
+      if (val < 3.0) {
+        verdict = 'Superior Aerobic Coupling (<3% drift)';
+        verdictColor = 'var(--accent)';
+        feedback = 'Exceptional cardiac stability; no aerobic fatigue or decoupling observed.';
+      } else if (val <= 5.0) {
+        verdict = 'Optimal Base Coupling (<5% drift)';
+        verdictColor = 'var(--success)';
+        feedback = 'Aerobic endurance system is stable and well-conditioned for this duration.';
+      } else if (val <= 7.5) {
+        verdict = 'Mild Aerobic Strain (5-7.5% drift)';
+        verdictColor = 'var(--warning)';
+        feedback = 'Mild cardiac drift detected. Ensure adequate hydration, electrolyte intake, and 24h easy recovery.';
+      } else {
+        verdict = 'Significant Cardiac Drift (>7.5% drift)';
+        verdictColor = 'var(--danger)';
+        feedback = 'Noticeable aerobic decoupling (>7.5%) due to cumulative fatigue, thermal stress, or glycogen depletion. Prioritize recovery.';
+      }
+
+      const vEl = document.getElementById('decouplingVerdict');
+      if (vEl) {
+        vEl.innerText = verdict;
+        vEl.style.color = verdictColor;
+      }
+      const fEl = document.getElementById('decouplingFeedback');
+      if (fEl) {
+        fEl.innerText = feedback;
+      }
+
+      svg.innerHTML = `
+        <rect x="${padL}" y="${barY}" width="${x3 - padL}" height="${barH}" fill="#06b6d4" rx="2"/>
+        <rect x="${x3}" y="${barY}" width="${x5 - x3}" height="${barH}" fill="#10b981"/>
+        <rect x="${x5}" y="${barY}" width="${x7_5 - x5}" height="${barH}" fill="#f59e0b"/>
+        <rect x="${x7_5}" y="${barY}" width="${x12 - x7_5}" height="${barH}" fill="#ef4444" rx="2"/>
+
+        <text x="${padL}" y="${barY - 8}" fill="#6b7280" font-size="9" text-anchor="start">0%</text>
+        <text x="${x3}" y="${barY - 8}" fill="#06b6d4" font-size="9" text-anchor="middle">3%</text>
+        <text x="${x5}" y="${barY - 8}" fill="#10b981" font-size="9" text-anchor="middle">5% (Limit)</text>
+        <text x="${x7_5}" y="${barY - 8}" fill="#f59e0b" font-size="9" text-anchor="middle">7.5%</text>
+        <text x="${x12}" y="${barY - 8}" fill="#ef4444" font-size="9" text-anchor="end">12%+</text>
+
+        <text x="${(padL + x3) / 2}" y="${barY + barH + 14}" fill="#06b6d4" font-size="8" text-anchor="middle">Superior</text>
+        <text x="${(x3 + x5) / 2}" y="${barY + barH + 14}" fill="#10b981" font-size="8" text-anchor="middle">Stable</text>
+        <text x="${(x5 + x7_5) / 2}" y="${barY + barH + 14}" fill="#f59e0b" font-size="8" text-anchor="middle">Mild Drift</text>
+        <text x="${(x7_5 + x12) / 2}" y="${barY + barH + 14}" fill="#ef4444" font-size="8" text-anchor="middle">High Fatigue</text>
+
+        <polygon points="${markerX - 4},${barY - 2} ${markerX + 4},${barY - 2} ${markerX},${barY + 6}" fill="#fff"/>
+        <line x1="${markerX}" y1="${barY}" x2="${markerX}" y2="${barY + barH}" stroke="#fff" stroke-width="2"/>
+        <text x="${markerX}" y="${barY - 12}" fill="#fff" font-size="10" font-weight="700" text-anchor="middle">${val.toFixed(1)}%</text>
+      `;
+    }
+
+    async function submitSessionReview(e) {
+      e.preventDefault();
+      const sport = document.getElementById('revSport').value;
+      const dur = parseInt(document.getElementById('revDuration').value) || 60;
+      const rpe = parseInt(document.getElementById('revRpe').value) || 6;
+      const dec = parseFloat(document.getElementById('revDecoupling').value);
+
+      renderDecouplingGauge(dec);
+
+      try {
+        const res = await fetch('/api/review', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sport: sport,
+            duration: dur,
+            rpe: rpe,
+            decoupling: isNaN(dec) ? null : dec
+          })
+        });
+        const data = await res.json();
+        if (data && data.coaching_feedback && data.coaching_feedback.length > 0) {
+          const fEl = document.getElementById('decouplingFeedback');
+          if (fEl) {
+            fEl.innerHTML = data.coaching_feedback.join('<br>');
+          }
+        }
+        showToast('Session debrief and efficiency calculated!');
+      } catch (err) {
+        console.error('Session review error:', err);
       }
     }
 

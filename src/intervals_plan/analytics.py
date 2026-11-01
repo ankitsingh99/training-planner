@@ -73,6 +73,7 @@ class RollingAnalysisReport:
     readiness: PhysiologicalReadiness
     intensity_distribution: IntensityDistribution
     raw_wellness_count: int
+    daily_series: List[Dict[str, Any]] = field(default_factory=list)
 
     def summary_lines(self) -> List[str]:
         lines = []
@@ -390,9 +391,13 @@ class RollingMetricsAnalyzer:
 
         # Build daily load map from activities
         daily_loads_dict: Dict[datetime.date, float] = {}
+        daily_moving_dict: Dict[datetime.date, float] = {}
+        daily_sports_dict: Dict[datetime.date, Dict[str, float]] = {}
         curr = start_date
         while curr <= end_date:
             daily_loads_dict[curr] = 0.0
+            daily_moving_dict[curr] = 0.0
+            daily_sports_dict[curr] = {}
             curr += datetime.timedelta(days=1)
 
         total_moving_secs = 0.0
@@ -404,9 +409,22 @@ class RollingMetricsAnalyzer:
                 act_date = datetime.date.fromisoformat(dt_str[:10])
                 if start_date <= act_date <= end_date:
                     load = float(a.get("icu_training_load") or 0)
+                    mtime = float(a.get("moving_time") or 0)
                     daily_loads_dict[act_date] = daily_loads_dict.get(act_date, 0.0) + load
+                    daily_moving_dict[act_date] = daily_moving_dict.get(act_date, 0.0) + mtime
                     total_load += load
-                    total_moving_secs += float(a.get("moving_time") or 0)
+                    total_moving_secs += mtime
+
+                    raw_type = a.get("type") or "Other"
+                    if raw_type in ["Ride", "VirtualRide", "GravelRide", "MountainBikeRide"]:
+                        sport = "Ride"
+                    elif raw_type in ["Run", "VirtualRun", "TrailRun"]:
+                        sport = "Run"
+                    elif raw_type in ["Swim", "OpenWaterSwim"]:
+                        sport = "Swim"
+                    else:
+                        sport = "Other"
+                    daily_sports_dict[act_date][sport] = daily_sports_dict[act_date].get(sport, 0.0) + load
 
         # Also incorporate load from wellness ctlLoad/atlLoad if activity list was incomplete
         daily_loads_list = sorted(daily_loads_dict.items(), key=lambda x: x[0])
@@ -428,6 +446,76 @@ class RollingMetricsAnalyzer:
         intensity_dist = self.analyze_intensity_distribution(activities)
         disciplines = self.analyze_disciplines(activities)
 
+        # Build daily series
+        wellness_by_date = {w.get("id"): w for w in wellness_records if w.get("id")}
+        initial_ctl = 25.0
+        initial_atl = 25.0
+        if wellness_records:
+            for w in sorted_w:
+                if w.get("ctl") is not None:
+                    initial_ctl = float(w["ctl"])
+                    break
+            for w in sorted_w:
+                if w.get("atl") is not None:
+                    initial_atl = float(w["atl"])
+                    break
+
+        curr_ctl = initial_ctl
+        curr_atl = initial_atl
+        ctl_decay = math.exp(-1.0 / 42.0)
+        atl_decay = math.exp(-1.0 / 7.0)
+
+        daily_series: List[Dict[str, Any]] = []
+        curr = start_date
+        while curr <= end_date:
+            iso_d = curr.isoformat()
+            w_rec = wellness_by_date.get(iso_d)
+            d_load = daily_loads_dict.get(curr, 0.0)
+            d_mtime = daily_moving_dict.get(curr, 0.0)
+
+            if w_rec and w_rec.get("ctl") is not None:
+                curr_ctl = float(w_rec["ctl"])
+            else:
+                curr_ctl = curr_ctl * ctl_decay + d_load * (1.0 - ctl_decay)
+
+            if w_rec and w_rec.get("atl") is not None:
+                curr_atl = float(w_rec["atl"])
+            else:
+                curr_atl = curr_atl * atl_decay + d_load * (1.0 - atl_decay)
+
+            rhr_val = None
+            if w_rec and w_rec.get("restingHR") is not None:
+                try:
+                    val = float(w_rec["restingHR"])
+                    if val > 30:
+                        rhr_val = val
+                except (ValueError, TypeError):
+                    pass
+
+            # Daily rolling ACWR calculation up to curr
+            acute_7d = sum(daily_loads_dict.get(curr - datetime.timedelta(days=d), 0.0) for d in range(7))
+            chronic_28d = sum(daily_loads_dict.get(curr - datetime.timedelta(days=d), 0.0) for d in range(28))
+            chronic_avg = chronic_28d / 4.0 if chronic_28d > 0 else 0.0
+            if chronic_avg > 0:
+                d_ratio = round(acute_7d / chronic_avg, 2)
+            elif acute_7d > 0:
+                d_ratio = 1.5
+            else:
+                d_ratio = 0.0
+
+            daily_series.append({
+                "date": iso_d,
+                "ctl": round(curr_ctl, 1),
+                "atl": round(curr_atl, 1),
+                "tsb": round(curr_ctl - curr_atl, 1),
+                "load_tss": round(d_load, 1),
+                "moving_hours": round(d_mtime / 3600.0, 2),
+                "resting_hr": rhr_val,
+                "acwr_ratio": d_ratio,
+                "sports": {k: round(v, 1) for k, v in daily_sports_dict.get(curr, {}).items()},
+            })
+            curr += datetime.timedelta(days=1)
+
         return RollingAnalysisReport(
             period_start=start_date.isoformat(),
             period_end=end_date.isoformat(),
@@ -439,5 +527,6 @@ class RollingMetricsAnalyzer:
             readiness=readiness,
             intensity_distribution=intensity_dist,
             raw_wellness_count=len(wellness_records),
+            daily_series=daily_series,
         )
 

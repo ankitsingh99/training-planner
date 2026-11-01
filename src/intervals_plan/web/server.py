@@ -372,7 +372,8 @@ class AdaptPulseRequestHandler(BaseHTTPRequestHandler):
                     "total_distance_km": v.total_distance_km,
                 }
                 for k, v in r.disciplines.items()
-            }
+            },
+            "daily_series": getattr(r, "daily_series", []),
         }
 
     def log_message(self, format: str, *args: Any) -> None:

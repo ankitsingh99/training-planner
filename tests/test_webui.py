@@ -65,6 +65,8 @@ def test_web_ui_endpoints():
             ana = json.loads(res.read().decode("utf-8"))
             assert "acwr" in ana
             assert "readiness" in ana
+            assert "daily_series" in ana
+            assert len(ana["daily_series"]) == 30
 
         # 6. Coaching API
         with urllib.request.urlopen(f"{base_url}/api/coaching") as res:
