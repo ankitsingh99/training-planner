@@ -730,11 +730,16 @@ def get_app_html() -> str:
 
     <!-- TAB 5: ECOSYSTEM & SYNC -->
     <div id="tab-sync" class="tab-content">
-      <div class="grid-3" style="margin-bottom: 1.5rem;">
+      <div class="grid-4" style="margin-bottom: 1.5rem;">
         <div class="card">
           <div class="card-title">Intervals.icu Cloud Hub</div>
           <div style="font-size: 1.1rem; font-weight: 700; color: var(--success);" id="intervalsStatus">Connected</div>
           <p class="card-subtext">Direct calendar sync with read-back verification.</p>
+        </div>
+        <div class="card">
+          <div class="card-title">TrainingPeaks Connector</div>
+          <div style="font-size: 1.1rem; font-weight: 700; color: var(--accent);" id="tpStatus">Checking...</div>
+          <p class="card-subtext">Structured workout export via OAuth Partner API.</p>
         </div>
         <div class="card">
           <div class="card-title">COROS Watch Sync</div>
@@ -869,15 +874,31 @@ def get_app_html() -> str:
 
     async function loadDashboard() {
       try {
-        const [profRes, anaRes, coachRes] = await Promise.all([
+        const [profRes, anaRes, coachRes, statusRes] = await Promise.all([
           fetch('/api/profile'),
           fetch('/api/analytics'),
-          fetch('/api/coaching')
+          fetch('/api/coaching'),
+          fetch('/api/status')
         ]);
 
         currentProfile = await profRes.json();
         currentAnalytics = await anaRes.json();
         const coach = await coachRes.json();
+        const statusData = await statusRes.json();
+
+        // Update Ecosystem status
+        if (statusData) {
+          const intStatusEl = document.getElementById('intervalsStatus');
+          if (intStatusEl) {
+            intStatusEl.innerText = statusData.intervals_connected ? 'Connected' : 'Not Configured';
+            intStatusEl.style.color = statusData.intervals_connected ? 'var(--success)' : 'var(--text-muted)';
+          }
+          const tpStatusEl = document.getElementById('tpStatus');
+          if (tpStatusEl) {
+            tpStatusEl.innerText = statusData.trainingpeaks_connected ? 'Connected' : 'Not Configured';
+            tpStatusEl.style.color = statusData.trainingpeaks_connected ? 'var(--success)' : 'var(--text-muted)';
+          }
+        }
 
         // Populate Dashboard Cards
         if (currentAnalytics && currentAnalytics.readiness) {
@@ -1231,3 +1252,4 @@ def get_app_html() -> str:
 </body>
 </html>
 """
+

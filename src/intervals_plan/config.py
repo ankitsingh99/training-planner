@@ -48,6 +48,12 @@ class Config:
     user_agent: str = field(
         default="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
     )
+    # TrainingPeaks API settings
+    tp_access_token: str = field(default="")
+    tp_client_id: str = field(default="")
+    tp_client_secret: str = field(default="")
+    tp_athlete_id: str = field(default="")
+    tp_base_url: str = field(default="https://api.trainingpeaks.com")
 
     @classmethod
     def load(cls, prompt_if_missing: bool = False) -> "Config":
@@ -61,11 +67,23 @@ class Config:
         data_dir_env = os.environ.get("INTERVALS_DATA_DIR")
         data_dir = pathlib.Path(data_dir_env) if data_dir_env else pathlib.Path.cwd() / "data"
 
+        # TrainingPeaks settings
+        tp_token = os.environ.get("TRAININGPEAKS_ACCESS_TOKEN", "").strip().strip("'\"")
+        tp_client_id = os.environ.get("TRAININGPEAKS_CLIENT_ID", "").strip().strip("'\"")
+        tp_client_secret = os.environ.get("TRAININGPEAKS_CLIENT_SECRET", "").strip().strip("'\"")
+        tp_athlete_id = os.environ.get("TRAININGPEAKS_ATHLETE_ID", "").strip().strip("'\"")
+        tp_base_url = os.environ.get("TRAININGPEAKS_BASE_URL", "https://api.trainingpeaks.com").strip().strip("'\"")
+
         cfg = cls(
             api_key=key,
             athlete_id=athlete_id,
             default_prefix=prefix,
             data_dir=data_dir,
+            tp_access_token=tp_token,
+            tp_client_id=tp_client_id,
+            tp_client_secret=tp_client_secret,
+            tp_athlete_id=tp_athlete_id,
+            tp_base_url=tp_base_url,
         )
         cfg.ensure_dirs()
         return cfg
@@ -78,10 +96,11 @@ class Config:
     def summary(self) -> str:
         """Safe representation of active configuration."""
         return (
-            f"Athlete ID:     {self.athlete_id}\n"
-            f"Base URL:       {self.base_url}\n"
-            f"Managed Prefix: {self.default_prefix}\n"
-            f"Data Directory: {self.data_dir}\n"
-            f"API Key:        {redact_secret(self.api_key)}"
+            f"Athlete ID:           {self.athlete_id}\n"
+            f"Base URL:             {self.base_url}\n"
+            f"Managed Prefix:       {self.default_prefix}\n"
+            f"Data Directory:       {self.data_dir}\n"
+            f"Intervals Key:        {redact_secret(self.api_key)}\n"
+            f"TrainingPeaks Token:  {redact_secret(self.tp_access_token)}"
         )
 

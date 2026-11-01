@@ -38,3 +38,4 @@ def test_backup_manager():
         # Error on missing
         with pytest.raises(FileNotFoundError):
             mgr.load_backup("nonexistent_backup")
+

@@ -160,3 +160,4 @@ class CoachingAdvisor:
             target_weekly_hours=readiness.target_next_week_hours,
             target_weekly_tss=readiness.target_next_week_tss,
         )
+

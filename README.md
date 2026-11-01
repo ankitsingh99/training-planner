@@ -141,12 +141,20 @@ Copy `.env.example` to `.env`:
 cp .env.example .env
 ```
 
-Edit `.env` with your Intervals.icu credentials:
+Edit `.env` with your credentials:
 
 ```dotenv
+# Intervals.icu Hub
 INTERVALS_API_KEY=your_api_key_here
 INTERVALS_ATHLETE_ID=0       # Use '0' or 'iXXXXX' for your own account
 INTERVALS_BASE_URL=https://intervals.icu/api/v1
+
+# TrainingPeaks Partner API (Optional)
+TRAININGPEAKS_ACCESS_TOKEN=your_oauth_access_token_here
+TRAININGPEAKS_CLIENT_ID=your_client_id_here
+TRAININGPEAKS_CLIENT_SECRET=your_client_secret_here
+TRAININGPEAKS_ATHLETE_ID=
+TRAININGPEAKS_BASE_URL=https://api.trainingpeaks.com
 ```
 
 Verify your setup:
@@ -242,7 +250,7 @@ adaptpulse profile --edit
 adaptpulse profile --hours 9.5 --goal running --horizon 2_weeks
 ```
 
-### 3. Dynamic Rolling Plan Generation
+### 6. Dynamic Rolling Plan Generation
 
 Build structured workouts tailored to your current fitness and recovery status:
 
@@ -260,7 +268,7 @@ adaptpulse plan-next --apply
 adaptpulse plan-next --apply --force
 ```
 
-### 4. Adaptive Adjustments
+### 7. Adaptive Adjustments
 
 React to unexpected fatigue or schedule interruptions:
 
@@ -272,7 +280,7 @@ adaptpulse adapt --auto --apply
 adaptpulse adapt --club-ride-hard --week 1 --apply
 ```
 
-### 5. Calendar Management & Safe Deletion
+### 8. Calendar Management & Safe Deletion
 
 Safely inspect, clean up, or restore calendar events:
 
@@ -293,12 +301,20 @@ adaptpulse events delete-by-prefix dynamic --confirm-phrase "DELETE 7 EVENTS"
 adaptpulse events restore data/backups/backup_20261101_193116_presync.json --apply
 ```
 
-### 6. COROS Watch Integration Status
+### 9. COROS Watch Integration Status
 
 Validate device communication and structured workout sync status:
 
 ```bash
 adaptpulse coros-status
+```
+
+### 10. TrainingPeaks API Status
+
+Validate TrainingPeaks Partner API connectivity, profile details, and active training zones:
+
+```bash
+adaptpulse tp-status
 ```
 
 ---
@@ -310,11 +326,16 @@ adaptpulse coros-status
 2. Select **Intervals.icu** and authorize.
 3. Workouts uploaded by AdaptPulse sync straight to your watch calendar with target HR and pace zones.
 
-### 2. Strava (Activity Feed)
+### 2. TrainingPeaks Partner API
+1. Configure `TRAININGPEAKS_ACCESS_TOKEN` in your `.env` file.
+2. Run `adaptpulse tp-status` to verify credentials and athlete training zones.
+3. Access connection health and sync status through the Ecosystem tab in the Web UI.
+
+### 3. Strava (Activity Feed)
 1. In **Intervals.icu**, go to **Settings** > **Connections**.
 2. Connect your **Strava** account. Completed runs, rides, and outdoor activities automatically flow into Intervals.icu to update your rolling CTL/ATL and ACWR metrics.
 
-### 3. Hevy (Strength Training)
+### 4. Hevy (Strength Training)
 1. Connect **Hevy** to **Strava** via **Settings** > **Integrations** in the Hevy app.
 2. Resistance training workouts sync to Strava as `WeightTraining` and forward to Intervals.icu, ensuring your full training stress profile is captured.
 
@@ -341,7 +362,8 @@ Run the automated test suite with coverage reporting:
 coverage run -m pytest && coverage report -m
 ```
 
-The test suite covers 96 unit, integration, and safety tests with **>95% test coverage**:
+The test suite covers 112 unit, integration, and safety tests with **>95% test coverage (currently 96%)**:
+- TrainingPeaks API connector and OAuth token error redaction
 - Sports science analytics: ACWR sweet spot/danger zone, PMC (CTL/ATL/TSB), Seiler 80/20 polarization, and Plews/Kiviniemi autonomic readiness
 - Periodization phase calculation (Base, Build, Peak, Taper, Recovery)
 - Multi-platform workout exporters (Zwift .zwo XML, iCalendar .ics, JSON)

@@ -72,3 +72,4 @@ def test_athlete_profile_model():
     p = AthleteProfile(id="i999", name="Athlete", restingHR=48, lthr=178)
     assert p.id == "i999"
     assert p.restingHR == 48
+

@@ -129,3 +129,4 @@ def test_coaching_advisor_under_training():
     report = _make_dummy_report(acwr_status="UNDER_TRAINING", acwr_ratio=0.6)
     advice = CoachingAdvisor(prof).advise(report)
     assert any("Under-Training" in a for a in advice.alerts)
+

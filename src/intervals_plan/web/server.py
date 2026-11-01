@@ -71,11 +71,13 @@ class AdaptPulseRequestHandler(BaseHTTPRequestHandler):
         if path == "/api/status":
             settings = Config.load()
             has_api_key = bool(settings.api_key and len(settings.api_key) > 5)
+            has_tp_token = bool(settings.tp_access_token and len(settings.tp_access_token) > 5)
             self._send_json({
                 "status": "online",
                 "app": "AdaptPulse",
                 "version": "0.3.0",
                 "intervals_connected": has_api_key,
+                "trainingpeaks_connected": has_tp_token,
                 "athlete_id": settings.athlete_id,
             })
             return

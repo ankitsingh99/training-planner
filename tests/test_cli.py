@@ -29,6 +29,7 @@ from intervals_plan.cli import (
     handle_plan_validate,
     handle_profile,
     handle_sync,
+    handle_tp_status,
     load_plan,
     main,
 )
@@ -219,6 +220,46 @@ def test_handle_coros_status():
         handle_coros_status(cfg)
 
 
+def test_handle_tp_status():
+    cfg_unconf = Config(tp_access_token="")
+    with patch("intervals_plan.cli.TrainingPeaksClient") as mock_cls:
+        inst = MagicMock()
+        inst.check_connection.return_value = {
+            "status": "UNCONFIGURED",
+            "message": "TRAININGPEAKS_ACCESS_TOKEN is not configured",
+        }
+        mock_cls.return_value = inst
+        handle_tp_status(cfg_unconf)
+
+    cfg_healthy = Config(tp_access_token="valid_token")
+    with patch("intervals_plan.cli.TrainingPeaksClient") as mock_cls:
+        inst = MagicMock()
+        inst.check_connection.return_value = {
+            "status": "HEALTHY",
+            "athlete_id": "ath_123",
+            "first_name": "Alex",
+            "last_name": "Rider",
+            "email": "alex@example.com",
+        }
+        inst.get_athlete_zones.return_value = [{"zone": 1}, {"zone": 2}]
+        mock_cls.return_value = inst
+        handle_tp_status(cfg_healthy)
+
+        # Zones failure handled gracefully
+        inst.get_athlete_zones.side_effect = Exception("Zone fetch failed")
+        handle_tp_status(cfg_healthy)
+
+    cfg_err = Config(tp_access_token="bad_token")
+    with patch("intervals_plan.cli.TrainingPeaksClient") as mock_cls:
+        inst = MagicMock()
+        inst.check_connection.return_value = {
+            "status": "ERROR",
+            "error": "HTTP 401 Unauthorized",
+        }
+        mock_cls.return_value = inst
+        handle_tp_status(cfg_err)
+
+
 def test_handle_coach_cli():
     cfg = Config(api_key="test_key")
     with patch("intervals_plan.cli.IntervalsClient") as mock_cls:
@@ -398,6 +439,7 @@ def test_cli_main_subcommand_dispatch():
         (["intervals-plan", "coros-status"], "handle_coros_status"),
         (["intervals-plan", "coach"], "handle_coach"),
         (["intervals-plan", "export"], "handle_export"),
+        (["intervals-plan", "tp-status"], "handle_tp_status"),
     ]:
         with patch.object(sys, "argv", sub), \
              patch(f"intervals_plan.cli.{handler_name}") as mock_handler:

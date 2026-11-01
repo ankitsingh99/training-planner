@@ -36,6 +36,8 @@ def test_web_ui_endpoints():
             data = json.loads(res.read().decode("utf-8"))
             assert data["app"] == "AdaptPulse"
             assert data["status"] == "online"
+            assert "trainingpeaks_connected" in data
+            assert "intervals_connected" in data
 
         # 3. Profile API (GET)
         with urllib.request.urlopen(f"{base_url}/api/profile") as res:

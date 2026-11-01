@@ -26,6 +26,7 @@ from intervals_plan.plan_builder import PlanBuilder, get_default_8wk_plan
 from intervals_plan.plan_models import PlanConfig, TrainingPlan
 from intervals_plan.rolling_planner import DynamicRollingPlanner
 from intervals_plan.sync import SyncManager
+from intervals_plan.trainingpeaks_client import TrainingPeaksClient
 from intervals_plan.web.server import run_web_server
 from intervals_plan.workout_schema import format_duration
 
@@ -154,6 +155,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     # coros-status
     subparsers.add_parser("coros-status", help="Check live COROS connection and workout sync status")
+
+    # tp-status (TrainingPeaks)
+    subparsers.add_parser("tp-status", help="Check live TrainingPeaks API connection and athlete zones")
 
     # ui
     ui_p = subparsers.add_parser("ui", help="Launch interactive multi-page Web UI dashboard")
@@ -382,7 +386,7 @@ def handle_adapt(cfg: Config, args: argparse.Namespace) -> None:
     events = builder.build_all_events()
 
     if getattr(args, "auto", False):
-        print("\n🤖 Running automatic physiological fatigue analysis...")
+        print("\nRunning automatic physiological fatigue analysis...")
         client = IntervalsClient(api_key=cfg.api_key, athlete_id=cfg.athlete_id, base_url=cfg.base_url)
         profile = AthleteProfileConfig.load(cfg.data_dir / "athlete_profile.json")
         lookback_start = datetime.date.today() - datetime.timedelta(days=30)
@@ -638,6 +642,36 @@ def handle_coros_status(cfg: Config) -> None:
         print(f"Error querying COROS status: {exc}")
 
 
+def handle_tp_status(cfg: Config) -> None:
+    print("\nChecking TrainingPeaks API Connection & Athlete Status...\n")
+    client = TrainingPeaksClient(
+        access_token=cfg.tp_access_token,
+        client_id=cfg.tp_client_id,
+        client_secret=cfg.tp_client_secret,
+        athlete_id=cfg.tp_athlete_id,
+        base_url=cfg.tp_base_url,
+    )
+    status = client.check_connection()
+    if status["status"] == "UNCONFIGURED":
+        print("TrainingPeaks Status: UNCONFIGURED")
+        print("Please set TRAININGPEAKS_ACCESS_TOKEN in .env or environment to enable sync.")
+        return
+
+    if status["status"] == "HEALTHY":
+        print("TrainingPeaks Status: HEALTHY (Connected)")
+        print(f"  - Athlete ID:   {status.get('athlete_id')}")
+        print(f"  - Name:         {status.get('first_name')} {status.get('last_name')}")
+        print(f"  - Email:        {status.get('email')}")
+        try:
+            zones = client.get_athlete_zones()
+            if zones:
+                print(f"  - Active Zones: {len(zones)} zone configurations retrieved.")
+        except Exception:
+            pass
+    else:
+        print(f"TrainingPeaks Status: ERROR - {status.get('error')}")
+
+
 def handle_ui(args: argparse.Namespace) -> None:
     """Launch the embedded interactive web application."""
     run_web_server(
@@ -811,6 +845,8 @@ def main() -> None:
         print_watch_research()
     elif args.subcommand == "coros-status":
         handle_coros_status(cfg)
+    elif args.subcommand == "tp-status":
+        handle_tp_status(cfg)
     elif args.subcommand == "ui":
         handle_ui(args)
     elif args.subcommand == "coach":
