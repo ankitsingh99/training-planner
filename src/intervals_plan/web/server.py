@@ -308,7 +308,11 @@ class AdaptPulseRequestHandler(BaseHTTPRequestHandler):
         settings = Config.load()
         if settings.api_key and len(settings.api_key) > 5:
             try:
-                client = IntervalsClient(settings)
+                client = IntervalsClient(
+                    api_key=settings.api_key,
+                    athlete_id=settings.athlete_id,
+                    base_url=settings.base_url,
+                )
                 today = datetime.date.today()
                 start = today - datetime.timedelta(days=29)
                 wellness = client.get_wellness_range(start.isoformat(), today.isoformat())
@@ -340,7 +344,11 @@ class AdaptPulseRequestHandler(BaseHTTPRequestHandler):
 
         if settings.api_key and len(settings.api_key) > 5:
             try:
-                client = IntervalsClient(settings)
+                client = IntervalsClient(
+                    api_key=settings.api_key,
+                    athlete_id=settings.athlete_id,
+                    base_url=settings.base_url,
+                )
                 events = client.list_events(start.isoformat(), today.isoformat())
                 acts = client.get_activities(start.isoformat(), today.isoformat())
                 return engine.evaluate(events, acts, start_date=start, end_date=today)
