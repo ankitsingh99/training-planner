@@ -102,7 +102,7 @@ def sample_hc_payload():
 
 def test_health_connect_parser_wellness(sample_hc_payload):
     parser = HealthConnectParser()
-    wellness = parser.parse_wellness(sample_hc_payload)
+    wellness = parser.parse_wellness(sample_hc_payload, include_steps=True)
 
     assert "2026-11-01" in wellness
     assert "2026-11-02" in wellness
@@ -214,7 +214,7 @@ def test_health_connect_sync_manager(tmp_path, sample_hc_payload):
     mgr.STATE_FILE = tmp_path / "health_connect_sync.json"
 
     # 1. Dry run
-    dry_res = mgr.sync_payload(sample_hc_payload, source="test_run", dry_run=True)
+    dry_res = mgr.sync_payload(sample_hc_payload, source="test_run", dry_run=True, sync_activities=True)
     assert dry_res.wellness_records_updated == 2
     assert dry_res.activities_uploaded == 2
     assert dry_res.details["dry_run"] is True
@@ -226,7 +226,7 @@ def test_health_connect_sync_manager(tmp_path, sample_hc_payload):
     # 2. Live apply with mocked IntervalsClient
     with patch("intervals_plan.intervals_client.IntervalsClient.update_wellness") as mock_update_w, \
          patch("intervals_plan.intervals_client.IntervalsClient.upload_activity") as mock_upload_act:
-        live_res = mgr.sync_payload(sample_hc_payload, source="test_live", dry_run=False)
+        live_res = mgr.sync_payload(sample_hc_payload, source="test_live", dry_run=False, sync_activities=True)
         assert live_res.wellness_records_updated == 2
         assert mock_update_w.call_count == 2
         assert mock_upload_act.call_count == 2
@@ -275,7 +275,7 @@ def test_health_connect_parser_numeric_stages_and_exercise_codes():
     }
 
     parser = HealthConnectParser()
-    wellness = parser.parse_wellness(payload)
+    wellness = parser.parse_wellness(payload, include_steps=True)
     acts = parser.parse_activities(payload)
 
     assert "2026-10-27" in wellness

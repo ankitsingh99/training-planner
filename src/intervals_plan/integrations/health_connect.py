@@ -79,9 +79,15 @@ class HealthConnectParser:
             return None
         return time_str[:10]
 
-    def parse_wellness(self, payload: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
+    def parse_wellness(
+        self,
+        payload: Dict[str, Any],
+        include_steps: bool = False,
+    ) -> Dict[str, Dict[str, Any]]:
         """
         Aggregate Health Connect data into date-indexed Intervals.icu wellness updates.
+        Restricted to body vitals and health statistics (RHR, Sleep Stages, SpO2, Weight, Body Fat, VO2max).
+        Steps are excluded by default to avoid contaminating pure watch/training telemetry.
         Returns: { 'YYYY-MM-DD': { 'restingHR': 52, 'hrv': 64.5, 'sleepSecs': 28800, ... } }
         """
         daily: Dict[str, Dict[str, Any]] = {}
@@ -221,13 +227,14 @@ class HealthConnectParser:
                 day = get_day(dt)
                 day["kcalConsumed"] = round(day.get("kcalConsumed", 0.0) + float(kcal))
 
-        # 12. Steps Daily Sum
-        for st in payload.get("steps", []):
-            dt = self._extract_date(st.get("start_time") or st.get("time"))
-            cnt = st.get("count") or 0
-            if dt and cnt:
-                day = get_day(dt)
-                day["steps"] = int(day.get("steps", 0) + int(cnt))
+        # 12. Steps Daily Sum (Only included if explicitly enabled)
+        if include_steps:
+            for st in payload.get("steps", []):
+                dt = self._extract_date(st.get("start_time") or st.get("time"))
+                cnt = st.get("count") or 0
+                if dt and cnt:
+                    day = get_day(dt)
+                    day["steps"] = int(day.get("steps", 0) + int(cnt))
 
         return daily
 
@@ -318,12 +325,15 @@ class HealthConnectSyncManager:
         payload: Dict[str, Any],
         source: str = "webhook",
         dry_run: bool = False,
+        sync_activities: bool = False,
+        include_steps: bool = False,
     ) -> HealthConnectSyncResult:
         """
         Process incoming Health Connect JSON payload and sync to Intervals.icu and COROS.
+        By default, only body vitals and health statistics are synced (no activities, no steps).
         """
-        daily_wellness = self.parser.parse_wellness(payload)
-        activities = self.parser.parse_activities(payload)
+        daily_wellness = self.parser.parse_wellness(payload, include_steps=include_steps)
+        activities = self.parser.parse_activities(payload) if sync_activities else []
 
         dates_processed = sorted(daily_wellness.keys())
         wellness_count = 0
@@ -337,7 +347,7 @@ class HealthConnectSyncManager:
                 base_url=self.cfg.base_url,
             )
 
-        # 1. Update Intervals.icu Wellness
+        # 1. Update Intervals.icu Wellness (Body Vitals and Health Stats only)
         if intervals_client and not dry_run:
             for dt, w_data in daily_wellness.items():
                 try:
@@ -348,8 +358,8 @@ class HealthConnectSyncManager:
         else:
             wellness_count = len(daily_wellness)
 
-        # 2. Upload Completed Activities
-        if intervals_client and not dry_run:
+        # 2. Upload Activities (Only if sync_activities is explicitly requested)
+        if intervals_client and not dry_run and sync_activities:
             for act in activities:
                 try:
                     intervals_client.upload_activity(act)

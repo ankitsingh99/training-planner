@@ -224,6 +224,8 @@ def build_parser() -> argparse.ArgumentParser:
     hc_p.add_argument("--token", help="Bearer auth token for phone local HTTP server (or env HEALTH_CONNECT_TOKEN)")
     hc_p.add_argument("--file", help="Ingest local Health Connect JSON export file")
     hc_p.add_argument("--status", action="store_true", help="Display Health Connect sync status and webhook configuration")
+    hc_p.add_argument("--sync-activities", action="store_true", default=False, help="Explicitly sync exercise activities (default: False, vitals only)")
+    hc_p.add_argument("--include-steps", action="store_true", default=False, help="Include daily step count (default: False, vitals only)")
     hc_p.add_argument("--dry-run", action="store_true", default=True, help="Preview without updating Intervals.icu")
     hc_p.add_argument("--apply", action="store_true", help="Apply updates to Intervals.icu and COROS")
 
@@ -973,19 +975,25 @@ def handle_health_connect(cfg: Config, args: argparse.Namespace) -> None:
         return
 
     mode_str = "DRY-RUN (Simulating)" if dry_run else "LIVE APPLY"
-    print(f"\nProcessing Health Connect Data [{mode_str}]...\n")
-    res = mgr.sync_payload(payload, source=src, dry_run=dry_run)
+    print(f"\nProcessing Health Connect Data [{mode_str}] (Vitals Only)...\n")
+    res = mgr.sync_payload(
+        payload,
+        source=src,
+        dry_run=dry_run,
+        sync_activities=getattr(args, "sync_activities", False),
+        include_steps=getattr(args, "include_steps", False),
+    )
 
     print(f"Processed Dates ({len(res.dates_processed)}): {', '.join(res.dates_processed[:5])}{'...' if len(res.dates_processed) > 5 else ''}")
     print(f"Wellness Days Updated:    {res.wellness_records_updated}")
-    print(f"Activities Synced:        {res.activities_uploaded}")
+    print(f"Activities Synced:        {res.activities_uploaded} (Filtered to Vitals Only)")
     print(f"COROS Sync Mode:          {res.coros_mode}")
 
     sample = res.details.get("sample_wellness", {})
     if sample:
         print("\nSample Wellness Output:")
         for dt, d in sample.items():
-            print(f"  [{dt}]: RHR={d.get('restingHR', 'N/A')} bpm | HRV={d.get('hrv', 'N/A')} ms | Sleep={d.get('sleepSecs', 0)/3600:.1f}h | Steps={d.get('steps', 'N/A')}")
+            print(f"  [{dt}]: RHR={d.get('restingHR', 'N/A')} bpm | HRV={d.get('hrv', 'N/A')} ms | Sleep={d.get('sleepSecs', 0)/3600:.1f}h | SpO2={d.get('spO2', 'N/A')}%")
 
     if dry_run:
         print("\nSafety Notice: Run with --apply to push updates to Intervals.icu and COROS.")
