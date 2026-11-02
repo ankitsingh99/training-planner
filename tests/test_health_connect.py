@@ -230,3 +230,85 @@ def test_health_connect_sync_manager(tmp_path, sample_hc_payload):
         assert live_res.wellness_records_updated == 2
         assert mock_update_w.call_count == 2
         assert mock_upload_act.call_count == 2
+
+
+def test_health_connect_parser_numeric_stages_and_exercise_codes():
+    """Verify parsing real Android Health Connect payloads with numeric sleep stages & exercise codes."""
+    payload = {
+        "steps": [{"start_time": "2026-10-27T10:00:00+05:30", "count": 12500}],
+        "sleep": [
+            {
+                "session_end_time": "2026-10-27T08:00:00+05:30",
+                "duration_seconds": 21600,
+                "stages": [
+                    {"stage": "1", "duration_seconds": 600},   # Awake
+                    {"stage": "4", "duration_seconds": 12000}, # Light
+                    {"stage": "5", "duration_seconds": 5000},  # Deep
+                    {"stage": "6", "duration_seconds": 4000},  # REM
+                ],
+            }
+        ],
+        "weight": [{"time": "2026-10-27T09:00:00+05:30", "kilograms": 79.5}],
+        "vo2_max": [{"time": "2026-10-27T09:00:00+05:30", "ml_per_kg_per_min": 42.1}],
+        "exercise": [
+            {
+                "type": "56",  # Running
+                "start_time": "2026-10-27T18:00:00+05:30",
+                "duration_seconds": 1800,
+                "distance_meters": 4500.0,
+                "active_calories": 320,
+            },
+            {
+                "type": "8",   # Biking
+                "start_time": "2026-10-27T20:00:00+05:30",
+                "duration_seconds": 3600,
+                "distance_meters": 25000.0,
+            },
+            {
+                "type": "70",  # Swimming
+                "title": "Evening Swim",
+                "start_time": "2026-10-27T21:00:00+05:30",
+                "duration_seconds": 2400,
+                "distance_meters": 1500.0,
+            },
+        ],
+    }
+
+    parser = HealthConnectParser()
+    wellness = parser.parse_wellness(payload)
+    acts = parser.parse_activities(payload)
+
+    assert "2026-10-27" in wellness
+    d = wellness["2026-10-27"]
+    assert d["steps"] == 12500
+    assert d["weight"] == 79.5
+    assert d["vo2max"] == 42.1
+    assert d["sleepSecs"] == 21600
+    assert "Deep" in d["comments"]
+    assert "REM" in d["comments"]
+
+    assert len(acts) == 3
+    assert acts[0]["type"] == "Run"
+    assert acts[0]["distance"] == 4500.0
+    assert acts[1]["type"] == "Ride"
+    assert acts[2]["type"] == "Swim"
+    assert acts[2]["name"] == "Evening Swim"
+
+
+def test_health_connect_client_bearer_token():
+    """Verify HealthConnectClient passes Bearer token when provided."""
+    mock_resp = MagicMock()
+    mock_resp.read.return_value = json.dumps({"status": "ok"}).encode("utf-8")
+    mock_resp.__enter__.return_value = mock_resp
+
+    with patch("urllib.request.urlopen", return_value=mock_resp) as mock_urlopen:
+        res = HealthConnectClient.fetch_lan(
+            phone_ip="192.168.0.158",
+            port=8787,
+            days=3,
+            auth_token="test_bearer_abc",
+        )
+        assert res["status"] == "ok"
+        req = mock_urlopen.call_args[0][0]
+        assert req.get_header("Authorization") == "Bearer test_bearer_abc"
+

@@ -190,6 +190,70 @@ class IntervalsClient:
         return self._request("PUT", f"/athlete/{self.athlete_id}/wellness/{date_str}", data=wellness_data)
 
     def upload_activity(self, activity_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Upload a completed activity record to Intervals.icu."""
-        return self._request("POST", f"/athlete/{self.athlete_id}/activities", data=activity_data)
+        """
+        Upload a completed activity record to Intervals.icu using standard TCX multipart upload.
+        """
+        import uuid
+        import datetime
+
+        start_time = activity_data.get("start_date_local", datetime.datetime.now().isoformat())
+        if "T" not in start_time:
+            start_time += "T00:00:00"
+        if not (start_time.endswith("Z") or "+" in start_time):
+            start_time_iso = start_time + "Z"
+        else:
+            start_time_iso = start_time
+
+        sport = activity_data.get("type", "Other")
+        tcx_sport = "Running" if sport == "Run" else "Biking" if sport == "Ride" else "Other"
+        dur = int(activity_data.get("moving_time") or activity_data.get("elapsed_time") or 1800)
+        dist = float(activity_data.get("distance") or 0.0)
+        cals = int(activity_data.get("calories") or 0)
+
+        tcx = f"""<?xml version="1.0" encoding="UTF-8"?>
+<TrainingCenterDatabase xmlns="http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2">
+  <Activities>
+    <Activity Sport="{tcx_sport}">
+      <Id>{start_time_iso}</Id>
+      <Lap StartTime="{start_time_iso}">
+        <TotalTimeSeconds>{dur}</TotalTimeSeconds>
+        <DistanceMeters>{dist:.2f}</DistanceMeters>
+        <Calories>{cals}</Calories>
+        <Intensity>Active</Intensity>
+        <TriggerMethod>Manual</TriggerMethod>
+        <Track>
+          <Trackpoint><Time>{start_time_iso}</Time></Trackpoint>
+        </Track>
+      </Lap>
+    </Activity>
+  </Activities>
+</TrainingCenterDatabase>
+"""
+        boundary = "----Boundary" + uuid.uuid4().hex[:12]
+        body = (
+            f"--{boundary}\r\n"
+            f'Content-Disposition: form-data; name="file"; filename="activity.tcx"\r\n'
+            f"Content-Type: application/vnd.garmin.tcx+xml\r\n\r\n"
+            f"{tcx}\r\n"
+            f"--{boundary}--\r\n"
+        ).encode("utf-8")
+
+        auth_header = "Basic " + base64.b64encode(f"API_KEY:{self.api_key}".encode("utf-8")).decode("utf-8")
+        url = f"{self.base_url}/athlete/{self.athlete_id}/activities"
+        req = urllib.request.Request(
+            url,
+            data=body,
+            headers={
+                "Authorization": auth_header,
+                "Content-Type": f"multipart/form-data; boundary={boundary}",
+                "User-Agent": "AdaptPulse/1.0",
+            },
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                res_bytes = resp.read()
+                return json.loads(res_bytes.decode("utf-8")) if res_bytes else {}
+        except urllib.error.HTTPError as exc:
+            err_body = exc.read().decode("utf-8") if exc.fp else ""
+            raise IntervalsAPIError(f"Intervals.icu returned HTTP {exc.code} for POST /athlete/{self.athlete_id}/activities: {err_body}") from exc
 

@@ -6,6 +6,7 @@ import argparse
 import dataclasses
 import datetime
 import json
+import os
 from pathlib import Path
 import sys
 from typing import Any, Dict, List, Optional
@@ -220,6 +221,7 @@ def build_parser() -> argparse.ArgumentParser:
     hc_p.add_argument("--pull", help="Pull on-demand from phone local HTTP server (IP address, e.g. 192.168.1.100)")
     hc_p.add_argument("--port", type=int, default=8787, help="Phone HTTP server port (default: 8787)")
     hc_p.add_argument("--days", type=int, default=7, help="Lookback days to pull (default: 7)")
+    hc_p.add_argument("--token", help="Bearer auth token for phone local HTTP server (or env HEALTH_CONNECT_TOKEN)")
     hc_p.add_argument("--file", help="Ingest local Health Connect JSON export file")
     hc_p.add_argument("--status", action="store_true", help="Display Health Connect sync status and webhook configuration")
     hc_p.add_argument("--dry-run", action="store_true", default=True, help="Preview without updating Intervals.icu")
@@ -954,9 +956,15 @@ def handle_health_connect(cfg: Config, args: argparse.Namespace) -> None:
         payload = json.loads(p.read_text(encoding="utf-8"))
         src = f"file_{p.name}"
     elif args.pull:
+        auth_tok = getattr(args, "token", None) or os.environ.get("HEALTH_CONNECT_TOKEN")
         print(f"Connecting to phone at http://{args.pull}:{args.port}/?days={args.days}...")
         try:
-            payload = HealthConnectClient.fetch_lan(phone_ip=args.pull, port=args.port, days=args.days)
+            payload = HealthConnectClient.fetch_lan(
+                phone_ip=args.pull,
+                port=args.port,
+                days=args.days,
+                auth_token=auth_tok,
+            )
             src = f"lan_pull_{args.pull}"
         except Exception as exc:
             print(f"Connection Error: {exc}")

@@ -44,6 +44,7 @@ class HealthConnectParser:
     """Parses raw Health Connect JSON payloads into sports-science data models."""
 
     SPORT_MAP = {
+        # String names
         "RUNNING": "Run",
         "RUN": "Run",
         "BIKING": "Ride",
@@ -62,6 +63,13 @@ class HealthConnectParser:
         "PILATES": "Yoga",
         "ROWING": "Rowing",
         "ELLIPTICAL": "Workout",
+        # Android Health Connect / Google Fit numeric activity type codes
+        "8": "Ride",  # Biking
+        "56": "Run",  # Running
+        "70": "Swim",  # Swimming
+        "79": "Walk",  # Walking
+        "80": "WeightTraining",  # Weightlifting
+        "82": "Yoga",  # Yoga
     }
 
     @staticmethod
@@ -90,14 +98,18 @@ class HealthConnectParser:
             if dt and bpm:
                 get_day(dt)["restingHR"] = round(float(bpm))
 
-        # 2. Heart Rate (if resting_heart_rate not provided, fallback to min HR)
+        # 2. Heart Rate (if resting_heart_rate not provided, fallback to min HR observed that day)
+        hr_by_date: Dict[str, List[float]] = {}
         for hr in payload.get("heart_rate", []):
             dt = self._extract_date(hr.get("time"))
-            min_hr = hr.get("min") or hr.get("bpm")
-            if dt and min_hr:
-                day = get_day(dt)
-                if "restingHR" not in day:
-                    day["restingHR"] = round(float(min_hr))
+            val = hr.get("min") or hr.get("bpm")
+            if dt and val:
+                hr_by_date.setdefault(dt, []).append(float(val))
+
+        for dt, hr_vals in hr_by_date.items():
+            day = get_day(dt)
+            if "restingHR" not in day and hr_vals:
+                day["restingHR"] = round(min(hr_vals))
 
         # 3. Heart Rate Variability (RMSSD in ms)
         for hrv in payload.get("heart_rate_variability", []):
@@ -107,6 +119,7 @@ class HealthConnectParser:
                 get_day(dt)["hrv"] = round(float(val), 1)
 
         # 4. Sleep & Sleep Stages
+        # Health Connect sleep stages: 1=Awake, 4=Light, 5=Deep, 6=REM
         for sl in payload.get("sleep", []):
             dt = self._extract_date(sl.get("session_end_time") or sl.get("start_time"))
             dur = sl.get("duration_seconds")
@@ -115,18 +128,36 @@ class HealthConnectParser:
                 day["sleepSecs"] = int(dur)
                 stages = sl.get("stages", [])
                 if stages:
-                    deep_sec = sum(s.get("duration_seconds", 0) for s in stages if "DEEP" in str(s.get("stage", "")).upper())
-                    rem_sec = sum(s.get("duration_seconds", 0) for s in stages if "REM" in str(s.get("stage", "")).upper())
-                    light_sec = sum(s.get("duration_seconds", 0) for s in stages if "LIGHT" in str(s.get("stage", "")).upper())
+                    deep_sec = sum(
+                        s.get("duration_seconds", 0)
+                        for s in stages
+                        if "DEEP" in str(s.get("stage", "")).upper() or str(s.get("stage", "")).strip() == "5"
+                    )
+                    rem_sec = sum(
+                        s.get("duration_seconds", 0)
+                        for s in stages
+                        if "REM" in str(s.get("stage", "")).upper() or str(s.get("stage", "")).strip() == "6"
+                    )
+                    light_sec = sum(
+                        s.get("duration_seconds", 0)
+                        for s in stages
+                        if "LIGHT" in str(s.get("stage", "")).upper() or str(s.get("stage", "")).strip() == "4"
+                    )
+                    awake_sec = sum(
+                        s.get("duration_seconds", 0)
+                        for s in stages
+                        if "AWAKE" in str(s.get("stage", "")).upper() or str(s.get("stage", "")).strip() == "1"
+                    )
                     total_hrs = dur / 3600.0
                     deep_hrs = deep_sec / 3600.0
                     rem_hrs = rem_sec / 3600.0
-                    day["comments"] = f"Samsung Health Sleep: {total_hrs:.1f}h total ({deep_hrs:.1f}h Deep, {rem_hrs:.1f}h REM)"
+                    light_hrs = light_sec / 3600.0
+                    day["comments"] = f"Samsung Health Sleep: {total_hrs:.1f}h total ({deep_hrs:.1f}h Deep, {rem_hrs:.1f}h REM, {light_hrs:.1f}h Light)"
 
         # 5. Weight & Body Composition
         for w in payload.get("weight", []):
             dt = self._extract_date(w.get("time"))
-            kg = w.get("weight_kg") or w.get("kg") or w.get("weight")
+            kg = w.get("kilograms") or w.get("weight_kg") or w.get("kg") or w.get("weight")
             if dt and kg:
                 get_day(dt)["weight"] = round(float(kg), 2)
 
@@ -135,6 +166,13 @@ class HealthConnectParser:
             pct = bf.get("percentage") or bf.get("body_fat_pct")
             if dt and pct:
                 get_day(dt)["bodyFat"] = round(float(pct), 1)
+
+        # 5b. VO2 Max
+        for vm in payload.get("vo2_max", []):
+            dt = self._extract_date(vm.get("time"))
+            vo2 = vm.get("ml_per_kg_per_min") or vm.get("vo2_max") or vm.get("value")
+            if dt and vo2:
+                get_day(dt)["vo2max"] = round(float(vo2), 1)
 
         # 6. Blood Pressure
         for bp in payload.get("blood_pressure", []):
@@ -196,14 +234,16 @@ class HealthConnectParser:
     def parse_activities(self, payload: Dict[str, Any]) -> List[Dict[str, Any]]:
         """
         Parse exercise sessions into Intervals.icu activity format.
+        Supports both 'exercise_sessions' and 'exercise' keys.
         """
         acts: List[Dict[str, Any]] = []
-        for ex in payload.get("exercise_sessions", []):
+        raw_exercises = payload.get("exercise_sessions") or payload.get("exercise") or []
+        for ex in raw_exercises:
             start = ex.get("start_time")
             if not start:
                 continue
 
-            ex_type = str(ex.get("exercise_type") or "").upper()
+            ex_type = str(ex.get("exercise_type") or ex.get("type") or "").strip().upper()
             sport = self.SPORT_MAP.get(ex_type, "Workout")
 
             dur = int(ex.get("duration_seconds") or 0)
@@ -216,7 +256,7 @@ class HealthConnectParser:
                     dur = 1800
 
             dist = float(ex.get("distance_meters") or 0.0)
-            cals = float(ex.get("calories_burned") or 0.0)
+            cals = float(ex.get("calories_burned") or ex.get("active_calories") or 0.0)
             title = ex.get("title") or f"Samsung Health {sport}"
 
             # Calculate estimated training load if duration is available
@@ -241,10 +281,19 @@ class HealthConnectClient:
     """Client for pulling Health Connect data from phone's local HTTP server."""
 
     @staticmethod
-    def fetch_lan(phone_ip: str, port: int = 8787, days: int = 7, timeout: int = 20) -> Dict[str, Any]:
+    def fetch_lan(
+        phone_ip: str,
+        port: int = 8787,
+        days: int = 7,
+        timeout: int = 20,
+        auth_token: Optional[str] = None,
+    ) -> Dict[str, Any]:
         """Fetch health data directly from HC Webhook local HTTP server on LAN."""
         url = f"http://{phone_ip}:{port}/?days={days}"
-        req = urllib.request.Request(url, headers={"Accept": "application/json"})
+        headers = {"Accept": "application/json"}
+        if auth_token:
+            headers["Authorization"] = f"Bearer {auth_token}"
+        req = urllib.request.Request(url, headers=headers)
         try:
             with urllib.request.urlopen(req, timeout=timeout) as resp:
                 raw = resp.read().decode("utf-8")
