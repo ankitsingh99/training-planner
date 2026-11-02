@@ -24,7 +24,7 @@ class ACWRMetric:  # pragma: no cover
 
 @dataclass
 class PhysiologicalReadiness:
-    """Readiness verdict based on Banister/Coggan PMC and Kiviniemi/Plews HRV & RHR decision trees."""
+    """Multi-Factor Sports-Science Readiness verdict combining PMC, ACWR, Sleep, RHR, SpO2, and HRV."""
     ctl: float  # Fitness (42d EWMA)
     atl: float  # Fatigue (7d EWMA)
     tsb: float  # Form (CTL - ATL)
@@ -32,11 +32,16 @@ class PhysiologicalReadiness:
     recent_resting_hr: Optional[float]
     rhr_delta: Optional[float]
     rhr_elevated: bool
-    readiness_state: str  # "OPTIMAL_OVERLOAD", "PRODUCTIVE_MAINTENANCE", "ELEVATED_FATIGUE", "RECOVERY_MANDATORY"
-    readiness_score: int  # 0 to 100
-    recommendation: str
-    target_next_week_tss: float
-    target_next_week_hours: float
+    recent_sleep_hours: Optional[float] = None
+    sleep_score: Optional[int] = None
+    recent_spo2: Optional[float] = None
+    recent_hrv: Optional[float] = None
+    readiness_state: str = "PRODUCTIVE_MAINTENANCE"  # "OPTIMAL_OVERLOAD", "PRODUCTIVE_MAINTENANCE", "ELEVATED_FATIGUE", "RECOVERY_MANDATORY"
+    readiness_score: int = 75  # 0 to 100 composite index
+    recommendation: str = ""
+    target_next_week_tss: float = 100.0
+    target_next_week_hours: float = 8.0
+    contributors: Dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -214,56 +219,158 @@ class RollingMetricsAnalyzer:
             if rhr_delta >= 4.0:
                 rhr_elevated = True
 
-        # Decision Tree Logic
-        readiness_score = 75  # Neutral baseline
-        if tsb >= 0:
-            readiness_score += 15
-        elif tsb >= -15:
-            readiness_score += 5
+        # Extract latest Sleep, SpO2, and HRV
+        recent_sleep_hours = None
+        sleep_score = None
+        recent_spo2 = None
+        recent_hrv = None
+
+        if wellness_records:
+            # Sort by date
+            sorted_w = sorted(wellness_records, key=lambda x: x.get("id", ""))
+            for w in reversed(sorted_w):
+                if recent_sleep_hours is None and w.get("sleepSecs"):
+                    try:
+                        s_val = float(w["sleepSecs"]) / 3600.0
+                        if s_val > 0:
+                            recent_sleep_hours = round(s_val, 1)
+                    except (ValueError, TypeError):
+                        pass
+                if recent_spo2 is None and w.get("spO2"):
+                    try:
+                        sp_val = float(w["spO2"])
+                        if sp_val > 0:
+                            recent_spo2 = round(sp_val, 1)
+                    except (ValueError, TypeError):
+                        pass
+                if recent_hrv is None and w.get("hrv"):
+                    try:
+                        h_val = float(w["hrv"])
+                        if h_val > 0:
+                            recent_hrv = round(h_val, 1)
+                    except (ValueError, TypeError):
+                        pass
+
+        # Multi-factor Composite Training Readiness Score (0 - 100)
+        # Weights:
+        # 1. Performance Form / TSB (30% weight)
+        # 2. Acute:Chronic Workload Ratio / ACWR (25% weight)
+        # 3. Autonomic Cardiac Strain / RHR & HRV (25% weight)
+        # 4. Sleep Recovery & Restoration (20% weight)
+
+        # Component 1: TSB Subscore (0 - 100)
+        if tsb >= 5:
+            tsb_score = 95
+        elif tsb >= 0:
+            tsb_score = 85
+        elif tsb >= -10:
+            tsb_score = 75
+        elif tsb >= -20:
+            tsb_score = 55
         elif tsb >= -30:
-            readiness_score -= 15
+            tsb_score = 35
         else:
-            readiness_score -= 30
+            tsb_score = 15
 
+        # Component 2: ACWR Subscore (0 - 100)
         if acwr.status == "SWEET_SPOT":
-            readiness_score += 10
-        elif acwr.status == "DANGER_ZONE":
-            readiness_score -= 25
+            acwr_score = 95
+        elif acwr.status == "UNDER_TRAINING":
+            acwr_score = 75
         elif acwr.status == "ELEVATED_LOAD":
-            readiness_score -= 10
+            acwr_score = 50
+        else:  # DANGER_ZONE
+            acwr_score = 20
 
-        if rhr_elevated:
-            readiness_score -= 25
+        # Component 3: Autonomic Strain Subscore (0 - 100)
+        if rhr_delta is not None:
+            if rhr_delta <= -2.0:
+                autonomic_score = 95  # Positive parasympathetic tone
+            elif rhr_delta <= 1.5:
+                autonomic_score = 85  # Normal baseline stability
+            elif rhr_delta <= 3.9:
+                autonomic_score = 65  # Mild elevated strain
+            elif rhr_delta <= 6.0:
+                autonomic_score = 35  # Moderate sympathetic overdrive
+            else:
+                autonomic_score = 15  # Severe autonomic fatigue
+        else:
+            autonomic_score = 75  # Default neutral
 
-        readiness_score = max(10, min(100, readiness_score))
+        # Component 4: Sleep Restoration Subscore (0 - 100)
+        if recent_sleep_hours is not None:
+            if recent_sleep_hours >= 7.5:
+                sleep_score = 95
+            elif recent_sleep_hours >= 6.5:
+                sleep_score = 85
+            elif recent_sleep_hours >= 5.5:
+                sleep_score = 65
+            elif recent_sleep_hours >= 4.0:
+                sleep_score = 40
+            else:
+                sleep_score = 20
+        else:
+            sleep_score = 75
+
+        # Optional SpO2 penalty
+        spo2_penalty = 0
+        if recent_spo2 is not None and recent_spo2 < 95.0:
+            spo2_penalty = 15
+
+        composite_score = (
+            0.30 * tsb_score +
+            0.25 * acwr_score +
+            0.25 * autonomic_score +
+            0.20 * sleep_score
+        ) - spo2_penalty
+
+        readiness_score = int(max(10, min(100, round(composite_score))))
 
         # Classify state
-        if readiness_score >= 80 and not rhr_elevated and acwr.status != "DANGER_ZONE":
+        if tsb < -30 or (readiness_score < 65 and tsb < -20):
+            if rhr_elevated or acwr.status == "DANGER_ZONE" or readiness_score < 45:
+                state = "RECOVERY_MANDATORY"
+                rec = "Excessive fatigue or workload spike. Immediate deload required to prevent injury or non-functional overreaching."
+                load_multiplier = 0.65
+                hour_multiplier = 0.75
+            else:
+                state = "ELEVATED_FATIGUE"
+                rec = "Sympathetic strain, sleep debt, or negative training stress balance observed. Shift high-intensity sessions to Zone 1/2 recovery."
+                load_multiplier = 0.85
+                hour_multiplier = 0.90
+        elif readiness_score >= 80 and not rhr_elevated and acwr.status != "DANGER_ZONE" and tsb >= -15:
             state = "OPTIMAL_OVERLOAD"
-            rec = "Physiological markers are green. Ready for progressive volume and high-quality interval work."
+            rec = "All biometrics are green (optimal sleep, autonomic stability, balanced workload). Prime window for progressive volume and high-quality interval work."
             load_multiplier = 1.05
             hour_multiplier = 1.0
-        elif readiness_score >= 60 and not rhr_elevated:
+        elif readiness_score >= 60 and not rhr_elevated and acwr.status != "DANGER_ZONE":
             state = "PRODUCTIVE_MAINTENANCE"
-            rec = "Stable training state. Execute planned sessions; ensure easy sessions stay strictly conversational."
+            rec = "Solid physiological state. Execute planned training; maintain conversational pace on easy sessions."
             load_multiplier = 1.00
             hour_multiplier = 1.0
-        elif readiness_score < 40:
+        elif readiness_score < 45 or rhr_elevated or acwr.status == "DANGER_ZONE":
             state = "RECOVERY_MANDATORY"
-            rec = "Excessive fatigue or workload spike. Immediate deload required to prevent injury or non-functional overreaching."
+            rec = "Accumulated physiological fatigue or acute workload spike detected. Immediate deload or active recovery required to prevent injury."
             load_multiplier = 0.65
             hour_multiplier = 0.75
         else:
             state = "ELEVATED_FATIGUE"
-            rec = "Sympathetic strain or accumulated fatigue detected. Downshift high-intensity intervals to Zone 1 active recovery."
+            rec = "Sympathetic strain, sleep debt, or negative training stress balance observed. Shift high-intensity sessions to Zone 1/2 recovery."
             load_multiplier = 0.85
             hour_multiplier = 0.90
 
         # Compute target TSS and hours
-        # Chronic weekly base is CTL * 7
         chronic_weekly = max(100.0, ctl * 7.0)
         target_tss = chronic_weekly * load_multiplier
         target_hours = self.target_hours_profile * hour_multiplier
+
+        contributors = {
+            "tsb_score": tsb_score,
+            "acwr_score": acwr_score,
+            "autonomic_score": autonomic_score,
+            "sleep_score": sleep_score,
+            "spo2_penalty": spo2_penalty,
+        }
 
         return PhysiologicalReadiness(
             ctl=round(ctl, 1),
@@ -273,11 +380,16 @@ class RollingMetricsAnalyzer:
             recent_resting_hr=round(recent_resting_hr, 1) if recent_resting_hr else None,
             rhr_delta=round(rhr_delta, 1) if rhr_delta is not None else None,
             rhr_elevated=rhr_elevated,
+            recent_sleep_hours=recent_sleep_hours,
+            sleep_score=sleep_score,
+            recent_spo2=recent_spo2,
+            recent_hrv=recent_hrv,
             readiness_state=state,
             readiness_score=readiness_score,
             recommendation=rec,
             target_next_week_tss=round(target_tss, 0),
             target_next_week_hours=round(target_hours, 1),
+            contributors=contributors,
         )
 
     def analyze_intensity_distribution(self, activities: List[Dict[str, Any]]) -> IntensityDistribution:
