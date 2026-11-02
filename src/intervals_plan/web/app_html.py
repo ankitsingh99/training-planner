@@ -510,6 +510,7 @@ def get_app_html() -> str:
       <button class="nav-btn" onclick="switchTab('analysis')">Analysis</button>
       <button class="nav-btn" onclick="switchTab('goals')">Goals & Profile</button>
       <button class="nav-btn" onclick="switchTab('planner')">Calendar & Plan</button>
+      <button class="nav-btn" onclick="switchTab('coros-hub')">COROS Training Hub</button>
       <button class="nav-btn" onclick="switchTab('sync')">Ecosystem & Sync</button>
       <button class="nav-btn" onclick="switchTab('export')">Export Center</button>
     </nav>
@@ -1173,6 +1174,216 @@ def get_app_html() -> str:
         </div>
       </div>
     </div>
+
+    <!-- TAB 7: COROS TRAINING HUB & EVOLAB -->
+    <div id="tab-coros-hub" class="tab-content">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1.5rem; flex-wrap:wrap; gap:1rem;">
+        <div>
+          <h2 style="font-size:1.5rem; font-weight:800; color:#fff; margin-bottom:0.25rem;">COROS Training Hub & EvoLab Analytics</h2>
+          <p style="font-size:0.875rem; color:var(--text-muted); margin:0;">
+            Real-time synchronization with COROS EvoLab metrics, Running Fitness evaluation, and training load recommendations.
+          </p>
+        </div>
+        <div style="display:flex; gap:0.5rem; align-items:center;">
+          <span id="corosHubSyncStatus" class="periodization-badge" style="background:rgba(16,185,129,0.2); color:var(--success);">COROS Cloud Linked</span>
+          <button class="btn btn-secondary" style="font-size:0.75rem; padding:0.35rem 0.75rem;" onclick="loadCorosHub()">Refresh EvoLab</button>
+        </div>
+      </div>
+
+      <!-- Grid 4: EvoLab Core Telemetry -->
+      <div class="grid-4" style="margin-bottom: 1.5rem;">
+        <div class="card">
+          <div class="card-title">Base Fitness (42d Rolling)</div>
+          <div class="card-value" id="corosBaseFitness" style="color:#06b6d4;">--</div>
+          <div class="card-subtext">Long-term physiological capacity (CTL)</div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Load Impact (7d Rolling)</div>
+          <div class="card-value" id="corosLoadImpact" style="color:#f43f5e;">--</div>
+          <div class="card-subtext">Short-term training stress (ATL)</div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Fatigue Index (0 - 100)</div>
+          <div class="card-value" id="corosFatigueScore" style="color:#f59e0b;">--</div>
+          <div class="card-subtext" id="corosFatigueZoneText">Optimized Zone</div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">7-Day Training Load</div>
+          <div class="card-value" id="coros7dLoad" style="color:#10b981;">--</div>
+          <div class="card-subtext" id="corosLoadRangeText">Target: -- - --</div>
+        </div>
+      </div>
+
+      <!-- Fatigue Gauge & Intensity Trend -->
+      <div class="card" style="margin-bottom: 1.5rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.75rem;">
+          <div class="card-title" style="margin-bottom:0;">EvoLab Fatigue & Intensity Trend</div>
+          <span id="corosFatigueBadge" class="periodization-badge" style="background:rgba(16,185,129,0.2); color:var(--success);">OPTIMIZED</span>
+        </div>
+        <div class="gauge-container" style="margin-bottom: 0.75rem;">
+          <div class="gauge-bar-bg" style="height:12px;">
+            <div id="corosFatigueFill" class="gauge-fill" style="width:50%; background:var(--accent);"></div>
+          </div>
+          <div class="gauge-ticks">
+            <span>0 (Minimal)</span>
+            <span>20 (Performance / Taper)</span>
+            <span>40 (Optimized Sweet Spot)</span>
+            <span>60 (High Fatigue)</span>
+            <span>80+ (Excessive)</span>
+          </div>
+        </div>
+        <p class="card-subtext" id="corosFatigueDesc" style="margin:0; font-size:0.8125rem;">
+          Evaluating fatigue dynamics...
+        </p>
+      </div>
+
+      <!-- Grid 2: Running Fitness & Race Predictor -->
+      <div class="grid-2" style="margin-bottom: 1.5rem;">
+        <!-- Running Fitness Card -->
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.75rem;">
+            <div class="card-title" style="margin-bottom:0;">Running Fitness (EvoLab 4-Pillars)</div>
+            <div style="font-size:1.25rem; font-weight:800; color:#38bdf8;" id="corosOverallFitness">-- / 100</div>
+          </div>
+          <div style="font-size:0.8125rem; color:var(--text-muted); margin-bottom:1rem;">
+            Calibrated Threshold Pace: <strong id="corosThreshPace" style="color:#fff;">--:-- /km</strong>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:0.75rem;">
+            <div>
+              <div style="display:flex; justify-content:space-between; font-size:0.8125rem; margin-bottom:3px;">
+                <span>Base (Aerobic Endurance / &gt;30km)</span>
+                <strong id="corosBaseScore" style="color:#10b981;">--</strong>
+              </div>
+              <div class="gauge-bar-bg" style="height:6px;">
+                <div id="corosBaseBar" class="gauge-fill" style="width:60%; background:#10b981;"></div>
+              </div>
+            </div>
+
+            <div>
+              <div style="display:flex; justify-content:space-between; font-size:0.8125rem; margin-bottom:3px;">
+                <span>Endurance (Lactate Threshold / ~10km)</span>
+                <strong id="corosEnduranceScore" style="color:#06b6d4;">--</strong>
+              </div>
+              <div class="gauge-bar-bg" style="height:6px;">
+                <div id="corosEnduranceBar" class="gauge-fill" style="width:65%; background:#06b6d4;"></div>
+              </div>
+            </div>
+
+            <div>
+              <div style="display:flex; justify-content:space-between; font-size:0.8125rem; margin-bottom:3px;">
+                <span>Speed (VO2 Max Aerobic Power / ~3km)</span>
+                <strong id="corosSpeedScore" style="color:#a855f7;">--</strong>
+              </div>
+              <div class="gauge-bar-bg" style="height:6px;">
+                <div id="corosSpeedBar" class="gauge-fill" style="width:70%; background:#a855f7;"></div>
+              </div>
+            </div>
+
+            <div>
+              <div style="display:flex; justify-content:space-between; font-size:0.8125rem; margin-bottom:3px;">
+                <span>Sprint (Neuromuscular Anaerobic / ~400m)</span>
+                <strong id="corosSprintScore" style="color:#f59e0b;">--</strong>
+              </div>
+              <div class="gauge-bar-bg" style="height:6px;">
+                <div id="corosSprintBar" class="gauge-fill" style="width:60%; background:#f59e0b;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Race Predictor Card -->
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.75rem;">
+            <div class="card-title" style="margin-bottom:0;">COROS Race Predictor</div>
+            <span class="periodization-badge" style="background:rgba(56,189,248,0.2); color:#38bdf8;">Riegel / Cameron Model</span>
+          </div>
+          <p style="font-size:0.8125rem; color:var(--text-muted); margin-bottom:1rem;">
+            Calculated finish times and pacing benchmarks based on threshold efficiency and aerobic training volume.
+          </p>
+
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Event</th>
+                <th>Distance</th>
+                <th>Predicted Time</th>
+                <th>Predicted Pace</th>
+              </tr>
+            </thead>
+            <tbody id="corosRaceTableBody">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Grid 2: Training Effect & Recovery Timer Simulator -->
+      <div class="grid-2">
+        <!-- Training Effect Calculator -->
+        <div class="card">
+          <div class="card-title" style="margin-bottom:0.75rem;">Training Effect (TE) Estimator</div>
+          <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:0.5rem; margin-bottom:0.75rem;">
+            <div>
+              <label style="font-size:0.75rem; color:var(--text-muted);">Duration (mins)</label>
+              <input type="number" id="teInputMins" value="60" style="width:100%; background:#0f172a; border:1px solid var(--border); border-radius:4px; color:#fff; padding:0.35rem 0.5rem; font-size:0.8125rem;">
+            </div>
+            <div>
+              <label style="font-size:0.75rem; color:var(--text-muted);">Load (TSS)</label>
+              <input type="number" id="teInputLoad" value="65" style="width:100%; background:#0f172a; border:1px solid var(--border); border-radius:4px; color:#fff; padding:0.35rem 0.5rem; font-size:0.8125rem;">
+            </div>
+            <div>
+              <label style="font-size:0.75rem; color:var(--text-muted);">Avg Heart Rate</label>
+              <input type="number" id="teInputHr" value="155" style="width:100%; background:#0f172a; border:1px solid var(--border); border-radius:4px; color:#fff; padding:0.35rem 0.5rem; font-size:0.8125rem;">
+            </div>
+          </div>
+          <button class="btn btn-secondary" style="font-size:0.75rem; padding:0.35rem 0.75rem; margin-bottom:0.75rem;" onclick="calcCorosTE()">Compute Session Effect</button>
+
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.75rem;">
+            <div style="background:#0f172a; border:1px solid var(--border); border-radius:6px; padding:0.6rem;">
+              <div style="font-size:0.75rem; color:var(--text-muted);">Aerobic Training Effect</div>
+              <div style="font-size:1.25rem; font-weight:800; color:#10b981;" id="corosAeroTeVal">--</div>
+              <div style="font-size:0.7rem; color:var(--text-muted);" id="corosAeroTeLabel">Maintaining</div>
+            </div>
+            <div style="background:#0f172a; border:1px solid var(--border); border-radius:6px; padding:0.6rem;">
+              <div style="font-size:0.75rem; color:var(--text-muted);">Anaerobic Training Effect</div>
+              <div style="font-size:1.25rem; font-weight:800; color:#f59e0b;" id="corosAnaeroTeVal">--</div>
+              <div style="font-size:0.7rem; color:var(--text-muted);" id="corosAnaeroTeLabel">Maintaining</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recovery Timer Card -->
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.75rem;">
+            <div class="card-title" style="margin-bottom:0;">COROS Recovery Timer</div>
+            <span id="corosRecoveryBadge" class="periodization-badge" style="background:rgba(16,185,129,0.2); color:var(--success);">READY (90%+)</span>
+          </div>
+
+          <div style="text-align:center; padding:1rem 0;">
+            <div style="font-size:2.25rem; font-weight:800; color:#fff;" id="corosRecoveryHours">0.0h</div>
+            <div style="font-size:0.8125rem; color:var(--text-muted); margin-top:2px;">Time until 100% full recovery</div>
+          </div>
+
+          <div style="margin-bottom:0.75rem;">
+            <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:var(--text-muted); margin-bottom:4px;">
+              <span>Recovery Percentage</span>
+              <strong id="corosRecoveryPctText" style="color:#10b981;">100%</strong>
+            </div>
+            <div class="gauge-bar-bg" style="height:10px;">
+              <div id="corosRecoveryFill" class="gauge-fill" style="width:100%; background:var(--success);"></div>
+            </div>
+          </div>
+
+          <p style="font-size:0.8125rem; color:var(--text-muted); margin:0;" id="corosRecoveryGuidance">
+            Your body is fully recovered and primed for high-intensity intervals or long aerobic volume.
+          </p>
+        </div>
+      </div>
+    </div>
   </main>
 
   <!-- WORKOUT STEP INSPECTOR MODAL -->
@@ -1417,6 +1628,9 @@ def get_app_html() -> str:
         // Load Health Connect Status
         loadHealthConnectStatus();
 
+        // Load COROS Training Hub & EvoLab Telemetry
+        loadCorosHub();
+
         // Update Joe Friel Telemetry Data Quality Auditor
         if (qualityData) {
           const qb = document.getElementById('dataQualityBadge');
@@ -1503,6 +1717,177 @@ def get_app_html() -> str:
           resBox.style.display = 'block';
           resBox.innerHTML = '<strong>Skiba Model Output:</strong> Max Depletion: ' + (s.wbal_max_depletion_j / 1000).toFixed(1) + ' kJ (' + s.wbal_usage_pct + '%) | Below 30%: ' + s.seconds_below_30pct + 's | Reconstitution Ratio: ' + s.wbal_recovery_ratio + 'x | Depletion Events: ' + s.wbal_depletion_events;
         }
+      }
+    }
+
+    async function loadCorosHub() {
+      try {
+        const res = await fetch('/api/coros/evolab');
+        const data = await res.json();
+        if (!data) return;
+
+        // 1. EvoLab Core Telemetry
+        if (data.evolab) {
+          const e = data.evolab;
+          const bfEl = document.getElementById('corosBaseFitness');
+          if (bfEl) bfEl.innerText = e.base_fitness.toFixed(1);
+          const liEl = document.getElementById('corosLoadImpact');
+          if (liEl) liEl.innerText = e.load_impact.toFixed(1);
+          const fsEl = document.getElementById('corosFatigueScore');
+          if (fsEl) fsEl.innerText = e.fatigue_score.toFixed(0);
+
+          const fzEl = document.getElementById('corosFatigueZoneText');
+          if (fzEl) fzEl.innerText = e.fatigue_zone + ' Zone';
+
+          const fbBadge = document.getElementById('corosFatigueBadge');
+          if (fbBadge) {
+            fbBadge.innerText = e.fatigue_zone;
+            if (e.fatigue_zone === 'OPTIMIZED') {
+              fbBadge.style.background = 'rgba(16,185,129,0.2)';
+              fbBadge.style.color = 'var(--success)';
+            } else if (e.fatigue_zone === 'PERFORMANCE') {
+              fbBadge.style.background = 'rgba(6,182,212,0.2)';
+              fbBadge.style.color = '#06b6d4';
+            } else if (e.fatigue_zone === 'HIGH') {
+              fbBadge.style.background = 'rgba(245,158,11,0.2)';
+              fbBadge.style.color = 'var(--warning)';
+            } else if (e.fatigue_zone === 'EXCESSIVE') {
+              fbBadge.style.background = 'rgba(239,68,68,0.2)';
+              fbBadge.style.color = 'var(--danger)';
+            } else {
+              fbBadge.style.background = 'rgba(148,163,184,0.2)';
+              fbBadge.style.color = '#94a3b8';
+            }
+          }
+
+          const fillEl = document.getElementById('corosFatigueFill');
+          if (fillEl) {
+            fillEl.style.width = Math.min(100, Math.max(5, e.fatigue_score)) + '%';
+            fillEl.style.background = e.fatigue_score >= 80 ? 'var(--danger)' : (e.fatigue_score >= 60 ? 'var(--warning)' : (e.fatigue_score >= 40 ? 'var(--success)' : '#06b6d4'));
+          }
+
+          const descEl = document.getElementById('corosFatigueDesc');
+          if (descEl) descEl.innerText = e.fatigue_description + ' (' + e.intensity_trend + ')';
+
+          const loadEl = document.getElementById('coros7dLoad');
+          if (loadEl) loadEl.innerText = e.seven_day_load.toFixed(0) + ' TSS';
+          const rangeEl = document.getElementById('corosLoadRangeText');
+          if (rangeEl) rangeEl.innerText = 'Target: ' + e.recommended_min_load.toFixed(0) + ' - ' + e.recommended_max_load.toFixed(0) + ' (' + e.load_recommendation_status + ')';
+        }
+
+        // 2. Running Fitness 4-Pillars
+        if (data.running_fitness) {
+          const rf = data.running_fitness;
+          const ofEl = document.getElementById('corosOverallFitness');
+          if (ofEl) ofEl.innerText = rf.overall_score.toFixed(1) + ' / 100';
+          const tpEl = document.getElementById('corosThreshPace');
+          if (tpEl) tpEl.innerText = rf.threshold_pace_formatted;
+
+          const bVal = document.getElementById('corosBaseScore');
+          if (bVal) bVal.innerText = rf.base_score.toFixed(1);
+          const bBar = document.getElementById('corosBaseBar');
+          if (bBar) bBar.style.width = rf.base_score + '%';
+
+          const eVal = document.getElementById('corosEnduranceScore');
+          if (eVal) eVal.innerText = rf.endurance_score.toFixed(1);
+          const eBar = document.getElementById('corosEnduranceBar');
+          if (eBar) eBar.style.width = rf.endurance_score + '%';
+
+          const sVal = document.getElementById('corosSpeedScore');
+          if (sVal) sVal.innerText = rf.speed_score.toFixed(1);
+          const sBar = document.getElementById('corosSpeedBar');
+          if (sBar) sBar.style.width = rf.speed_score + '%';
+
+          const spVal = document.getElementById('corosSprintScore');
+          if (spVal) spVal.innerText = rf.sprint_score.toFixed(1);
+          const spBar = document.getElementById('corosSprintBar');
+          if (spBar) spBar.style.width = rf.sprint_score + '%';
+        }
+
+        // 3. Race Predictor Table
+        if (data.race_predictions) {
+          const tbody = document.getElementById('corosRaceTableBody');
+          if (tbody) {
+            tbody.innerHTML = data.race_predictions.map(p => {
+              return '<tr>' +
+                '<td style="font-weight:700; color:#fff;">' + p.distance_name + '</td>' +
+                '<td style="color:var(--text-muted);">' + p.distance_km + ' km</td>' +
+                '<td style="font-weight:700; color:#38bdf8;">' + p.predicted_time_formatted + '</td>' +
+                '<td style="color:var(--success);">' + p.predicted_pace_formatted + '</td>' +
+              '</tr>';
+            }).join('');
+          }
+        }
+
+        // 4. Training Effect & Recovery Timer
+        if (data.training_effect) {
+          renderCorosTE(data.training_effect);
+        }
+
+      } catch (err) {
+        console.debug('Failed loading COROS Hub metrics:', err);
+      }
+    }
+
+    function renderCorosTE(te) {
+      if (!te) return;
+      const aeroEl = document.getElementById('corosAeroTeVal');
+      if (aeroEl) aeroEl.innerText = te.aerobic_te.toFixed(1);
+      const aeroLbl = document.getElementById('corosAeroTeLabel');
+      if (aeroLbl) aeroLbl.innerText = te.aerobic_label;
+
+      const anaeroEl = document.getElementById('corosAnaeroTeVal');
+      if (anaeroEl) anaeroEl.innerText = te.anaerobic_te.toFixed(1);
+      const anaeroLbl = document.getElementById('corosAnaeroTeLabel');
+      if (anaeroLbl) anaeroLbl.innerText = te.anaerobic_label;
+
+      const recH = document.getElementById('corosRecoveryHours');
+      if (recH) recH.innerText = te.recovery_hours.toFixed(1) + 'h';
+      const recPct = document.getElementById('corosRecoveryPctText');
+      if (recPct) recPct.innerText = te.recovery_pct + '%';
+      const recFill = document.getElementById('corosRecoveryFill');
+      if (recFill) {
+        recFill.style.width = te.recovery_pct + '%';
+        recFill.style.background = te.recovery_state === 'FRESH' ? 'var(--success)' : (te.recovery_state === 'TIRED' ? 'var(--warning)' : 'var(--danger)');
+      }
+
+      const recBadge = document.getElementById('corosRecoveryBadge');
+      if (recBadge) {
+        recBadge.innerText = te.recovery_state + ' (' + te.recovery_pct + '%)';
+        recBadge.style.color = te.recovery_state === 'FRESH' ? 'var(--success)' : (te.recovery_state === 'TIRED' ? 'var(--warning)' : 'var(--danger)');
+        recBadge.style.background = te.recovery_state === 'FRESH' ? 'rgba(16,185,129,0.2)' : (te.recovery_state === 'TIRED' ? 'rgba(245,158,11,0.2)' : 'rgba(239,68,68,0.2)');
+      }
+
+      const recGuid = document.getElementById('corosRecoveryGuidance');
+      if (recGuid) {
+        if (te.recovery_state === 'FRESH') {
+          recGuid.innerText = 'Body is fully recovered and primed for high-intensity intervals or long aerobic volume.';
+        } else if (te.recovery_state === 'TIRED') {
+          recGuid.innerText = 'Body is processing recent training strain. Easy aerobic recovery or zone 2 volume is permitted.';
+        } else {
+          recGuid.innerText = 'High physiological fatigue accumulated. Complete rest or light passive mobility recommended.';
+        }
+      }
+    }
+
+    async function calcCorosTE() {
+      const durMins = parseInt(document.getElementById('teInputMins').value) || 60;
+      const load = parseFloat(document.getElementById('teInputLoad').value) || 60.0;
+      const hr = parseInt(document.getElementById('teInputHr').value) || 155;
+      try {
+        const res = await fetch('/api/coros/training-effect', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            duration_seconds: durMins * 60,
+            load_tss: load,
+            hr_avg: hr
+          })
+        });
+        const data = await res.json();
+        renderCorosTE(data);
+      } catch (err) {
+        console.error('Failed computing training effect:', err);
       }
     }
 

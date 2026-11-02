@@ -256,7 +256,32 @@ def test_web_ui_endpoints():
             assert "alpha1" in dfa_res
             assert dfa_res["samples"] == 120
 
-        # 19. 404 test on GET and POST
+        # 19. COROS EvoLab Hub API (GET)
+        with urllib.request.urlopen(f"{base_url}/api/coros/evolab") as res:
+            assert res.status == 200
+            hub = json.loads(res.read().decode("utf-8"))
+            assert "evolab" in hub
+            assert "running_fitness" in hub
+            assert "race_predictions" in hub
+            assert "training_effect" in hub
+            assert hub["evolab"]["fatigue_zone"] in ("MINIMAL", "PERFORMANCE", "OPTIMIZED", "HIGH", "EXCESSIVE")
+            assert len(hub["race_predictions"]) == 4
+
+        # 20. COROS Training Effect API (POST)
+        te_req = urllib.request.Request(
+            f"{base_url}/api/coros/training-effect",
+            data=json.dumps({"duration_seconds": 3600, "load_tss": 70, "hr_avg": 160}).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(te_req) as res:
+            assert res.status == 200
+            te_data = json.loads(res.read().decode("utf-8"))
+            assert "aerobic_te" in te_data
+            assert "anaerobic_te" in te_data
+            assert "recovery_hours" in te_data
+
+        # 21. 404 test on GET and POST
         req_404 = urllib.request.Request(f"{base_url}/api/nonexistent")
         try:
             urllib.request.urlopen(req_404)

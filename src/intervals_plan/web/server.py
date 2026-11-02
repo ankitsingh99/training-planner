@@ -215,6 +215,12 @@ class AdaptPulseRequestHandler(BaseHTTPRequestHandler):
             self._send_json(report)
             return
 
+        # 13. COROS Training Hub & EvoLab API
+        if path == "/api/coros/evolab":
+            hub_report = self._compute_coros_evolab()
+            self._send_json(hub_report)
+            return
+
         self._send_json({"error": "Endpoint not found"}, status=404)
 
     def do_POST(self) -> None:
@@ -326,6 +332,27 @@ class AdaptPulseRequestHandler(BaseHTTPRequestHandler):
             self._send_json({"alpha1": a1, "samples": len(rr)})
             return
 
+        # 9. COROS Training Effect & Recovery Timer API
+        if path == "/api/coros/training-effect":
+            from intervals_plan.coros_evolab import CorosEvoLabEngine
+            prof = AthleteProfileConfig.load()
+            dur = int(req_data.get("duration_seconds", 3600))
+            load = float(req_data.get("load_tss", 60.0))
+            hr = req_data.get("hr_avg")
+            lthr = int(req_data.get("lthr", prof.lthr_run))
+            fatigue = float(req_data.get("fatigue_score", 50.0))
+            elapsed = float(req_data.get("hours_elapsed", 0.0))
+            te_res = CorosEvoLabEngine.calculate_training_effect(
+                duration_seconds=dur,
+                load_tss=load,
+                hr_avg=hr,
+                lthr=lthr,
+                fatigue_score=fatigue,
+                hours_elapsed=elapsed,
+            )
+            self._send_json(te_res.to_dict())
+            return
+
         self._send_json({"error": "Endpoint not found"}, status=404)
 
     def _compute_data_quality(self) -> Dict[str, Any]:
@@ -395,6 +422,37 @@ class AdaptPulseRequestHandler(BaseHTTPRequestHandler):
             recent_activities=recent_activities,
         )
         return audit.to_dict()
+
+    def _compute_coros_evolab(self) -> Dict[str, Any]:
+        """Compute live COROS Training Hub and EvoLab physiological metrics."""
+        from intervals_plan.coros_evolab import CorosEvoLabEngine
+        prof = AthleteProfileConfig.load()
+        rep = self._compute_report()
+        base_fitness = float(rep.readiness.ctl) if rep.readiness.ctl is not None else 42.0
+        load_impact = float(rep.readiness.atl) if rep.readiness.atl is not None else 45.0
+
+        daily_loads = []
+        if hasattr(rep, "daily_series") and rep.daily_series:
+            daily_loads = [float(d.get("training_load", 0.0)) for d in rep.daily_series[-7:]]
+        if not daily_loads:
+            daily_loads = [base_fitness] * 7
+
+        threshold_pace = getattr(prof, "threshold_pace_sec_km", 270)
+        weekly_hours = getattr(prof, "weekly_hours", 8.0)
+        lthr = getattr(prof, "lthr_run", 182)
+
+        return CorosEvoLabEngine.evaluate_full_hub(
+            base_fitness=base_fitness,
+            load_impact=load_impact,
+            recent_daily_loads=daily_loads,
+            threshold_pace_sec_km=threshold_pace,
+            weekly_hours=weekly_hours,
+            last_workout_load=65.0,
+            last_workout_duration_secs=3600,
+            last_workout_hr=155,
+            athlete_lthr=lthr,
+            hours_since_last_workout=12.0,
+        )
 
     def _compute_report(self):
         """Generate rolling report using live Intervals client or local fallback."""

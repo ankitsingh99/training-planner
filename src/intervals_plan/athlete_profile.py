@@ -37,6 +37,8 @@ class AthleteProfileConfig:
     max_hr: int = 200
     ftp_bike: int = 250
     resting_hr_baseline: Optional[int] = 50
+    # Threshold pace in seconds per kilometer (e.g. 270s = 4:30/km)
+    threshold_pace_sec_km: int = 270
     # Swim benchmarks (Critical Swim Speed in seconds per 100m, e.g. 105s = 1:45/100m)
     swim_css_sec_100m: int = 105
     pool_length_m: int = 25
