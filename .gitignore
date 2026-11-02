@@ -23,6 +23,7 @@ data/cache/*
 data/manifest.json
 data/audit.log
 data/athlete_profile.json
+data/health_connect_sync.json
 !data/athlete_profile.json.example
 *.sqlite
 *.sqlite3

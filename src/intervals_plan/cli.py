@@ -215,6 +215,16 @@ def build_parser() -> argparse.ArgumentParser:
     tok_p.add_argument("--top", type=int, default=15, help="Number of top files to display")
     tok_p.add_argument("--json", action="store_true", help="Output machine-readable JSON")
 
+    # health-connect
+    hc_p = subparsers.add_parser("health-connect", help="Sync Samsung Health / Health Connect biometrics and workouts")
+    hc_p.add_argument("--pull", help="Pull on-demand from phone local HTTP server (IP address, e.g. 192.168.1.100)")
+    hc_p.add_argument("--port", type=int, default=8787, help="Phone HTTP server port (default: 8787)")
+    hc_p.add_argument("--days", type=int, default=7, help="Lookback days to pull (default: 7)")
+    hc_p.add_argument("--file", help="Ingest local Health Connect JSON export file")
+    hc_p.add_argument("--status", action="store_true", help="Display Health Connect sync status and webhook configuration")
+    hc_p.add_argument("--dry-run", action="store_true", default=True, help="Preview without updating Intervals.icu")
+    hc_p.add_argument("--apply", action="store_true", help="Apply updates to Intervals.icu and COROS")
+
     return parser
 
 
@@ -899,6 +909,82 @@ def handle_session_review(args: argparse.Namespace) -> None:
     print("=" * 60 + "\n")
 
 
+def handle_health_connect(cfg: Config, args: argparse.Namespace) -> None:
+    from intervals_plan.integrations.health_connect import (
+        HealthConnectClient,
+        HealthConnectSyncManager,
+    )
+    from intervals_plan.integrations.coros_client import CorosClient
+
+    mgr = HealthConnectSyncManager(cfg)
+    coros = CorosClient.from_config(cfg)
+    client = IntervalsClient(api_key=cfg.api_key, athlete_id=cfg.athlete_id, base_url=cfg.base_url)
+    coros_status = coros.check_status(client)
+
+    if args.status or (not args.pull and not args.file):
+        last_state = mgr.load_last_state()
+        print("\nHealth Connect & Samsung Health Integration Status\n")
+        print("Webhook Receiver (AdaptPulse Web UI):")
+        print("  - Path:                 /api/health-connect (HTTP POST)")
+        print("  - Target URL on LAN:    http://<COMPUTER_IP>:8080/api/health-connect")
+        print("  - Delivery Format:      JSON (default in HC Webhook app)")
+        print("\nSync Targets:")
+        print(f"  - Intervals.icu:        {'CONNECTED' if cfg.api_key else 'NOT CONFIGURED'}")
+        print(f"  - COROS Status:         {'CONNECTED' if coros_status.connected else 'NOT CONFIGURED'} [{coros_status.mode}]")
+        if coros_status.user_id:
+            print(f"  - COROS User ID:        {coros_status.user_id}")
+            print(f"  - COROS Auto-Sync:      Upload Workouts={coros_status.upload_workouts}, Download Wellness={coros_status.download_wellness}")
+        if last_state:
+            print(f"\nLast Sync:               {last_state.get('timestamp')}")
+            print(f"  - Source:               {last_state.get('source')}")
+            print(f"  - Dates Processed:      {len(last_state.get('dates_processed', []))}")
+            print(f"  - Wellness Records:     {last_state.get('wellness_records_updated')}")
+            print(f"  - Activities Uploaded:  {last_state.get('activities_uploaded')}")
+        else:
+            print("\nLast Sync:               Never")
+        return
+
+    dry_run = not args.apply
+
+    if args.file:
+        p = Path(args.file)
+        if not p.is_file():
+            print(f"Error: JSON file not found: {args.file}")
+            sys.exit(1)
+        payload = json.loads(p.read_text(encoding="utf-8"))
+        src = f"file_{p.name}"
+    elif args.pull:
+        print(f"Connecting to phone at http://{args.pull}:{args.port}/?days={args.days}...")
+        try:
+            payload = HealthConnectClient.fetch_lan(phone_ip=args.pull, port=args.port, days=args.days)
+            src = f"lan_pull_{args.pull}"
+        except Exception as exc:
+            print(f"Connection Error: {exc}")
+            sys.exit(1)
+    else:
+        return
+
+    mode_str = "DRY-RUN (Simulating)" if dry_run else "LIVE APPLY"
+    print(f"\nProcessing Health Connect Data [{mode_str}]...\n")
+    res = mgr.sync_payload(payload, source=src, dry_run=dry_run)
+
+    print(f"Processed Dates ({len(res.dates_processed)}): {', '.join(res.dates_processed[:5])}{'...' if len(res.dates_processed) > 5 else ''}")
+    print(f"Wellness Days Updated:    {res.wellness_records_updated}")
+    print(f"Activities Synced:        {res.activities_uploaded}")
+    print(f"COROS Sync Mode:          {res.coros_mode}")
+
+    sample = res.details.get("sample_wellness", {})
+    if sample:
+        print("\nSample Wellness Output:")
+        for dt, d in sample.items():
+            print(f"  [{dt}]: RHR={d.get('restingHR', 'N/A')} bpm | HRV={d.get('hrv', 'N/A')} ms | Sleep={d.get('sleepSecs', 0)/3600:.1f}h | Steps={d.get('steps', 'N/A')}")
+
+    if dry_run:
+        print("\nSafety Notice: Run with --apply to push updates to Intervals.icu and COROS.")
+    else:
+        print("\nSuccess: Biometrics successfully written to Intervals.icu and queued for COROS sync!")
+
+
 def main() -> None:
     parser = build_parser()
     args = parser.parse_args()
@@ -1003,6 +1089,8 @@ def main() -> None:
         handle_session_review(args)
     elif args.subcommand == "token-audit":
         handle_token_audit(cfg, args)
+    elif args.subcommand == "health-connect":
+        handle_health_connect(cfg, args)
 
 
 if __name__ == "__main__":

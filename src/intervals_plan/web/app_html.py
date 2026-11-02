@@ -944,9 +944,68 @@ def get_app_html() -> str:
           <p class="card-subtext">Clean ASCII cues &lt;= 20 chars ready for watch firmware.</p>
         </div>
         <div class="card">
-          <div class="card-title">Strava & Hevy Integration</div>
-          <div style="font-size: 1.1rem; font-weight: 700; color: var(--warning);">Automated Inflow</div>
-          <p class="card-subtext">Gym workouts upload via Strava to complete stress profile.</p>
+          <div class="card-title">Samsung Health Hub</div>
+          <div style="font-size: 1.1rem; font-weight: 700; color: #a855f7;">Health Connect Active</div>
+          <p class="card-subtext">Automated biometrics & workout ingestion pipeline.</p>
+        </div>
+      </div>
+
+      <!-- Samsung Health & Health Connect Webhook Hub -->
+      <div class="card" style="margin-bottom: 1.5rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+          <div class="card-title" style="margin-bottom:0;">Samsung Health & Health Connect Synchronization</div>
+          <span id="hcSyncBadge" class="periodization-badge" style="background:rgba(16,185,129,0.2); color:var(--success);">Active Relay to Intervals + COROS</span>
+        </div>
+        <p class="card-subtext" style="margin-bottom:1.25rem;">
+          Ingests biometrics (Resting HR, overnight HRV RMSSD, sleep stages, SpO2, blood pressure, weight, and exercise sessions) from Samsung Health via the <code>health-connect-webhook</code> app, automatically updating Intervals.icu and relaying to your COROS watch.
+        </p>
+        <div class="grid-2">
+          <div style="background:#0f172a; border:1px solid #1f2937; border-radius:8px; padding:1.25rem;">
+            <div style="font-weight:700; color:var(--accent); margin-bottom:0.5rem; font-size:0.9375rem;">1. Automated Inbound Webhook (Push)</div>
+            <p style="font-size:0.8125rem; color:var(--text-muted); margin-bottom:0.75rem;">
+              Configure this target URL in your Android Health Connect Webhook app for automated scheduled/interval syncing:
+            </p>
+            <div style="background:#111827; border:1px solid #374151; border-radius:6px; padding:0.5rem 0.75rem; font-family:monospace; font-size:0.8125rem; color:#38bdf8; word-break:break-all;" id="hcWebhookUrl">
+              http://127.0.0.1:8080/api/health-connect
+            </div>
+            <div style="font-size:0.75rem; color:#9ca3af; margin-top:0.5rem;">
+              Format: <strong>JSON</strong> | Recommended Schedule: 08:00 & 21:00 or every 30-60 mins.
+            </div>
+          </div>
+
+          <div style="background:#0f172a; border:1px solid #1f2937; border-radius:8px; padding:1.25rem;">
+            <div style="font-weight:700; color:var(--success); margin-bottom:0.5rem; font-size:0.9375rem;">2. On-Demand LAN Pull (Local Server :8787)</div>
+            <p style="font-size:0.8125rem; color:var(--text-muted); margin-bottom:0.75rem;">
+              Pull recent data over Wi-Fi from the app's built-in Local HTTP server:
+            </p>
+            <div style="display:flex; gap:0.5rem; margin-bottom:0.5rem;">
+              <input type="text" id="hcPhoneIp" class="form-input" placeholder="Phone IP (e.g. 192.168.1.100)" style="flex:2;">
+              <input type="number" id="hcDays" class="form-input" value="7" min="1" max="30" style="flex:1;" title="Days lookback">
+              <button class="btn" onclick="triggerLanPull()" id="btnLanPull" style="white-space:nowrap;">Pull Now</button>
+            </div>
+            <div style="font-size:0.75rem; color:#9ca3af;" id="hcPullStatus">
+              Enable "Local HTTP server" in the phone app settings (default port 8787).
+            </div>
+          </div>
+        </div>
+
+        <div style="background:#111827; border:1px solid #1f2937; border-radius:6px; padding:0.75rem 1rem; margin-top:1rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem; font-size:0.8125rem;">
+          <div>
+            <span style="color:var(--text-muted);">Last Synced:</span>
+            <strong id="hcLastSyncText" style="color:#f3f4f6; margin-left:4px;">Never</strong>
+          </div>
+          <div>
+            <span style="color:var(--text-muted);">Wellness Updated:</span>
+            <strong id="hcWellnessCount" style="color:var(--success); margin-left:4px;">0 days</strong>
+          </div>
+          <div>
+            <span style="color:var(--text-muted);">Activities Uploaded:</span>
+            <strong id="hcActivitiesCount" style="color:#38bdf8; margin-left:4px;">0</strong>
+          </div>
+          <div>
+            <span style="color:var(--text-muted);">COROS Relay:</span>
+            <strong id="hcCorosRelayStatus" style="color:var(--accent); margin-left:4px;">Active via Intervals.icu</strong>
+          </div>
         </div>
       </div>
 
@@ -1216,6 +1275,9 @@ def get_app_html() -> str:
         // Load backups
         loadBackups();
 
+        // Load Health Connect Status
+        loadHealthConnectStatus();
+
       } catch (err) {
         console.error('Failed to load dashboard data:', err);
       }
@@ -1262,6 +1324,70 @@ def get_app_html() -> str:
         console.error('Failed to fetch AI coaching:', err);
       } finally {
         if (btn) btn.innerText = 'AI Synthesis (:free)';
+      }
+    }
+
+    async function loadHealthConnectStatus() {
+      try {
+        const uEl = document.getElementById('hcWebhookUrl');
+        if (uEl) {
+          uEl.innerText = window.location.origin + '/api/health-connect';
+        }
+        const res = await fetch('/api/health-connect/status');
+        const data = await res.json();
+        if (data && data.last_sync) {
+          const l = data.last_sync;
+          const dtText = document.getElementById('hcLastSyncText');
+          if (dtText && l.timestamp) dtText.innerText = l.timestamp.slice(0, 19).replace('T', ' ');
+          const wCount = document.getElementById('hcWellnessCount');
+          if (wCount) wCount.innerText = (l.wellness_records_updated || 0) + ' days';
+          const aCount = document.getElementById('hcActivitiesCount');
+          if (aCount) aCount.innerText = (l.activities_uploaded || 0) + '';
+        }
+        const cRelay = document.getElementById('hcCorosRelayStatus');
+        if (cRelay) {
+          cRelay.innerText = data.coros_connected ? `Active (${data.coros_mode})` : 'Not Configured';
+          cRelay.style.color = data.coros_connected ? 'var(--success)' : 'var(--warning)';
+        }
+      } catch (err) {
+        console.debug('Failed loading Health Connect status:', err);
+      }
+    }
+
+    async function triggerLanPull() {
+      const ip = (document.getElementById('hcPhoneIp').value || '').trim();
+      const days = parseInt(document.getElementById('hcDays').value) || 7;
+      if (!ip) {
+        alert('Please enter your phone IP address (shown in the HC Webhook app on your phone)');
+        return;
+      }
+      const btn = document.getElementById('btnLanPull');
+      const statusEl = document.getElementById('hcPullStatus');
+      btn.disabled = true;
+      btn.innerText = 'Pulling...';
+      statusEl.innerText = `Connecting to http://${ip}:8787/?days=${days}...`;
+
+      try {
+        const res = await fetch('/api/health-connect/pull', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone_ip: ip, port: 8787, days: days, dry_run: false })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          showToast(`Synced ${data.wellness_records_updated} wellness days & ${data.activities_uploaded} activities!`);
+          statusEl.innerText = `Success: ${data.wellness_records_updated} days written to Intervals.icu & queued for COROS!`;
+          loadDashboard();
+        } else {
+          statusEl.innerText = `Error: ${data.error || 'Failed to pull from phone'}`;
+          alert(`Pull Error: ${data.error}`);
+        }
+      } catch (err) {
+        statusEl.innerText = `Network Error: ${err}`;
+        alert(`Network Error: ${err}`);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'Pull Now';
       }
     }
 

@@ -185,3 +185,11 @@ class IntervalsClient:
         except IntervalsAPIError:
             return []
 
+    def update_wellness(self, date_str: str, wellness_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Update or create wellness metrics for a specific date (YYYY-MM-DD)."""
+        return self._request("PUT", f"/athlete/{self.athlete_id}/wellness/{date_str}", data=wellness_data)
+
+    def upload_activity(self, activity_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Upload a completed activity record to Intervals.icu."""
+        return self._request("POST", f"/athlete/{self.athlete_id}/activities", data=activity_data)
+

@@ -6,6 +6,7 @@ from http.server import ThreadingHTTPServer
 import json
 import threading
 import time
+from unittest.mock import patch
 import urllib.request
 
 from intervals_plan.web.server import AdaptPulseRequestHandler
@@ -184,7 +185,43 @@ def test_web_ui_endpoints():
         with urllib.request.urlopen(req_bad_json) as res:
             assert res.status == 200
 
-        # 13. 404 test on GET and POST
+        # 13. Health Connect Status API (GET)
+        with urllib.request.urlopen(f"{base_url}/api/health-connect/status") as res:
+            assert res.status == 200
+            hc_stat = json.loads(res.read().decode("utf-8"))
+            assert hc_stat["configured"] is True
+            assert "webhook_path" in hc_stat
+
+        # 14. Health Connect Webhook Ingestion (POST)
+        hc_payload = json.dumps({
+            "steps": [{"count": 3000, "start_time": "2026-11-02T08:00:00Z"}],
+            "resting_heart_rate": [{"bpm": 49, "time": "2026-11-02T06:00:00Z"}],
+            "dry_run": True,
+        }).encode("utf-8")
+        req_hc = urllib.request.Request(
+            f"{base_url}/api/health-connect",
+            data=hc_payload,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req_hc) as res:
+            assert res.status == 200
+            hc_res = json.loads(res.read().decode("utf-8"))
+            assert hc_res["wellness_records_updated"] >= 1
+
+        # 15. Health Connect LAN Pull (POST)
+        with patch("intervals_plan.integrations.health_connect.HealthConnectClient.fetch_lan", return_value={"steps": []}):
+            pull_payload = json.dumps({"phone_ip": "192.168.1.15", "port": 8787, "dry_run": True}).encode("utf-8")
+            req_pull = urllib.request.Request(
+                f"{base_url}/api/health-connect/pull",
+                data=pull_payload,
+                headers={"Content-Type": "application/json"},
+                method="POST",
+            )
+            with urllib.request.urlopen(req_pull) as res:
+                assert res.status == 200
+
+        # 16. 404 test on GET and POST
         req_404 = urllib.request.Request(f"{base_url}/api/nonexistent")
         try:
             urllib.request.urlopen(req_404)

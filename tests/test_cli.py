@@ -452,6 +452,7 @@ def test_cli_main_subcommand_dispatch():
         (["intervals-plan", "compliance"], "handle_compliance"),
         (["intervals-plan", "review-session"], "handle_session_review"),
         (["intervals-plan", "token-audit"], "handle_token_audit"),
+        (["intervals-plan", "health-connect"], "handle_health_connect"),
     ]:
         with patch.object(sys, "argv", sub), \
              patch(f"intervals_plan.cli.{handler_name}") as mock_handler:
@@ -515,3 +516,30 @@ def test_handle_token_audit_cli():
 
     args_json = argparse.Namespace(top=5, json=True)
     handle_token_audit(cfg, args_json)
+
+
+def test_handle_health_connect_cli(tmp_path):
+    from intervals_plan.cli import handle_health_connect
+    cfg = Config(api_key="valid_test_key", athlete_id="i123", data_dir=tmp_path)
+
+    # 1. Status mode
+    args_status = argparse.Namespace(status=True, pull=None, file=None, apply=False)
+    handle_health_connect(cfg, args_status)
+
+    # 2. File mode
+    dummy_payload = {"steps": [{"count": 2000, "start_time": "2026-11-02T08:00:00Z"}]}
+    f_path = tmp_path / "test_hc.json"
+    f_path.write_text(json.dumps(dummy_payload), encoding="utf-8")
+
+    args_file = argparse.Namespace(status=False, pull=None, file=str(f_path), apply=False)
+    handle_health_connect(cfg, args_file)
+
+    args_apply = argparse.Namespace(status=False, pull=None, file=str(f_path), apply=True)
+    with patch("intervals_plan.intervals_client.IntervalsClient.update_wellness"):
+        handle_health_connect(cfg, args_apply)
+
+    # 3. Pull mode
+    args_pull = argparse.Namespace(status=False, pull="192.168.1.10", port=8787, days=3, file=None, apply=False)
+    with patch("intervals_plan.integrations.health_connect.HealthConnectClient.fetch_lan", return_value=dummy_payload):
+        handle_health_connect(cfg, args_pull)
+

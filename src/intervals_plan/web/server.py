@@ -187,6 +187,28 @@ class AdaptPulseRequestHandler(BaseHTTPRequestHandler):
             self._send_json(data)
             return
 
+        # 11. Health Connect Status API
+        if path == "/api/health-connect/status":
+            from intervals_plan.integrations.health_connect import HealthConnectSyncManager
+            from intervals_plan.integrations.coros_client import CorosClient
+            mgr = HealthConnectSyncManager()
+            last_state = mgr.load_last_state()
+            cfg = Config.load()
+            coros_client = CorosClient.from_config(cfg)
+            int_client = None
+            if cfg.api_key and len(cfg.api_key) > 5:
+                int_client = IntervalsClient(api_key=cfg.api_key, athlete_id=cfg.athlete_id, base_url=cfg.base_url)
+            coros_status = coros_client.check_status(int_client)
+            self._send_json({
+                "configured": True,
+                "webhook_path": "/api/health-connect",
+                "last_sync": last_state,
+                "coros_connected": coros_status.connected,
+                "coros_mode": coros_status.mode,
+                "coros_user_id": coros_status.user_id,
+            })
+            return
+
         self._send_json({"error": "Endpoint not found"}, status=404)
 
     def do_POST(self) -> None:
@@ -249,6 +271,31 @@ class AdaptPulseRequestHandler(BaseHTTPRequestHandler):
             reviewer = SessionReviewer()
             res = reviewer.review(inp)
             self._send_json(res.to_dict())
+            return
+
+        # 5. Inbound Health Connect Webhook
+        if path == "/api/health-connect":
+            from intervals_plan.integrations.health_connect import HealthConnectSyncManager
+            mgr = HealthConnectSyncManager()
+            dry_run = bool(req_data.get("dry_run", False))
+            result = mgr.sync_payload(req_data, source="webhook", dry_run=dry_run)
+            self._send_json(result.to_dict())
+            return
+
+        # 6. On-Demand Health Connect LAN Pull
+        if path == "/api/health-connect/pull":
+            from intervals_plan.integrations.health_connect import HealthConnectClient, HealthConnectSyncManager
+            phone_ip = req_data.get("phone_ip", "192.168.1.100")
+            port = int(req_data.get("port", 8787))
+            days = int(req_data.get("days", 7))
+            dry_run = bool(req_data.get("dry_run", False))
+            try:
+                payload = HealthConnectClient.fetch_lan(phone_ip=phone_ip, port=port, days=days)
+                mgr = HealthConnectSyncManager()
+                result = mgr.sync_payload(payload, source=f"lan_pull_{phone_ip}", dry_run=dry_run)
+                self._send_json(result.to_dict())
+            except Exception as exc:
+                self._send_json({"error": str(exc)}, status=502)
             return
 
         self._send_json({"error": "Endpoint not found"}, status=404)
