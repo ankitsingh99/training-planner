@@ -549,6 +549,30 @@ def get_app_html() -> str:
         </div>
       </div>
 
+      <!-- Biometrics & Wellness Telemetry Cards -->
+      <div class="grid-4" style="margin-bottom: 1.5rem;">
+        <div class="card">
+          <div class="card-title">Sleep Duration & Stages</div>
+          <div class="card-value" id="dashSleepVal" style="color:#a855f7;">--</div>
+          <div class="card-subtext" id="dashSleepSubtext">Samsung Health / Health Connect</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Blood Oxygen (SpO2)</div>
+          <div class="card-value" id="dashSpo2Val" style="color:#06b6d4;">--</div>
+          <div class="card-subtext" id="dashSpo2Subtext">Optimal &gt;95%</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Body Composition (Weight)</div>
+          <div class="card-value" id="dashWeightVal" style="color:#10b981;">--</div>
+          <div class="card-subtext" id="dashWeightSubtext">Scale Telemetry</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Body Fat %</div>
+          <div class="card-value" id="dashBodyFatVal" style="color:#f59e0b;">--</div>
+          <div class="card-subtext" id="dashBodyFatSubtext">Bioimpedance Analysis</div>
+        </div>
+      </div>
+
       <div class="grid-2">
         <div class="card">
           <div class="card-title">Weekly Load Distribution & Target</div>
@@ -646,6 +670,41 @@ def get_app_html() -> str:
             <span class="chart-legend-item" style="color:#38bdf8;">● Daily Resting HR</span>
             <span class="chart-legend-item" style="color:#94a3b8;">-- 30d Baseline</span>
             <span class="chart-legend-item" style="color:#ef4444;">-- +4 bpm Strain Alert</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Biometrics Timeseries Charts: Sleep & SpO2 / Weight -->
+      <div class="grid-2" style="margin-bottom: 1.5rem;">
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+            <div class="card-title" style="margin-bottom:0;">Sleep Duration & Recovery Stages (Rolling 30 Days)</div>
+            <div style="font-size:0.8125rem; color:var(--text-muted);" id="sleepSummaryText">-- hrs avg</div>
+          </div>
+          <div class="chart-box-compact" id="sleepChartContainer">
+            <div class="chart-tooltip" id="sleepTooltip"></div>
+            <svg id="sleepChartSvg" width="100%" height="100%" viewBox="0 0 450 180" preserveAspectRatio="none">
+            </svg>
+          </div>
+          <div class="chart-legend">
+            <span class="chart-legend-item" style="color:#a855f7;">■ Sleep Duration (Hrs)</span>
+            <span class="chart-legend-item" style="color:#10b981;">-- 7h Target Baseline</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+            <div class="card-title" style="margin-bottom:0;">Blood Oxygen (SpO2) & Body Weight Trends</div>
+            <div style="font-size:0.8125rem; color:var(--text-muted);" id="vitalsSummaryText">Samsung Health / Scale</div>
+          </div>
+          <div class="chart-box-compact" id="vitalsChartContainer">
+            <div class="chart-tooltip" id="vitalsTooltip"></div>
+            <svg id="vitalsChartSvg" width="100%" height="100%" viewBox="0 0 450 180" preserveAspectRatio="none">
+            </svg>
+          </div>
+          <div class="chart-legend">
+            <span class="chart-legend-item" style="color:#06b6d4;">● SpO2 (%)</span>
+            <span class="chart-legend-item" style="color:#10b981;">● Weight (kg)</span>
           </div>
         </div>
       </div>
@@ -1218,6 +1277,32 @@ def get_app_html() -> str:
           }
         }
 
+        // Populate Biometrics Cards from latest series entry
+        if (currentAnalytics && currentAnalytics.daily_series) {
+          const s = currentAnalytics.daily_series;
+          const latestWithSleep = [...s].reverse().find(x => x.sleep_hours !== null && x.sleep_hours !== undefined);
+          const latestWithSpo2 = [...s].reverse().find(x => x.spo2 !== null && x.spo2 !== undefined);
+          const latestWithWeight = [...s].reverse().find(x => x.weight !== null && x.weight !== undefined);
+          const latestWithFat = [...s].reverse().find(x => x.body_fat !== null && x.body_fat !== undefined);
+
+          if (latestWithSleep) {
+            document.getElementById('dashSleepVal').innerText = latestWithSleep.sleep_hours + 'h';
+            document.getElementById('dashSleepSubtext').innerText = latestWithSleep.date + (latestWithSleep.sleep_note ? ' (' + latestWithSleep.sleep_note.slice(0, 24) + '...)' : '');
+          }
+          if (latestWithSpo2) {
+            document.getElementById('dashSpo2Val').innerText = latestWithSpo2.spo2 + '%';
+            document.getElementById('dashSpo2Subtext').innerText = 'Recorded on ' + latestWithSpo2.date;
+          }
+          if (latestWithWeight) {
+            document.getElementById('dashWeightVal').innerText = latestWithWeight.weight + ' kg';
+            document.getElementById('dashWeightSubtext').innerText = 'Recorded on ' + latestWithWeight.date;
+          }
+          if (latestWithFat) {
+            document.getElementById('dashBodyFatVal').innerText = latestWithFat.body_fat + '%';
+            document.getElementById('dashBodyFatSubtext').innerText = 'Recorded on ' + latestWithFat.date;
+          }
+        }
+
         if (currentAnalytics && currentAnalytics.acwr) {
           const a = currentAnalytics.acwr;
           document.getElementById('acwrRatio').innerText = a.ratio.toFixed(2);
@@ -1481,6 +1566,8 @@ def get_app_html() -> str:
       renderPmcChart(series);
       renderAcwrChart(series);
       renderRhrChart(series, data.readiness ? data.readiness.resting_hr_baseline : null);
+      renderSleepChart(series);
+      renderVitalsChart(series);
       renderDailyLoadChart(series);
       renderDecouplingGauge(3.2);
 
@@ -1852,6 +1939,111 @@ def get_app_html() -> str:
           if (ch) ch.setAttribute('opacity', '0');
         };
       }
+    }
+
+    function renderSleepChart(series) {
+      const svg = document.getElementById('sleepChartSvg');
+      if (!svg || !series || series.length === 0) return;
+
+      const w = 450, h = 180;
+      const padL = 40, padR = 20, padT = 15, padB = 25;
+      const pw = w - padL - padR;
+      const ph = h - padT - padB;
+
+      const maxVal = 10.0;
+      const minVal = 0.0;
+
+      const getX = (i) => padL + (i / (series.length - 1)) * pw;
+      const getY = (val) => padT + ph - (val / maxVal) * ph;
+      const colW = Math.max(4, Math.floor(pw / series.length) - 2);
+
+      const y7h = getY(7.0);
+
+      let gridSvg = `
+        <line x1="${padL}" y1="${y7h}" x2="${w - padR}" y2="${y7h}" stroke="#10b981" stroke-width="1.5" stroke-dasharray="4"/>
+        <text x="${w - padR - 5}" y="${y7h - 4}" fill="#10b981" font-size="9" text-anchor="end">7h Optimal</text>
+        <text x="${padL - 6}" y="${y7h + 3}" fill="#10b981" font-size="9" text-anchor="end">7h</text>
+        <line x1="${padL}" y1="${getY(4.0)}" x2="${w - padR}" y2="${getY(4.0)}" stroke="#1f2937" stroke-dasharray="3"/>
+        <text x="${padL - 6}" y="${getY(4.0) + 3}" fill="#6b7280" font-size="9" text-anchor="end">4h</text>
+      `;
+
+      let barsSvg = '';
+      let sleepSum = 0;
+      let sleepCount = 0;
+
+      series.forEach((d, i) => {
+        if (d.sleep_hours !== null && d.sleep_hours !== undefined) {
+          sleepSum += d.sleep_hours;
+          sleepCount += 1;
+          const bh = (d.sleep_hours / maxVal) * ph;
+          const bx = getX(i) - colW / 2;
+          const by = padT + ph - bh;
+          const barColor = d.sleep_hours >= 7.0 ? '#10b981' : d.sleep_hours >= 5.0 ? '#a855f7' : '#f59e0b';
+          barsSvg += `<rect x="${bx}" y="${by}" width="${colW}" height="${bh}" rx="2" fill="${barColor}" opacity="0.85"/>`;
+        }
+      });
+
+      const avgText = sleepCount > 0 ? (sleepSum / sleepCount).toFixed(1) + ' hrs avg' : '-- hrs avg';
+      const sumEl = document.getElementById('sleepSummaryText');
+      if (sumEl) sumEl.innerText = avgText;
+
+      let dateSvg = '';
+      for (let i = 0; i < series.length; i += 7) {
+        const xPos = getX(i);
+        const dt = series[i].date ? series[i].date.slice(5) : '';
+        dateSvg += `<text x="${xPos}" y="${h - 8}" fill="#6b7280" font-size="9" text-anchor="middle">${dt}</text>`;
+      }
+      const lastX = getX(series.length - 1);
+      const lastDt = series[series.length - 1].date ? series[series.length - 1].date.slice(5) : '';
+      dateSvg += `<text x="${lastX}" y="${h - 8}" fill="#9ca3af" font-size="9" text-anchor="middle">${lastDt}</text>`;
+
+      svg.innerHTML = gridSvg + barsSvg + dateSvg;
+    }
+
+    function renderVitalsChart(series) {
+      const svg = document.getElementById('vitalsChartSvg');
+      if (!svg || !series || series.length === 0) return;
+
+      const w = 450, h = 180;
+      const padL = 40, padR = 20, padT = 15, padB = 25;
+      const pw = w - padL - padR;
+      const ph = h - padT - padB;
+
+      const getX = (i) => padL + (i / (series.length - 1)) * pw;
+      // SpO2 scale (90% to 100%) on left, Weight (75kg to 85kg) on right
+      const getSpo2Y = (val) => padT + ph - ((val - 90.0) / 10.0) * ph;
+      const getWeightY = (val) => padT + ph - ((val - 75.0) / 10.0) * ph;
+
+      let gridSvg = `
+        <line x1="${padL}" y1="${getSpo2Y(95.0)}" x2="${w - padR}" y2="${getSpo2Y(95.0)}" stroke="#06b6d4" stroke-width="1" stroke-dasharray="3"/>
+        <text x="${padL - 6}" y="${getSpo2Y(95.0) + 3}" fill="#06b6d4" font-size="9" text-anchor="end">95%</text>
+        <text x="${w - padR + 4}" y="${getWeightY(80.0) + 3}" fill="#10b981" font-size="9">80kg</text>
+      `;
+
+      let pointsSvg = '';
+      series.forEach((d, i) => {
+        const cx = getX(i);
+        if (d.spo2 !== null && d.spo2 !== undefined) {
+          const cy = Math.max(padT, Math.min(padT + ph, getSpo2Y(d.spo2)));
+          pointsSvg += `<circle cx="${cx}" cy="${cy}" r="3.5" fill="#06b6d4"/>`;
+        }
+        if (d.weight !== null && d.weight !== undefined) {
+          const wy = Math.max(padT, Math.min(padT + ph, getWeightY(d.weight)));
+          pointsSvg += `<circle cx="${cx}" cy="${wy}" r="3.5" fill="#10b981"/>`;
+        }
+      });
+
+      let dateSvg = '';
+      for (let i = 0; i < series.length; i += 7) {
+        const xPos = getX(i);
+        const dt = series[i].date ? series[i].date.slice(5) : '';
+        dateSvg += `<text x="${xPos}" y="${h - 8}" fill="#6b7280" font-size="9" text-anchor="middle">${dt}</text>`;
+      }
+      const lastX = getX(series.length - 1);
+      const lastDt = series[series.length - 1].date ? series[series.length - 1].date.slice(5) : '';
+      dateSvg += `<text x="${lastX}" y="${h - 8}" fill="#9ca3af" font-size="9" text-anchor="middle">${lastDt}</text>`;
+
+      svg.innerHTML = gridSvg + pointsSvg + dateSvg;
     }
 
     function renderDailyLoadChart(series) {

@@ -492,6 +492,51 @@ class RollingMetricsAnalyzer:
                 except (ValueError, TypeError):
                     pass
 
+            sleep_hours = None
+            if w_rec and w_rec.get("sleepSecs") is not None:
+                try:
+                    s_val = float(w_rec["sleepSecs"])
+                    if s_val > 0:
+                        sleep_hours = round(s_val / 3600.0, 1)
+                except (ValueError, TypeError):
+                    pass
+
+            hrv_val = None
+            if w_rec and w_rec.get("hrv") is not None:
+                try:
+                    h_val = float(w_rec["hrv"])
+                    if h_val > 0:
+                        hrv_val = round(h_val, 1)
+                except (ValueError, TypeError):
+                    pass
+
+            spo2_val = None
+            if w_rec and w_rec.get("spO2") is not None:
+                try:
+                    sp_val = float(w_rec["spO2"])
+                    if sp_val > 0:
+                        spo2_val = round(sp_val, 1)
+                except (ValueError, TypeError):
+                    pass
+
+            weight_val = None
+            if w_rec and w_rec.get("weight") is not None:
+                try:
+                    wt_val = float(w_rec["weight"])
+                    if wt_val > 0:
+                        weight_val = round(wt_val, 1)
+                except (ValueError, TypeError):
+                    pass
+
+            body_fat_val = None
+            if w_rec and w_rec.get("bodyFat") is not None:
+                try:
+                    bf_val = float(w_rec["bodyFat"])
+                    if bf_val > 0:
+                        body_fat_val = round(bf_val, 1)
+                except (ValueError, TypeError):
+                    pass
+
             # Daily rolling ACWR calculation up to curr
             acute_7d = sum(daily_loads_dict.get(curr - datetime.timedelta(days=d), 0.0) for d in range(7))
             chronic_28d = sum(daily_loads_dict.get(curr - datetime.timedelta(days=d), 0.0) for d in range(28))
@@ -511,7 +556,13 @@ class RollingMetricsAnalyzer:
                 "load_tss": round(d_load, 1),
                 "moving_hours": round(d_mtime / 3600.0, 2),
                 "resting_hr": rhr_val,
+                "sleep_hours": sleep_hours,
+                "hrv": hrv_val,
+                "spo2": spo2_val,
+                "weight": weight_val,
+                "body_fat": body_fat_val,
                 "acwr_ratio": d_ratio,
+                "sleep_note": w_rec.get("comments") if w_rec else None,
                 "sports": {k: round(v, 1) for k, v in daily_sports_dict.get(curr, {}).items()},
             })
             curr += datetime.timedelta(days=1)
