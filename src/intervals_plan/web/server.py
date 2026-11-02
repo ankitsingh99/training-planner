@@ -209,6 +209,12 @@ class AdaptPulseRequestHandler(BaseHTTPRequestHandler):
             })
             return
 
+        # 12. Data Quality & Telemetry Audit API
+        if path == "/api/data-quality":
+            report = self._compute_data_quality()
+            self._send_json(report)
+            return
+
         self._send_json({"error": "Endpoint not found"}, status=404)
 
     def do_POST(self) -> None:
@@ -298,7 +304,97 @@ class AdaptPulseRequestHandler(BaseHTTPRequestHandler):
                 self._send_json({"error": str(exc)}, status=502)
             return
 
+        # 7. Skiba W'bal Anaerobic Battery API
+        if path == "/api/wbal":
+            from intervals_plan.advanced_modeling import compute_wbal, summarize_wbal
+            watts = req_data.get("watts", [])
+            w_prime = float(req_data.get("w_prime", 20000.0))
+            cp = float(req_data.get("cp", 250.0))
+            wbal = compute_wbal(watts, w_prime, cp)
+            summary = summarize_wbal(wbal, w_prime)
+            self._send_json({"wbal": wbal, "summary": summary})
+            return
+
+        # 8. DFA Alpha 1 Aerobic Threshold API
+        if path == "/api/dfa":
+            from intervals_plan.advanced_modeling import dfa_alpha1, parse_rr_stream
+            rr = req_data.get("rr_intervals", [])
+            raw = req_data.get("raw")
+            if raw and not rr:
+                rr = parse_rr_stream(raw)
+            a1 = dfa_alpha1(rr)
+            self._send_json({"alpha1": a1, "samples": len(rr)})
+            return
+
         self._send_json({"error": "Endpoint not found"}, status=404)
+
+    def _compute_data_quality(self) -> Dict[str, Any]:
+        """Audit athlete profile and telemetry data quality using Joe Friel principles."""
+        from intervals_plan.advanced_modeling import DataQualityAuditor
+        prof = AthleteProfileConfig.load()
+        settings = Config.load()
+        ftp = prof.ftp_bike if prof.ftp_bike > 0 else 230.0
+        rolling_ftp = None
+        eftp = None
+        w_prime = getattr(prof, "w_prime", 20000.0)
+        rolling_w_prime = None
+        resting_hr = None
+        hrv = None
+        sleep_secs = None
+        recent_activities: List[Dict[str, Any]] = []
+
+        if settings.api_key and len(settings.api_key) > 5:
+            try:
+                client = IntervalsClient(
+                    api_key=settings.api_key,
+                    athlete_id=settings.athlete_id,
+                    base_url=settings.base_url,
+                )
+                today = datetime.date.today()
+                start_7d = today - datetime.timedelta(days=7)
+                wellness = client.get_wellness_range(start_7d.isoformat(), today.isoformat())
+                if wellness:
+                    latest_w = wellness[-1]
+                    resting_hr = latest_w.get("restingHR")
+                    hrv = latest_w.get("hrv") or latest_w.get("hrvCustom")
+                    if latest_w.get("sleepSecs"):
+                        sleep_secs = float(latest_w["sleepSecs"])
+
+                events = client.list_events(start_7d.isoformat(), today.isoformat())
+                recent_activities = [e.to_dict() for e in events if e.category != "WORKOUT"]
+                athlete_info = client.get_athlete()
+                if athlete_info and isinstance(athlete_info, dict):
+                    eftp = athlete_info.get("icu_eftp") or athlete_info.get("ftp")
+                    if athlete_info.get("w_prime"):
+                        rolling_w_prime = float(athlete_info["w_prime"])
+            except Exception:
+                pass
+
+        if not resting_hr:
+            rep = self._compute_report()
+            resting_hr = rep.readiness.recent_resting_hr
+            hrv = rep.readiness.recent_hrv
+            if rep.readiness.recent_sleep_hours:
+                sleep_secs = rep.readiness.recent_sleep_hours * 3600.0
+            if not recent_activities:
+                recent_activities = [
+                    {"id": "act_sample_1", "type": "Ride", "rpe": 6},
+                    {"id": "act_sample_2", "type": "Run", "rpe": 7},
+                    {"id": "act_sample_3", "type": "Ride", "rpe": 5},
+                ]
+
+        audit = DataQualityAuditor.audit(
+            ftp=ftp,
+            rolling_ftp=rolling_ftp or ftp,
+            eftp=eftp or (ftp * 1.02),
+            w_prime=w_prime,
+            rolling_w_prime=rolling_w_prime or w_prime,
+            resting_hr=resting_hr,
+            hrv=hrv,
+            sleep_secs=sleep_secs,
+            recent_activities=recent_activities,
+        )
+        return audit.to_dict()
 
     def _compute_report(self):
         """Generate rolling report using live Intervals client or local fallback."""

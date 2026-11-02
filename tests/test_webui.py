@@ -221,7 +221,42 @@ def test_web_ui_endpoints():
             with urllib.request.urlopen(req_pull) as res:
                 assert res.status == 200
 
-        # 16. 404 test on GET and POST
+        # 16. Data Quality API (GET)
+        with urllib.request.urlopen(f"{base_url}/api/data-quality") as res:
+            assert res.status == 200
+            dq = json.loads(res.read().decode("utf-8"))
+            assert dq["overall"] in ("Good", "Partial", "Limited")
+            assert "checks" in dq
+            assert len(dq["checks"]) == 5
+
+        # 17. Skiba W'bal Anaerobic Battery API (POST)
+        wbal_req = urllib.request.Request(
+            f"{base_url}/api/wbal",
+            data=json.dumps({"watts": [300, 300, 150, 150], "cp": 250.0, "w_prime": 20000.0}).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(wbal_req) as res:
+            assert res.status == 200
+            wb = json.loads(res.read().decode("utf-8"))
+            assert "wbal" in wb
+            assert "summary" in wb
+            assert wb["summary"]["w_prime_j"] == 20000.0
+
+        # 18. DFA Alpha 1 Aerobic Threshold API (POST)
+        dfa_req = urllib.request.Request(
+            f"{base_url}/api/dfa",
+            data=json.dumps({"rr_intervals": [800.0 + (i % 7) * 5 for i in range(120)]}).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(dfa_req) as res:
+            assert res.status == 200
+            dfa_res = json.loads(res.read().decode("utf-8"))
+            assert "alpha1" in dfa_res
+            assert dfa_res["samples"] == 120
+
+        # 19. 404 test on GET and POST
         req_404 = urllib.request.Request(f"{base_url}/api/nonexistent")
         try:
             urllib.request.urlopen(req_404)

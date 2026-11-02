@@ -24,6 +24,7 @@ data/manifest.json
 data/audit.log
 data/athlete_profile.json
 data/health_connect_sync.json
+data/health_connect_latest.json
 !data/athlete_profile.json.example
 *.sqlite
 *.sqlite3

@@ -151,7 +151,12 @@ def test_generate_model_fallback_on_error(tmp_path: Path, monkeypatch):
 
     def mock_urlopen(req, timeout=45):
         if "/models" in req.full_url:
-            return io.BytesIO(json.dumps({"data": [{"id": "google/gemma-4-31b-it:free", "pricing": {"prompt": "0", "completion": "0"}}]}).encode("utf-8"))
+            return io.BytesIO(json.dumps({
+                "data": [
+                    {"id": "google/gemma-4-31b-it:free", "pricing": {"prompt": "0", "completion": "0"}},
+                    {"id": "meta-llama/llama-3.3-70b-instruct:free", "pricing": {"prompt": "0", "completion": "0"}},
+                ]
+            }).encode("utf-8"))
         body = json.loads(req.data.decode("utf-8"))
         model = body.get("model")
         call_models.append(model)

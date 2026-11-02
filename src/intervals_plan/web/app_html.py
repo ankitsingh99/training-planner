@@ -614,6 +614,58 @@ def get_app_html() -> str:
           </ul>
         </div>
       </div>
+
+      <!-- Advanced Sports Science Extensions (Skiba W'bal, DFA a1 & Joe Friel Telemetry Quality) -->
+      <div class="grid-2" style="margin-top: 1.5rem;">
+        <!-- Card 1: Friel Data Quality Auditor -->
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.75rem;">
+            <div class="card-title" style="margin-bottom:0;">Telemetry Data Quality (Joe Friel Audit)</div>
+            <span id="dataQualityBadge" class="periodization-badge" style="background:rgba(16,185,129,0.2); color:var(--success);">Audit: Good</span>
+          </div>
+          <p style="font-size:0.8125rem; color:var(--text-muted); margin-bottom:0.75rem;" id="dataQualityFix">
+            Verifying physiological thresholds, biometric streams, and exertion logs...
+          </p>
+          <div id="dataQualityChecklist" style="display:flex; flex-direction:column; gap:6px; font-size:0.8125rem;">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+        <!-- Card 2: Skiba W'bal Anaerobic Capacity & DFA a1 -->
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.75rem;">
+            <div class="card-title" style="margin-bottom:0;">Anaerobic Battery (Skiba W') & DFA Alpha 1</div>
+            <span id="wbalStatusBadge" class="periodization-badge" style="background:rgba(6,182,212,0.2); color:#06b6d4;">Battery: 100% Full</span>
+          </div>
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.75rem; margin-bottom:0.75rem;">
+            <div style="background:#0f172a; border:1px solid var(--border); border-radius:6px; padding:0.5rem 0.75rem;">
+              <div style="font-size:0.75rem; color:var(--text-muted);">Anaerobic Work Capacity (W')</div>
+              <div style="font-size:1.125rem; font-weight:700; color:#38bdf8;" id="wPrimeDisplay">20.0 kJ</div>
+              <div style="font-size:0.7rem; color:var(--text-muted);">Critical Power: <span id="cpDisplay">250 W</span></div>
+            </div>
+            <div style="background:#0f172a; border:1px solid var(--border); border-radius:6px; padding:0.5rem 0.75rem;">
+              <div style="font-size:0.75rem; color:var(--text-muted);">DFA Alpha 1 Thresholds</div>
+              <div style="font-size:0.8125rem; font-weight:600; color:#10b981;">LT1 (Aerobic): a1 ~ 0.75</div>
+              <div style="font-size:0.8125rem; font-weight:600; color:#f43f5e;">LT2 (Anaerobic): a1 ~ 0.50</div>
+            </div>
+          </div>
+          <!-- Dynamic Battery Bar -->
+          <div style="margin-bottom:0.75rem;">
+            <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:var(--text-muted); margin-bottom:3px;">
+              <span>W' Battery Reconstitution State</span>
+              <span id="wbalBatteryPct">100% (20.0 / 20.0 kJ)</span>
+            </div>
+            <div class="gauge-bar-bg" style="height:10px;">
+              <div id="wbalBatteryFill" class="gauge-fill" style="width:100%; background:var(--accent);"></div>
+            </div>
+          </div>
+          <div style="display:flex; gap:0.5rem;">
+            <button class="btn btn-secondary" style="font-size:0.75rem; padding:0.35rem 0.6rem;" onclick="simulateWbal('intervals')">Simulate 4x4 VO2max Depletion</button>
+            <button class="btn btn-secondary" style="font-size:0.75rem; padding:0.35rem 0.6rem;" onclick="simulateWbal('steady')">Simulate Threshold Cruise</button>
+          </div>
+          <div id="wbalSimResult" style="display:none; margin-top:0.6rem; font-size:0.75rem; color:#94a3b8; background:#0f172a; border-radius:4px; padding:0.4rem 0.6rem;"></div>
+        </div>
+      </div>
     </div>
 
     <!-- TAB 2: ANALYSIS & PMC -->
@@ -1200,12 +1252,13 @@ def get_app_html() -> str:
 
     async function loadDashboard() {
       try {
-        const [profRes, anaRes, coachRes, statusRes, compRes] = await Promise.all([
+        const [profRes, anaRes, coachRes, statusRes, compRes, qualRes] = await Promise.all([
           fetch('/api/profile'),
           fetch('/api/analytics'),
           fetch('/api/coaching'),
           fetch('/api/status'),
-          fetch('/api/compliance')
+          fetch('/api/compliance'),
+          fetch('/api/data-quality')
         ]);
 
         currentProfile = await profRes.json();
@@ -1213,6 +1266,7 @@ def get_app_html() -> str:
         const coach = await coachRes.json();
         const statusData = await statusRes.json();
         const comp = await compRes.json();
+        const qualityData = await qualRes.json();
 
         // Update Ecosystem status
         if (statusData) {
@@ -1363,8 +1417,92 @@ def get_app_html() -> str:
         // Load Health Connect Status
         loadHealthConnectStatus();
 
+        // Update Joe Friel Telemetry Data Quality Auditor
+        if (qualityData) {
+          const qb = document.getElementById('dataQualityBadge');
+          if (qb) {
+            qb.innerText = 'Audit: ' + qualityData.overall;
+            if (qualityData.overall === 'Good') {
+              qb.style.background = 'rgba(16,185,129,0.2)';
+              qb.style.color = 'var(--success)';
+            } else if (qualityData.overall === 'Partial') {
+              qb.style.background = 'rgba(245,158,11,0.2)';
+              qb.style.color = 'var(--warning)';
+            } else {
+              qb.style.background = 'rgba(239,68,68,0.2)';
+              qb.style.color = 'var(--danger)';
+            }
+          }
+          const qf = document.getElementById('dataQualityFix');
+          if (qf) qf.innerText = qualityData.suggested_fix;
+
+          const cl = document.getElementById('dataQualityChecklist');
+          if (cl && qualityData.checks) {
+            cl.innerHTML = qualityData.checks.map(c => {
+              const bg = c.status === 'OK' ? 'rgba(16,185,129,0.15)' : (c.status === 'Warning' ? 'rgba(245,158,11,0.15)' : 'rgba(239,68,68,0.15)');
+              const col = c.status === 'OK' ? 'var(--success)' : (c.status === 'Warning' ? 'var(--warning)' : 'var(--danger)');
+              return '<div style="display:flex; justify-content:space-between; align-items:center; background:#0f172a; border:1px solid var(--border); border-radius:4px; padding:0.35rem 0.6rem;">' +
+                     '<div><span style="font-weight:600; color:#e2e8f0;">' + c.area + ':</span> <span style="color:var(--text-muted);">' + c.explanation + '</span></div>' +
+                     '<span style="padding:2px 6px; border-radius:3px; font-size:0.7rem; font-weight:700; background:' + bg + '; color:' + col + ';">' + c.status + '</span>' +
+                     '</div>';
+            }).join('');
+          }
+        }
+
+        // Update W' and CP displays
+        if (currentProfile) {
+          const cp = currentProfile.ftp_bike || 250;
+          const cpEl = document.getElementById('cpDisplay');
+          if (cpEl) cpEl.innerText = cp + ' W';
+          const wpEl = document.getElementById('wPrimeDisplay');
+          if (wpEl) wpEl.innerText = '20.0 kJ';
+        }
+
       } catch (err) {
         console.error('Failed to load dashboard data:', err);
+      }
+    }
+
+    async function simulateWbal(type) {
+      const cp = (currentProfile && currentProfile.ftp_bike) ? currentProfile.ftp_bike : 250;
+      const wPrime = 20000;
+      let watts = [];
+      if (type === 'intervals') {
+        for (let rep = 0; rep < 4; rep++) {
+          for (let s = 0; s < 240; s++) watts.push(Math.round(cp * 1.20));
+          for (let s = 0; s < 120; s++) watts.push(Math.round(cp * 0.50));
+        }
+      } else {
+        for (let s = 0; s < 1200; s++) watts.push(Math.round(cp * 1.02));
+        for (let s = 0; s < 300; s++) watts.push(Math.round(cp * 0.55));
+      }
+
+      const res = await fetch('/api/wbal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ watts: watts, cp: cp, w_prime: wPrime })
+      });
+      const data = await res.json();
+      if (data && data.summary) {
+        const s = data.summary;
+        const minPct = Math.max(0, Math.round(s.wbal_min_j / wPrime * 100));
+        const fill = document.getElementById('wbalBatteryFill');
+        if (fill) {
+          fill.style.width = minPct + '%';
+          fill.style.background = minPct < 30 ? 'var(--danger)' : (minPct < 60 ? 'var(--warning)' : 'var(--success)');
+        }
+        const pctEl = document.getElementById('wbalBatteryPct');
+        if (pctEl) pctEl.innerText = minPct + '% min remaining (' + (s.wbal_min_j / 1000).toFixed(1) + ' / ' + (wPrime / 1000).toFixed(1) + ' kJ)';
+        const b = document.getElementById('wbalStatusBadge');
+        if (b) {
+          b.innerText = minPct < 30 ? 'Battery Depleted' : (minPct < 60 ? 'Battery Strained' : 'Battery Optimal');
+          b.style.color = minPct < 30 ? 'var(--danger)' : (minPct < 60 ? 'var(--warning)' : 'var(--success)');
+        }
+        const resBox = document.getElementById('wbalSimResult');
+        if (resBox) {
+          resBox.style.display = 'block';
+          resBox.innerHTML = '<strong>Skiba Model Output:</strong> Max Depletion: ' + (s.wbal_max_depletion_j / 1000).toFixed(1) + ' kJ (' + s.wbal_usage_pct + '%) | Below 30%: ' + s.seconds_below_30pct + 's | Reconstitution Ratio: ' + s.wbal_recovery_ratio + 'x | Depletion Events: ' + s.wbal_depletion_events;
+        }
       }
     }
 
