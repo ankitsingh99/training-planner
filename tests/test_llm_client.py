@@ -10,6 +10,7 @@ from intervals_plan.llm_client import (
     DEFAULT_FREE_MODEL,
     FALLBACK_FREE_MODELS,
     OpenRouterClient,
+    _IN_MEMORY_MODELS_CACHE,
     get_session_token_usage,
     is_free_model,
     print_token_benchmark,
@@ -143,6 +144,7 @@ def test_generate_network_call_and_cache_hit(tmp_path: Path, monkeypatch):
 
 def test_generate_model_fallback_on_error(tmp_path: Path, monkeypatch):
     """Verify client attempts next free model in pool if primary returns HTTP error."""
+    _IN_MEMORY_MODELS_CACHE.clear()
     reset_session_token_usage()
     db_path = tmp_path / "cache" / "test_fallback.sqlite"
     client = OpenRouterClient(api_key="fake_key", cache_db_path=db_path)

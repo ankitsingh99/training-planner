@@ -414,6 +414,35 @@ def get_app_html() -> str:
     }
 
     /* SVG Charts */
+    .chart-scroll-container {
+      width: 100%;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scrollbar-width: thin;
+      scrollbar-color: #475569 #0f172a;
+      -webkit-overflow-scrolling: touch;
+      position: relative;
+    }
+    .chart-scroll-container::-webkit-scrollbar {
+      height: 6px;
+    }
+    .chart-scroll-container::-webkit-scrollbar-track {
+      background: #0f172a;
+      border-radius: 4px;
+    }
+    .chart-scroll-container::-webkit-scrollbar-thumb {
+      background: #475569;
+      border-radius: 4px;
+    }
+    .chart-scroll-container::-webkit-scrollbar-thumb:hover {
+      background: #64748b;
+    }
+    .chart-filter-btn.active {
+      background: var(--accent) !important;
+      color: #000 !important;
+      font-weight: 700 !important;
+    }
+
     .chart-box {
       width: 100%;
       height: 280px;
@@ -576,13 +605,46 @@ def get_app_html() -> str:
 
       <div class="grid-2">
         <div class="card">
-          <div class="card-title">Weekly Load Distribution & Target</div>
-          <div class="gauge-container">
-            <div style="display:flex; justify-content:space-between; margin-bottom: 0.5rem; font-size:0.875rem;">
-              <span>Target Volume</span>
-              <strong id="targetHoursText">8.0 Hours</strong>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.75rem;">
+            <div class="card-title" style="margin-bottom:0;">Weekly Load Distribution & Target</div>
+            <span id="weeklyLoadBadge" class="periodization-badge" style="background:rgba(16,185,129,0.2); color:var(--success);">--h / --h</span>
+          </div>
+
+          <!-- Volume & Load Progress Indicators -->
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.75rem; margin-bottom:0.75rem;">
+            <div style="background:#0f172a; border:1px solid var(--border); border-radius:6px; padding:0.5rem 0.75rem;">
+              <div style="font-size:0.75rem; color:var(--text-muted);">7-Day Completed Volume</div>
+              <div style="font-size:1.125rem; font-weight:700; color:#38bdf8;" id="weeklyVolumeText">-- hrs</div>
+              <div style="font-size:0.7rem; color:var(--text-muted);">Target: <span id="targetHoursText">8.0 Hours</span></div>
             </div>
-            <div class="gauge-bar-bg">
+            <div style="background:#0f172a; border:1px solid var(--border); border-radius:6px; padding:0.5rem 0.75rem;">
+              <div style="font-size:0.75rem; color:var(--text-muted);">7-Day Completed Load</div>
+              <div style="font-size:1.125rem; font-weight:700; color:#f59e0b;" id="weeklyLoadText">-- TSS</div>
+              <div style="font-size:0.7rem; color:var(--text-muted);">Target: <span id="targetLoadRangeText">-- - -- TSS</span></div>
+            </div>
+          </div>
+
+          <!-- Stacked Discipline Distribution Bar -->
+          <div style="margin-bottom:0.75rem;">
+            <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:var(--text-muted); margin-bottom:4px;">
+              <span>Discipline Load Share</span>
+              <span id="weeklyDisciplinePills">Calculating...</span>
+            </div>
+            <div id="weeklyDisciplineBar" style="display:flex; height:10px; border-radius:4px; overflow:hidden; background:#1e293b;">
+              <div id="barShareRide" style="width:0%; background:#f59e0b;" title="Ride"></div>
+              <div id="barShareRun" style="width:0%; background:#06b6d4;" title="Run"></div>
+              <div id="barShareSwim" style="width:0%; background:#38bdf8;" title="Swim"></div>
+              <div id="barShareOther" style="width:0%; background:#64748b;" title="Other"></div>
+            </div>
+          </div>
+
+          <!-- Tim Gabbett ACWR Injury Meter -->
+          <div class="gauge-container" style="margin-bottom:0.5rem;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:0.25rem; font-size:0.75rem; color:var(--text-muted);">
+              <span>ACWR Workload Ratio</span>
+              <strong id="acwrRatioInline" style="color:var(--success);">Sweet Spot</strong>
+            </div>
+            <div class="gauge-bar-bg" style="height:8px;">
               <div id="acwrBarFill" class="gauge-fill" style="width: 50%; background: var(--accent);"></div>
             </div>
             <div class="gauge-ticks">
@@ -592,7 +654,7 @@ def get_app_html() -> str:
               <span>1.5+ (Danger)</span>
             </div>
           </div>
-          <p class="card-subtext" id="acwrGuidance">Optimal progressive overload without non-contact injury spikes.</p>
+          <p class="card-subtext" id="acwrGuidance" style="margin:0; font-size:0.75rem;">Optimal progressive overload without non-contact injury spikes.</p>
         </div>
 
         <div class="card">
@@ -764,21 +826,38 @@ def get_app_html() -> str:
 
       <!-- Daily Training Load & Volume (Stacked Discipline TSS) -->
       <div class="card" style="margin-bottom: 1.5rem;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
-          <div class="card-title" style="margin-bottom:0;">Daily Training Load & Volume (Stacked Discipline TSS)</div>
-          <div style="font-size:0.8125rem; color:var(--text-muted);" id="totalVolumeLoadSummary">-- hrs | -- TSS</div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem; flex-wrap:wrap; gap:0.5rem;">
+          <div>
+            <div class="card-title" style="margin-bottom:0.25rem;">Daily Training Load & Volume (Stacked Discipline TSS)</div>
+            <div style="font-size:0.8125rem; color:var(--text-muted);" id="totalVolumeLoadSummary">-- hrs | -- TSS</div>
+          </div>
+          <!-- Interactive Timeframe & Scroll Filters -->
+          <div style="display:flex; gap:0.4rem; align-items:center;">
+            <span style="font-size:0.75rem; color:var(--text-muted); margin-right:4px;">Window:</span>
+            <button class="btn btn-secondary chart-filter-btn active" id="btnLoad30d" onclick="filterDailyLoad(30)" style="font-size:0.7rem; padding:0.25rem 0.6rem;">30 Days</button>
+            <button class="btn btn-secondary chart-filter-btn" id="btnLoad14d" onclick="filterDailyLoad(14)" style="font-size:0.7rem; padding:0.25rem 0.6rem;">14 Days</button>
+            <button class="btn btn-secondary chart-filter-btn" id="btnLoad7d" onclick="filterDailyLoad(7)" style="font-size:0.7rem; padding:0.25rem 0.6rem;">7 Days</button>
+          </div>
         </div>
-        <div class="chart-box-compact" id="loadChartContainer">
+
+        <!-- Scrollable Chart Container -->
+        <div class="chart-scroll-container" id="loadChartScrollBox" style="position:relative; width:100%; overflow-x:auto; overflow-y:hidden; border-radius:8px; border:1px solid var(--border); background:#0f172a; padding: 0.5rem 0;">
           <div class="chart-tooltip" id="loadTooltip"></div>
-          <svg id="loadChartSvg" width="100%" height="100%" viewBox="0 0 800 180" preserveAspectRatio="none">
+          <svg id="loadChartSvg" height="190" style="display:block; min-width:850px; width:100%;">
           </svg>
         </div>
-        <div class="chart-legend">
-          <span class="chart-legend-item" style="color:#06b6d4;">■ Run</span>
-          <span class="chart-legend-item" style="color:#f59e0b;">■ Ride</span>
-          <span class="chart-legend-item" style="color:#38bdf8;">■ Swim</span>
-          <span class="chart-legend-item" style="color:#a855f7;">■ Brick/Duathlon</span>
-          <span class="chart-legend-item" style="color:#64748b;">■ Other</span>
+
+        <div class="chart-legend" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-top:0.75rem;">
+          <div style="display:flex; gap:1rem; flex-wrap:wrap;">
+            <span class="chart-legend-item" style="color:#06b6d4;">■ Run</span>
+            <span class="chart-legend-item" style="color:#f59e0b;">■ Ride</span>
+            <span class="chart-legend-item" style="color:#38bdf8;">■ Swim</span>
+            <span class="chart-legend-item" style="color:#a855f7;">■ Brick/Duathlon</span>
+            <span class="chart-legend-item" style="color:#64748b;">■ Other</span>
+          </div>
+          <div style="font-size:0.7rem; color:var(--text-muted);">
+            Scroll horizontally or drag / swipe on touch devices to explore all days
+          </div>
         </div>
       </div>
 
@@ -1598,6 +1677,79 @@ def get_app_html() -> str:
           }
         }
 
+        // Populate Weekly Load Distribution & Target card
+        if (currentAnalytics) {
+          const ws = currentAnalytics.weekly_summary || {};
+          const sevenHrs = ws.seven_day_hours || 0;
+          const targetHrs = ws.target_hours || (currentProfile ? currentProfile.weekly_hours : 8.0);
+          const sevenLoad = ws.seven_day_load || 0;
+          const volPct = targetHrs > 0 ? Math.round((sevenHrs / targetHrs) * 100) : 0;
+
+          const wBadge = document.getElementById('weeklyLoadBadge');
+          if (wBadge) {
+            wBadge.innerText = `${sevenHrs}h / ${targetHrs}h (${volPct}%)`;
+            wBadge.style.color = volPct >= 80 ? 'var(--success)' : (volPct >= 40 ? '#38bdf8' : 'var(--warning)');
+            wBadge.style.background = volPct >= 80 ? 'rgba(16,185,129,0.2)' : (volPct >= 40 ? 'rgba(56,189,248,0.2)' : 'rgba(245,158,11,0.2)');
+          }
+
+          const volTxt = document.getElementById('weeklyVolumeText');
+          if (volTxt) volTxt.innerText = `${sevenHrs} hrs`;
+
+          const thTxt = document.getElementById('targetHoursText');
+          if (thTxt) thTxt.innerText = `${targetHrs} Hours`;
+
+          const loadTxt = document.getElementById('weeklyLoadText');
+          if (loadTxt) loadTxt.innerText = `${sevenLoad} TSS`;
+
+          // Target weekly load range based on CTL
+          const ctlVal = (currentAnalytics.readiness && currentAnalytics.readiness.ctl) ? currentAnalytics.readiness.ctl : 40;
+          const recMin = Math.round(ctlVal * 7 * 0.85);
+          const recMax = Math.round(ctlVal * 7 * 1.25);
+          const rangeTxt = document.getElementById('targetLoadRangeText');
+          if (rangeTxt) rangeTxt.innerText = `${recMin} - ${recMax} TSS`;
+
+          // Stacked discipline shares
+          const sports = ws.seven_day_sports || {};
+          const totalLoadSeven = Object.values(sports).reduce((acc, sp) => acc + (sp.load || 0), 0) || sevenLoad || 1;
+          const rideLoad = (sports.Ride && sports.Ride.load) || 0;
+          const runLoad = (sports.Run && sports.Run.load) || 0;
+          const swimLoad = (sports.Swim && sports.Swim.load) || 0;
+          const otherLoad = (sports.Other && sports.Other.load) || 0;
+
+          const ridePct = Math.round((rideLoad / totalLoadSeven) * 100);
+          const runPct = Math.round((runLoad / totalLoadSeven) * 100);
+          const swimPct = Math.round((swimLoad / totalLoadSeven) * 100);
+          const otherPct = Math.max(0, 100 - ridePct - runPct - swimPct);
+
+          const bRide = document.getElementById('barShareRide');
+          if (bRide) bRide.style.width = ridePct + '%';
+          const bRun = document.getElementById('barShareRun');
+          if (bRun) bRun.style.width = runPct + '%';
+          const bSwim = document.getElementById('barShareSwim');
+          if (bSwim) bSwim.style.width = swimPct + '%';
+          const bOther = document.getElementById('barShareOther');
+          if (bOther) bOther.style.width = otherPct + '%';
+
+          const pillsEl = document.getElementById('weeklyDisciplinePills');
+          if (pillsEl) {
+            const parts = [];
+            if (rideLoad > 0) parts.push(`Ride: ${rideLoad} TSS (${(sports.Ride && sports.Ride.hours) || 0}h)`);
+            if (runLoad > 0) parts.push(`Run: ${runLoad} TSS (${(sports.Run && sports.Run.hours) || 0}h)`);
+            if (swimLoad > 0) parts.push(`Swim: ${swimLoad} TSS`);
+            if (otherLoad > 0) parts.push(`Other: ${otherLoad} TSS`);
+            pillsEl.innerText = parts.length ? parts.join(' | ') : `${sevenHrs} hrs completed`;
+          }
+
+          if (currentAnalytics.acwr) {
+            const a = currentAnalytics.acwr;
+            const ratioInline = document.getElementById('acwrRatioInline');
+            if (ratioInline) {
+              ratioInline.innerText = `${a.ratio.toFixed(2)} (${a.status.replace('_', ' ')})`;
+              ratioInline.style.color = a.status === 'SWEET_SPOT' ? 'var(--success)' : (a.status === 'DANGER_ZONE' ? 'var(--danger)' : 'var(--warning)');
+            }
+          }
+        }
+
         if (currentAnalytics && currentAnalytics.readiness) {
           const r = currentAnalytics.readiness;
           const rBadge = document.getElementById('rhrStrainBadge');
@@ -2096,7 +2248,7 @@ def get_app_html() -> str:
 
       const sumEl = document.getElementById('totalVolumeLoadSummary');
       if (sumEl) {
-        sumEl.innerText = (data.total_moving_hours || 0) + ' hrs | ' + (data.total_load_tss || 0) + ' TSS';
+        sumEl.innerText = (data.total_moving_hours || 0) + ' hrs | ' + (data.total_load_tss || 0) + ' TSS (' + (data.total_activities || 0) + ' activities)';
       }
 
       // Intensity distribution
@@ -2569,23 +2721,44 @@ def get_app_html() -> str:
       svg.innerHTML = gridSvg + pointsSvg + dateSvg;
     }
 
-    function renderDailyLoadChart(series) {
-      const svg = document.getElementById('loadChartSvg');
-      if (!svg || !series || series.length === 0) return;
+    let currentDailyLoadDays = 30;
 
-      const w = 800, h = 180;
-      const padL = 45, padR = 25, padT = 15, padB = 25;
-      const pw = w - padL - padR;
+    function filterDailyLoad(days) {
+      currentDailyLoadDays = days;
+      document.querySelectorAll('.chart-filter-btn').forEach(b => b.classList.remove('active'));
+      const activeBtn = document.getElementById('btnLoad' + days + 'd');
+      if (activeBtn) activeBtn.classList.add('active');
+      if (currentAnalytics && currentAnalytics.daily_series) {
+        renderDailyLoadChart(currentAnalytics.daily_series, days);
+      }
+    }
+
+    function renderDailyLoadChart(allSeries, daysCount) {
+      const svg = document.getElementById('loadChartSvg');
+      const scrollBox = document.getElementById('loadChartScrollBox');
+      if (!svg || !allSeries || allSeries.length === 0) return;
+
+      const days = daysCount || currentDailyLoadDays || 30;
+      const series = allSeries.slice(-days);
+
+      const h = 190;
+      const padL = 50, padR = 30, padT = 18, padB = 28;
+      const colW = Math.max(28, Math.min(48, Math.floor(800 / series.length)));
+      const pw = colW * series.length;
+      const w = Math.max(scrollBox ? scrollBox.clientWidth : 800, padL + pw + padR);
       const ph = h - padT - padB;
 
-      const maxLoad = Math.max(100, Math.max(...series.map(d => d.load_tss || 0)) * 1.15);
-      const getX = (i) => padL + (i / series.length) * pw;
-      const barW = Math.max(4, (pw / series.length) * 0.75);
+      svg.setAttribute('width', w + 'px');
+      svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+
+      const maxLoad = Math.max(60, Math.max(...series.map(d => d.load_tss || 0)) * 1.18);
+      const getX = (i) => padL + (i * colW);
+      const barW = Math.max(12, colW * 0.72);
       const getY = (val) => padT + ph - (Math.min(maxLoad, val) / maxLoad) * ph;
       const y0 = padT + ph;
 
       let gridSvg = '';
-      const ySteps = 3;
+      const ySteps = 4;
       for (let s = 0; s <= ySteps; s++) {
         const val = (s / ySteps) * maxLoad;
         const yPos = getY(val);
@@ -2602,75 +2775,114 @@ def get_app_html() -> str:
         'Other': '#64748b'
       };
 
+      // Hover highlight background bar
+      let hoverBgSvg = `<rect id="loadHoverBar" x="0" y="${padT}" width="${colW}" height="${ph}" fill="rgba(56, 189, 248, 0.12)" rx="3" opacity="0" pointer-events="none"/>`;
+
       let barsSvg = '';
       series.forEach((d, i) => {
-        const bx = getX(i) + (pw / series.length - barW) / 2;
+        const bx = getX(i) + (colW - barW) / 2;
         const sports = d.sports || {};
         let currentY = y0;
 
-        const sportEntries = Object.entries(sports);
+        const sportEntries = Object.entries(sports).filter(([sp, val]) => val > 0);
         if (sportEntries.length > 0 && d.load_tss > 0) {
           sportEntries.forEach(([sp, load]) => {
-            const segH = (load / maxLoad) * ph;
+            const segH = Math.max(2, (load / maxLoad) * ph);
             const color = sportColors[sp] || sportColors['Other'];
-            barsSvg += `<rect x="${bx.toFixed(1)}" y="${(currentY - segH).toFixed(1)}" width="${barW.toFixed(1)}" height="${segH.toFixed(1)}" fill="${color}" rx="1"/>`;
+            barsSvg += `<rect x="${bx.toFixed(1)}" y="${(currentY - segH).toFixed(1)}" width="${barW.toFixed(1)}" height="${segH.toFixed(1)}" fill="${color}" rx="2"/>`;
             currentY -= segH;
           });
         } else if (d.load_tss > 0) {
-          const segH = (d.load_tss / maxLoad) * ph;
-          barsSvg += `<rect x="${bx.toFixed(1)}" y="${(currentY - segH).toFixed(1)}" width="${barW.toFixed(1)}" height="${segH.toFixed(1)}" fill="#06b6d4" rx="1"/>`;
+          const segH = Math.max(2, (d.load_tss / maxLoad) * ph);
+          barsSvg += `<rect x="${bx.toFixed(1)}" y="${(currentY - segH).toFixed(1)}" width="${barW.toFixed(1)}" height="${segH.toFixed(1)}" fill="#f59e0b" rx="2"/>`;
         } else {
-          barsSvg += `<circle cx="${(bx + barW / 2).toFixed(1)}" cy="${(y0 - 2).toFixed(1)}" r="1.5" fill="#334155"/>`;
+          barsSvg += `<circle cx="${(bx + barW / 2).toFixed(1)}" cy="${(y0 - 3).toFixed(1)}" r="2" fill="#334155"/>`;
         }
       });
 
       let dateSvg = '';
-      for (let i = 0; i < series.length; i += 5) {
-        const bx = getX(i) + (pw / series.length) / 2;
+      const step = series.length > 20 ? 3 : (series.length > 10 ? 2 : 1);
+      for (let i = 0; i < series.length; i += step) {
+        const bx = getX(i) + colW / 2;
         const dt = series[i].date ? series[i].date.slice(5) : '';
-        dateSvg += `<text x="${bx}" y="${h - 8}" fill="#6b7280" font-size="10" text-anchor="middle">${dt}</text>`;
+        dateSvg += `<text x="${bx}" y="${h - 8}" fill="#94a3b8" font-size="10" text-anchor="middle">${dt}</text>`;
+      }
+      const lastIdx = series.length - 1;
+      if (lastIdx % step !== 0) {
+        const bx = getX(lastIdx) + colW / 2;
+        const dt = series[lastIdx].date ? series[lastIdx].date.slice(5) : '';
+        dateSvg += `<text x="${bx}" y="${h - 8}" fill="#38bdf8" font-size="10" font-weight="700" text-anchor="middle">${dt}</text>`;
       }
 
       svg.innerHTML = `
         ${gridSvg}
+        ${hoverBgSvg}
         ${dateSvg}
         ${barsSvg}
       `;
 
-      const container = document.getElementById('loadChartContainer');
+      // Auto-scroll to end so latest days are displayed
+      if (scrollBox && !scrollBox.dataset.userScrolled) {
+        scrollBox.scrollLeft = scrollBox.scrollWidth;
+      }
+
+      // Trackpad / wheel horizontal scroll
+      if (scrollBox && !scrollBox.dataset.wheelBound) {
+        scrollBox.dataset.wheelBound = 'true';
+        scrollBox.addEventListener('wheel', (e) => {
+          if (Math.abs(e.deltaX) < Math.abs(e.deltaY)) {
+            scrollBox.scrollLeft += e.deltaY;
+            scrollBox.dataset.userScrolled = 'true';
+            e.preventDefault();
+          }
+        }, { passive: false });
+      }
+
       const tooltip = document.getElementById('loadTooltip');
-      if (container && tooltip) {
-        container.onmousemove = function(e) {
-          const rect = container.getBoundingClientRect();
-          const mouseX = e.clientX - rect.left;
-          const relX = (mouseX / rect.width) * w;
-          if (relX < padL || relX > w - padR) {
+      if (scrollBox && tooltip) {
+        scrollBox.onmousemove = function(e) {
+          const rect = scrollBox.getBoundingClientRect();
+          const mouseX = e.clientX - rect.left + scrollBox.scrollLeft;
+          if (mouseX < padL || mouseX > padL + pw) {
             tooltip.style.display = 'none';
+            const hb = document.getElementById('loadHoverBar');
+            if (hb) hb.setAttribute('opacity', '0');
             return;
           }
-          const frac = (relX - padL) / pw;
-          const idx = Math.min(series.length - 1, Math.max(0, Math.floor(frac * series.length)));
+
+          const idx = Math.min(series.length - 1, Math.max(0, Math.floor((mouseX - padL) / colW)));
           const pt = series[idx];
+          const colStartX = getX(idx);
+
+          const hb = document.getElementById('loadHoverBar');
+          if (hb) {
+            hb.setAttribute('x', colStartX);
+            hb.setAttribute('opacity', '1');
+          }
 
           let sportLines = '';
           if (pt.sports && Object.keys(pt.sports).length > 0) {
             sportLines = Object.entries(pt.sports).map(([sp, val]) =>
-              `<div style="font-size:0.7rem; color:${sportColors[sp] || '#94a3b8'};">• ${sp}: <strong>${val} TSS</strong></div>`
+              `<div style="font-size:0.75rem; color:${sportColors[sp] || '#94a3b8'};">• ${sp}: <strong>${val} TSS</strong></div>`
             ).join('');
           }
 
           tooltip.style.display = 'block';
-          tooltip.style.left = Math.min(rect.width - 160, Math.max(10, mouseX - 60)) + 'px';
-          tooltip.style.top = '15px';
+          const tipLeft = e.clientX - rect.left;
+          tooltip.style.left = Math.min(rect.width - 170, Math.max(10, tipLeft - 70)) + 'px';
+          tooltip.style.top = '12px';
           tooltip.innerHTML = `
-            <div style="font-weight:700; color:#fff; border-bottom:1px solid #334155; padding-bottom:2px; margin-bottom:4px;">${pt.date}</div>
-            <div style="color:#06b6d4;">Total Load: <strong>${pt.load_tss} TSS</strong></div>
-            <div style="color:#f1f5f9; font-size:0.7rem;">Moving Time: ${pt.moving_hours} hrs</div>
-            ${sportLines ? `<div style="margin-top:4px; border-top:1px dashed #334155; padding-top:2px;">${sportLines}</div>` : ''}
+            <div style="font-weight:700; color:#fff; border-bottom:1px solid #334155; padding-bottom:3px; margin-bottom:4px;">${pt.date}</div>
+            <div style="color:#f59e0b; font-size:0.8125rem;">Total Load: <strong>${pt.load_tss} TSS</strong></div>
+            <div style="color:#38bdf8; font-size:0.75rem;">Moving Time: <strong>${pt.moving_hours} hrs</strong></div>
+            ${sportLines ? `<div style="margin-top:4px; border-top:1px dashed #334155; padding-top:4px;">${sportLines}</div>` : ''}
           `;
         };
-        container.onmouseleave = function() {
+
+        scrollBox.onmouseleave = function() {
           tooltip.style.display = 'none';
+          const hb = document.getElementById('loadHoverBar');
+          if (hb) hb.setAttribute('opacity', '0');
         };
       }
     }

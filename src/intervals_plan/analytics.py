@@ -79,6 +79,7 @@ class RollingAnalysisReport:
     intensity_distribution: IntensityDistribution
     raw_wellness_count: int
     daily_series: List[Dict[str, Any]] = field(default_factory=list)
+    weekly_summary: Dict[str, Any] = field(default_factory=dict)
 
     def summary_lines(self) -> List[str]:
         lines = []
@@ -453,6 +454,25 @@ class RollingMetricsAnalyzer:
             summary=summary,
         )
 
+    def _extract_activity_load(self, a: Dict[str, Any]) -> float:
+        """Extract training load from activity or estimate from HR / duration."""
+        raw_load = a.get("icu_training_load")
+        if raw_load is not None and float(raw_load) > 0:
+            return round(float(raw_load), 1)
+
+        mtime = float(a.get("moving_time") or 0)
+        if mtime <= 0:
+            return 0.0
+
+        avg_hr = a.get("average_heartrate")
+        raw_type = a.get("type") or "Other"
+        if avg_hr and self.athlete_lthr and self.athlete_lthr > 0:
+            hr_ratio = min(1.3, float(avg_hr) / float(self.athlete_lthr))
+            return round((mtime / 3600.0) * (hr_ratio ** 2) * 60.0, 1)
+
+        rate = 50.0 if raw_type in ["Run", "VirtualRun", "TrailRun"] else 45.0
+        return round((mtime / 3600.0) * rate, 1)
+
     def analyze_disciplines(self, activities: List[Dict[str, Any]]) -> Dict[str, DisciplineSummary]:
         """Aggregate activities by sport."""
         disciplines: Dict[str, Dict[str, float]] = {}
@@ -473,7 +493,7 @@ class RollingMetricsAnalyzer:
 
             disciplines[sport]["count"] += 1
             disciplines[sport]["moving_time"] += float(a.get("moving_time") or 0)
-            disciplines[sport]["load"] += float(a.get("icu_training_load") or 0)
+            disciplines[sport]["load"] += self._extract_activity_load(a)
             disciplines[sport]["distance"] += float(a.get("distance") or 0)
 
         result = {}
@@ -520,7 +540,7 @@ class RollingMetricsAnalyzer:
             if dt_str:
                 act_date = datetime.date.fromisoformat(dt_str[:10])
                 if start_date <= act_date <= end_date:
-                    load = float(a.get("icu_training_load") or 0)
+                    load = self._extract_activity_load(a)
                     mtime = float(a.get("moving_time") or 0)
                     daily_loads_dict[act_date] = daily_loads_dict.get(act_date, 0.0) + load
                     daily_moving_dict[act_date] = daily_moving_dict.get(act_date, 0.0) + mtime
@@ -679,6 +699,48 @@ class RollingMetricsAnalyzer:
             })
             curr += datetime.timedelta(days=1)
 
+        # 7-day rolling weekly summary
+        last_7_days = daily_series[-7:] if len(daily_series) >= 7 else daily_series
+        seven_day_hours = round(sum(d.get("moving_hours", 0.0) for d in last_7_days), 1)
+        seven_day_load = round(sum(d.get("load_tss", 0.0) for d in last_7_days), 0)
+        seven_day_sports: Dict[str, Dict[str, float]] = {}
+        for d in last_7_days:
+            for sp, ld in d.get("sports", {}).items():
+                if sp not in seven_day_sports:
+                    seven_day_sports[sp] = {"load": 0.0, "hours": 0.0}
+                seven_day_sports[sp]["load"] += ld
+
+        seven_day_start = end_date - datetime.timedelta(days=6)
+        for a in activities:
+            dt_str = a.get("start_date_local", "")
+            if dt_str:
+                act_date = datetime.date.fromisoformat(dt_str[:10])
+                if seven_day_start <= act_date <= end_date:
+                    sp = "Other"
+                    raw_type = a.get("type") or "Other"
+                    if raw_type in ["Ride", "VirtualRide", "GravelRide", "MountainBikeRide"]:
+                        sp = "Ride"
+                    elif raw_type in ["Run", "VirtualRun", "TrailRun"]:
+                        sp = "Run"
+                    elif raw_type in ["Swim", "OpenWaterSwim"]:
+                        sp = "Swim"
+                    if sp not in seven_day_sports:
+                        seven_day_sports[sp] = {"load": 0.0, "hours": 0.0}
+                    seven_day_sports[sp]["hours"] += float(a.get("moving_time") or 0) / 3600.0
+
+        for sp in seven_day_sports:
+            seven_day_sports[sp]["hours"] = round(seven_day_sports[sp]["hours"], 1)
+            seven_day_sports[sp]["load"] = round(seven_day_sports[sp]["load"], 1)
+
+        vol_pct = round(min(150.0, (seven_day_hours / self.target_hours_profile) * 100.0), 1) if self.target_hours_profile > 0 else 0.0
+        weekly_summary = {
+            "seven_day_hours": seven_day_hours,
+            "seven_day_load": seven_day_load,
+            "target_hours": self.target_hours_profile,
+            "volume_completion_pct": vol_pct,
+            "seven_day_sports": seven_day_sports,
+        }
+
         return RollingAnalysisReport(
             period_start=start_date.isoformat(),
             period_end=end_date.isoformat(),
@@ -691,5 +753,6 @@ class RollingMetricsAnalyzer:
             intensity_distribution=intensity_dist,
             raw_wellness_count=len(wellness_records),
             daily_series=daily_series,
+            weekly_summary=weekly_summary,
         )
 

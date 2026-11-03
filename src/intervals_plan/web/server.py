@@ -387,8 +387,7 @@ class AdaptPulseRequestHandler(BaseHTTPRequestHandler):
                     if latest_w.get("sleepSecs"):
                         sleep_secs = float(latest_w["sleepSecs"])
 
-                events = client.list_events(start_7d.isoformat(), today.isoformat())
-                recent_activities = [e.to_dict() for e in events if e.category != "WORKOUT"]
+                recent_activities = client.get_activities(start_7d.isoformat(), today.isoformat())
                 athlete_info = client.get_athlete()
                 if athlete_info and isinstance(athlete_info, dict):
                     eftp = athlete_info.get("icu_eftp") or athlete_info.get("ftp")
@@ -470,10 +469,8 @@ class AdaptPulseRequestHandler(BaseHTTPRequestHandler):
                 today = datetime.date.today()
                 start = today - datetime.timedelta(days=29)
                 wellness = client.get_wellness_range(start.isoformat(), today.isoformat())
-                acts = client.list_events(start.isoformat(), today.isoformat())
-                # Filter down to activities
-                act_dicts = [a.to_dict() for a in acts if a.category != "WORKOUT"]
-                return analyzer.analyze_30d(wellness, act_dicts)
+                acts = client.get_activities(start.isoformat(), today.isoformat())
+                return analyzer.analyze_30d(wellness, acts)
             except Exception:
                 pass
 
@@ -588,6 +585,7 @@ class AdaptPulseRequestHandler(BaseHTTPRequestHandler):
                 for k, v in r.disciplines.items()
             },
             "daily_series": getattr(r, "daily_series", []),
+            "weekly_summary": getattr(r, "weekly_summary", {}),
         }
 
     def log_message(self, format: str, *args: Any) -> None:
