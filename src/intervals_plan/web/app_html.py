@@ -2267,17 +2267,72 @@ def get_app_html() -> str:
       // Disciplines
       if (data.disciplines) {
         const tbody = document.getElementById('disciplineTableBody');
-        tbody.innerHTML = '';
-        for (const [sport, d] of Object.entries(data.disciplines)) {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td style="font-weight:700;">${sport}</td>
-            <td>${d.activity_count}</td>
-            <td>${d.moving_time_hours} hrs</td>
-            <td>${d.total_load} TSS</td>
-            <td>${d.total_distance_km} km</td>
-          `;
-          tbody.appendChild(tr);
+        if (tbody) {
+          tbody.innerHTML = '';
+          const preferredOrder = ['Ride', 'Run', 'Strength', 'Swim', 'Walk', 'Other'];
+          const sportBadges = {
+            'Ride': { bg: 'rgba(245, 158, 11, 0.2)', col: '#f59e0b' },
+            'Run': { bg: 'rgba(6, 182, 212, 0.2)', col: '#06b6d4' },
+            'Swim': { bg: 'rgba(56, 189, 248, 0.2)', col: '#38bdf8' },
+            'Strength': { bg: 'rgba(168, 85, 247, 0.2)', col: '#a855f7' },
+            'Walk': { bg: 'rgba(16, 185, 129, 0.2)', col: '#10b981' },
+            'Other': { bg: 'rgba(100, 116, 139, 0.2)', col: '#94a3b8' }
+          };
+
+          const fullDisciplines = { ...data.disciplines };
+          ['Ride', 'Run', 'Strength', 'Swim'].forEach(sp => {
+            if (!fullDisciplines[sp]) {
+              fullDisciplines[sp] = { activity_count: 0, moving_time_hours: 0.0, total_load: 0.0, total_distance_km: 0.0 };
+            }
+          });
+
+          const sortedEntries = Object.entries(fullDisciplines).sort((a, b) => {
+            const ia = preferredOrder.indexOf(a[0]) !== -1 ? preferredOrder.indexOf(a[0]) : 99;
+            const ib = preferredOrder.indexOf(b[0]) !== -1 ? preferredOrder.indexOf(b[0]) : 99;
+            return ia - ib;
+          });
+
+          let totSessions = 0, totHours = 0, totLoad = 0, totDist = 0;
+
+          sortedEntries.forEach(([sport, d]) => {
+            if ((sport === 'Other' || sport === 'Walk') && (!d.activity_count || d.activity_count === 0)) return;
+
+            totSessions += (d.activity_count || 0);
+            totHours += (d.moving_time_hours || 0);
+            totLoad += (d.total_load || 0);
+            totDist += (d.total_distance_km || 0);
+
+            const badge = sportBadges[sport] || { bg: 'rgba(100, 116, 139, 0.2)', col: '#94a3b8' };
+            const tr = document.createElement('tr');
+            const distStr = (sport === 'Strength' || (sport === 'Other' && (!d.total_distance_km || d.total_distance_km <= 0)))
+              ? '--'
+              : (d.total_distance_km > 0 ? d.total_distance_km.toFixed(1) + ' km' : '--');
+            const timeStr = d.moving_time_hours > 0 ? d.moving_time_hours.toFixed(1) + ' hrs' : '0.0 hrs';
+            const loadStr = d.total_load > 0 ? Math.round(d.total_load) + ' TSS' : '0 TSS';
+
+            tr.innerHTML = `
+              <td><span style="display:inline-block; padding:2px 8px; border-radius:4px; font-weight:700; font-size:0.75rem; background:${badge.bg}; color:${badge.col};">${sport}</span></td>
+              <td style="font-weight:600;">${d.activity_count || 0}</td>
+              <td>${timeStr}</td>
+              <td>${loadStr}</td>
+              <td>${distStr}</td>
+            `;
+            tbody.appendChild(tr);
+          });
+
+          if (totSessions > 0) {
+            const tfoot = document.createElement('tr');
+            tfoot.style.borderTop = '2px solid #334155';
+            tfoot.style.fontWeight = '700';
+            tfoot.innerHTML = `
+              <td style="color:#fff;">Total Completed</td>
+              <td style="color:#38bdf8;">${totSessions}</td>
+              <td style="color:#38bdf8;">${totHours.toFixed(1)} hrs</td>
+              <td style="color:#f59e0b;">${Math.round(totLoad)} TSS</td>
+              <td style="color:#fff;">${totDist > 0 ? totDist.toFixed(1) + ' km' : '--'}</td>
+            `;
+            tbody.appendChild(tfoot);
+          }
         }
       }
     }
@@ -2770,8 +2825,11 @@ def get_app_html() -> str:
         'Run': '#06b6d4',
         'Ride': '#f59e0b',
         'Swim': '#38bdf8',
+        'Strength': '#a855f7',
+        'WeightTraining': '#a855f7',
         'Brick': '#a855f7',
         'Duathlon': '#a855f7',
+        'Walk': '#10b981',
         'Other': '#64748b'
       };
 

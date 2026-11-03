@@ -453,6 +453,62 @@ class AdaptPulseRequestHandler(BaseHTTPRequestHandler):
             hours_since_last_workout=12.0,
         )
 
+    @staticmethod
+    def _enrich_activities(acts: List[Dict[str, Any]], start_date: datetime.date, end_date: datetime.date) -> List[Dict[str, Any]]:
+        """
+        Enrich activities by pairing Strava restricted placeholders and unlogged workouts
+        with local Health Connect telemetry.
+        """
+        from intervals_plan.integrations.health_connect import HealthConnectParser
+        hc_file = pathlib.Path.cwd() / "data" / "health_connect_latest.json"
+        hc_acts: List[Dict[str, Any]] = []
+        if hc_file.exists():
+            try:
+                with open(hc_file, "r", encoding="utf-8") as f:
+                    payload = json.load(f)
+                hc_acts = HealthConnectParser().parse_activities(payload)
+            except Exception:
+                pass
+
+        enriched: List[Dict[str, Any]] = []
+        # Keep valid Intervals activities
+        for a in acts:
+            mtime = float(a.get("moving_time") or 0)
+            if mtime > 0 and a.get("type"):
+                enriched.append(a)
+            elif a.get("source") == "STRAVA" or not a.get("type"):
+                st = (a.get("start_date_local") or "")[:16]
+                match = next((h for h in hc_acts if (h.get("start_date_local") or "")[:16] == st), None)
+                if match:
+                    ea = dict(a)
+                    ea["type"] = match["type"]
+                    ea["name"] = match.get("name") or f"Enriched {match['type']}"
+                    ea["moving_time"] = match["moving_time"]
+                    ea["distance"] = match.get("distance")
+                    ea["icu_training_load"] = match.get("icu_training_load")
+                    enriched.append(ea)
+
+        # Add remaining standalone HC workouts not already represented
+        for h in hc_acts:
+            st = h.get("start_date_local") or ""
+            sp = h.get("type") or ""
+            mtime = float(h.get("moving_time") or 0)
+            if mtime >= 300 and sp in ("Run", "WeightTraining", "Ride", "Swim"):
+                if len(st) >= 10:
+                    try:
+                        dt = datetime.date.fromisoformat(st[:10])
+                    except ValueError:
+                        continue
+                    if start_date <= dt <= end_date:
+                        is_dup = any(
+                            e.get("type") == sp and (e.get("start_date_local") or "")[:10] == st[:10]
+                            for e in enriched
+                        )
+                        if not is_dup:
+                            enriched.append(h)
+
+        return enriched
+
     def _compute_report(self):
         """Generate rolling report using live Intervals client or local fallback."""
         prof = AthleteProfileConfig.load()
@@ -469,7 +525,8 @@ class AdaptPulseRequestHandler(BaseHTTPRequestHandler):
                 today = datetime.date.today()
                 start = today - datetime.timedelta(days=29)
                 wellness = client.get_wellness_range(start.isoformat(), today.isoformat())
-                acts = client.get_activities(start.isoformat(), today.isoformat())
+                raw_acts = client.get_activities(start.isoformat(), today.isoformat())
+                acts = self._enrich_activities(raw_acts, start, today)
                 return analyzer.analyze_30d(wellness, acts)
             except Exception:
                 pass
@@ -501,7 +558,8 @@ class AdaptPulseRequestHandler(BaseHTTPRequestHandler):
                     base_url=settings.base_url,
                 )
                 events = client.list_events(start.isoformat(), today.isoformat())
-                acts = client.get_activities(start.isoformat(), today.isoformat())
+                raw_acts = client.get_activities(start.isoformat(), today.isoformat())
+                acts = self._enrich_activities(raw_acts, start, today)
                 return engine.evaluate(events, acts, start_date=start, end_date=today)
             except Exception:
                 pass

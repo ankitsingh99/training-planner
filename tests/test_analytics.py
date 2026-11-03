@@ -165,11 +165,13 @@ def test_analyze_disciplines():
         {"type": "TrailRun", "moving_time": 1800, "icu_training_load": 40, "distance": 5000},
         {"type": "OpenWaterSwim", "moving_time": 1200, "icu_training_load": 25, "distance": 1000},
         {"type": "WeightTraining", "moving_time": 2400, "icu_training_load": 30, "distance": 0},
+        {"type": "Rowing", "moving_time": 1200, "icu_training_load": 20, "distance": 2000},
     ]
     disciplines = analyzer.analyze_disciplines(acts)
     assert "Ride" in disciplines
     assert "Run" in disciplines
     assert "Swim" in disciplines
+    assert "Strength" in disciplines
     assert "Other" in disciplines
     assert disciplines["Ride"].moving_time_hours == 1.0
 

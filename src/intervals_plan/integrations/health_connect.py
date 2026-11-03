@@ -253,6 +253,17 @@ class HealthConnectParser:
             ex_type = str(ex.get("exercise_type") or ex.get("type") or "").strip().upper()
             sport = self.SPORT_MAP.get(ex_type, "Workout")
 
+            title_val = ex.get("title") or ""
+            title_lower = title_val.lower()
+            if any(w in title_lower for w in ["legs", "strength", "weight", "gym", "chest", "back", "workout"]):
+                sport = "WeightTraining"
+            elif any(w in title_lower for w in ["swim", "pool"]):
+                sport = "Swim"
+            elif any(w in title_lower for w in ["run", "jog"]):
+                sport = "Run"
+            elif any(w in title_lower for w in ["ride", "bike", "cycle"]):
+                sport = "Ride"
+
             dur = int(ex.get("duration_seconds") or 0)
             if dur <= 0 and ex.get("end_time"):
                 try:
@@ -264,7 +275,7 @@ class HealthConnectParser:
 
             dist = float(ex.get("distance_meters") or 0.0)
             cals = float(ex.get("calories_burned") or ex.get("active_calories") or 0.0)
-            title = ex.get("title") or f"Samsung Health {sport}"
+            title = title_val or f"Samsung Health {sport}"
 
             # Calculate estimated training load if duration is available
             est_load = round((dur / 3600.0) * 50.0, 1) if dur > 0 else 25.0

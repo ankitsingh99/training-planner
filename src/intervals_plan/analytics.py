@@ -478,6 +478,12 @@ class RollingMetricsAnalyzer:
         disciplines: Dict[str, Dict[str, float]] = {}
 
         for a in activities:
+            mtime = float(a.get("moving_time") or 0)
+            load = self._extract_activity_load(a)
+            # Filter out empty placeholder records with no duration and no load
+            if mtime <= 0 and load <= 0:
+                continue
+
             raw_type = a.get("type") or "Other"
             if raw_type in ["Ride", "VirtualRide", "GravelRide", "MountainBikeRide"]:
                 sport = "Ride"
@@ -485,6 +491,10 @@ class RollingMetricsAnalyzer:
                 sport = "Run"
             elif raw_type in ["Swim", "OpenWaterSwim"]:
                 sport = "Swim"
+            elif raw_type in ["WeightTraining", "Gym", "StrengthTraining", "WeightLifting", "FitnessClass"]:
+                sport = "Strength"
+            elif raw_type in ["Walk", "Hike"]:
+                sport = "Walk"
             else:
                 sport = "Other"
 
@@ -492,8 +502,8 @@ class RollingMetricsAnalyzer:
                 disciplines[sport] = {"count": 0, "moving_time": 0.0, "load": 0.0, "distance": 0.0}
 
             disciplines[sport]["count"] += 1
-            disciplines[sport]["moving_time"] += float(a.get("moving_time") or 0)
-            disciplines[sport]["load"] += self._extract_activity_load(a)
+            disciplines[sport]["moving_time"] += mtime
+            disciplines[sport]["load"] += load
             disciplines[sport]["distance"] += float(a.get("distance") or 0)
 
         result = {}
@@ -520,6 +530,10 @@ class RollingMetricsAnalyzer:
             end_date = datetime.date.today()
 
         start_date = end_date - datetime.timedelta(days=29)
+        valid_activities = [
+            a for a in activities
+            if float(a.get("moving_time") or 0) > 0 or self._extract_activity_load(a) > 0
+        ]
 
         # Build daily load map from activities
         daily_loads_dict: Dict[datetime.date, float] = {}
@@ -535,13 +549,13 @@ class RollingMetricsAnalyzer:
         total_moving_secs = 0.0
         total_load = 0.0
 
-        for a in activities:
+        for a in valid_activities:
+            load = self._extract_activity_load(a)
+            mtime = float(a.get("moving_time") or 0)
             dt_str = a.get("start_date_local", "")
             if dt_str:
                 act_date = datetime.date.fromisoformat(dt_str[:10])
                 if start_date <= act_date <= end_date:
-                    load = self._extract_activity_load(a)
-                    mtime = float(a.get("moving_time") or 0)
                     daily_loads_dict[act_date] = daily_loads_dict.get(act_date, 0.0) + load
                     daily_moving_dict[act_date] = daily_moving_dict.get(act_date, 0.0) + mtime
                     total_load += load
@@ -554,6 +568,10 @@ class RollingMetricsAnalyzer:
                         sport = "Run"
                     elif raw_type in ["Swim", "OpenWaterSwim"]:
                         sport = "Swim"
+                    elif raw_type in ["WeightTraining", "Gym", "StrengthTraining", "WeightLifting", "FitnessClass"]:
+                        sport = "Strength"
+                    elif raw_type in ["Walk", "Hike"]:
+                        sport = "Walk"
                     else:
                         sport = "Other"
                     daily_sports_dict[act_date][sport] = daily_sports_dict[act_date].get(sport, 0.0) + load
@@ -744,7 +762,7 @@ class RollingMetricsAnalyzer:
         return RollingAnalysisReport(
             period_start=start_date.isoformat(),
             period_end=end_date.isoformat(),
-            total_activities=len(activities),
+            total_activities=len(valid_activities),
             total_moving_hours=round(total_moving_secs / 3600.0, 1),
             total_load_tss=round(total_load, 0),
             disciplines=disciplines,
