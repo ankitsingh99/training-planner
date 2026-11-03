@@ -1313,11 +1313,16 @@ def get_app_html() -> str:
 
     <!-- TAB 5: ECOSYSTEM & SYNC -->
     <div id="tab-sync" class="tab-content">
-      <div class="grid-4" style="margin-bottom: 1.5rem;">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 1.25rem; margin-bottom: 1.5rem;">
         <div class="card">
           <div class="card-title">Intervals.icu Cloud Hub</div>
           <div style="font-size: 1.1rem; font-weight: 700; color: var(--success);" id="intervalsStatus">Connected</div>
           <p class="card-subtext">Direct calendar sync with read-back verification.</p>
+        </div>
+        <div class="card">
+          <div class="card-title">Garmin Connect Bridge</div>
+          <div style="font-size: 1.1rem; font-weight: 700; color: #38bdf8;" id="garminStatus">Checking...</div>
+          <p class="card-subtext">Direct FIT engine & Intervals Health/Training relay.</p>
         </div>
         <div class="card">
           <div class="card-title">TrainingPeaks Connector</div>
@@ -1333,6 +1338,72 @@ def get_app_html() -> str:
           <div class="card-title">Samsung Health Hub</div>
           <div style="font-size: 1.1rem; font-weight: 700; color: #a855f7;">Health Connect Active</div>
           <p class="card-subtext">Automated biometrics & workout ingestion pipeline.</p>
+        </div>
+      </div>
+
+      <!-- Garmin Connect & Ecosystem Bridge -->
+      <div class="card" style="margin-bottom: 1.5rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+          <div class="card-title" style="margin-bottom:0;">Garmin Connect & Ecosystem Bridge</div>
+          <span id="garminModeBadge" class="periodization-badge" style="background:rgba(56,189,248,0.2); color:#38bdf8;">Intervals Cloud Relay Active</span>
+        </div>
+        <p class="card-subtext" style="margin-bottom:1.25rem;">
+          Bidirectional synchronization between AdaptPulse, Intervals.icu, and Garmin Connect. Supports automatic workout delivery to Garmin devices, binary FIT workout generation (for <code>GARMIN/NEWFILES</code>), and ingestion of Body Battery, Resting Heart Rate, and overnight HRV.
+        </p>
+        <div class="grid-2">
+          <div style="background:#0f172a; border:1px solid #1f2937; border-radius:8px; padding:1.25rem;">
+            <div style="font-weight:700; color:var(--accent); margin-bottom:0.5rem; font-size:0.9375rem;">1. Intervals.icu Garmin Cloud Relay</div>
+            <p style="font-size:0.8125rem; color:var(--text-muted); margin-bottom:0.75rem;">
+              Enables seamless, hands-free workout sync directly to your Garmin watch or bike computer whenever workouts are generated or updated.
+            </p>
+            <div style="display:flex; flex-direction:column; gap:0.5rem; margin-bottom:0.75rem; font-size:0.8125rem;">
+              <div style="display:flex; justify-content:space-between;">
+                <span style="color:var(--text-muted);">Workout Auto-Push:</span>
+                <strong id="garminUploadStatus" style="color:var(--success);">Enabled</strong>
+              </div>
+              <div style="display:flex; justify-content:space-between;">
+                <span style="color:var(--text-muted);">Wellness & Body Battery Download:</span>
+                <strong id="garminWellnessStatus" style="color:var(--success);">Enabled</strong>
+              </div>
+              <div style="display:flex; justify-content:space-between;">
+                <span style="color:var(--text-muted);">Power Target Mode:</span>
+                <strong id="garminPowerMode" style="color:#f3f4f6;">POWER_LAP</strong>
+              </div>
+            </div>
+            <button class="btn btn-secondary" onclick="toggleGarminRelay()" id="btnGarminRelay" style="width:100%;">Update Relay Settings</button>
+          </div>
+
+          <div style="background:#0f172a; border:1px solid #1f2937; border-radius:8px; padding:1.25rem;">
+            <div style="font-weight:700; color:var(--success); margin-bottom:0.5rem; font-size:0.9375rem;">2. Pure-Python FIT Workout Engine</div>
+            <p style="font-size:0.8125rem; color:var(--text-muted); margin-bottom:0.75rem;">
+              Compiles planned workouts into standard Garmin binary FIT protocol (Global Messages 0, 26, 27 with 16-bit CRC checksums). No external drivers required.
+            </p>
+            <div style="background:#111827; border:1px solid #374151; border-radius:6px; padding:0.5rem 0.75rem; font-size:0.8125rem; margin-bottom:0.75rem;">
+              <div style="color:var(--text-muted); font-size:0.75rem; margin-bottom:0.25rem;">Device Compatibility:</div>
+              <div style="color:#38bdf8; font-weight:600;">Garmin Forerunner, Edge 530/830/1040, Fenix, Epix</div>
+              <div style="color:#9ca3af; font-size:0.75rem; margin-top:0.25rem;">Copy directly to <code>GARMIN/NEWFILES</code> via USB or Garmin Express.</div>
+            </div>
+            <button class="btn" onclick="downloadExport('fit')" style="width:100%;">Download Current Workout (.fit)</button>
+          </div>
+        </div>
+
+        <div style="background:#111827; border:1px solid #1f2937; border-radius:6px; padding:0.75rem 1rem; margin-top:1rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem; font-size:0.8125rem;">
+          <div>
+            <span style="color:var(--text-muted);">Garmin Athlete ID:</span>
+            <strong id="garminUserIdText" style="color:#f3f4f6; margin-left:4px;">Connected</strong>
+          </div>
+          <div>
+            <span style="color:var(--text-muted);">Sync Mode:</span>
+            <strong id="garminModeText" style="color:var(--success); margin-left:4px;">Intervals Cloud Relay</strong>
+          </div>
+          <div>
+            <span style="color:var(--text-muted);">Direct API:</span>
+            <strong id="garminDirectText" style="color:var(--accent); margin-left:4px;">Ready</strong>
+          </div>
+          <div>
+            <span style="color:var(--text-muted);">Target Tolerances:</span>
+            <strong id="garminToleranceText" style="color:#38bdf8; margin-left:4px;">HR ±1.5% | Pace ±2.5%</strong>
+          </div>
         </div>
       </div>
 
@@ -1421,7 +1492,15 @@ def get_app_html() -> str:
           Download your planned workouts in multi-platform compatible formats for indoor trainers, smart watches, and calendar software.
         </p>
 
-        <div class="grid-3">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 1.25rem;">
+          <div style="background:#1e293b; border:1px solid #334155; border-radius:8px; padding:1.25rem;">
+            <h3 style="font-size:1.1rem; margin-bottom:0.5rem; color:#38bdf8;">Garmin Binary (.fit)</h3>
+            <p style="font-size:0.8125rem; color:var(--text-muted); margin-bottom:1rem;">
+              Standard binary FIT protocol for Edge, Forerunner, and Fenix. Direct USB copy to GARMIN/NEWFILES.
+            </p>
+            <button class="btn btn-secondary" onclick="downloadExport('fit')">Download Garmin .fit</button>
+          </div>
+
           <div style="background:#1e293b; border:1px solid #334155; border-radius:8px; padding:1.25rem;">
             <h3 style="font-size:1.1rem; margin-bottom:0.5rem; color:var(--accent);">Zwift (.zwo XML)</h3>
             <p style="font-size:0.8125rem; color:var(--text-muted); margin-bottom:1rem;">
@@ -1565,6 +1644,11 @@ def get_app_html() -> str:
           if (tpStatusEl) {
             tpStatusEl.innerText = statusData.trainingpeaks_connected ? 'Connected' : 'Not Configured';
             tpStatusEl.style.color = statusData.trainingpeaks_connected ? 'var(--success)' : 'var(--text-muted)';
+          }
+          const garminStatusEl = document.getElementById('garminStatus');
+          if (garminStatusEl) {
+            garminStatusEl.innerText = statusData.garmin_connected ? 'Direct API' : 'Relay Active';
+            garminStatusEl.style.color = statusData.garmin_connected ? 'var(--success)' : '#38bdf8';
           }
         }
 
@@ -1775,6 +1859,9 @@ def get_app_html() -> str:
 
         // Load Health Connect Status
         loadHealthConnectStatus();
+
+        // Load Garmin Connect Status
+        loadGarminStatus();
 
         // Load COROS Training Hub & EvoLab Telemetry
         loadCorosHub();
@@ -2146,6 +2233,90 @@ def get_app_html() -> str:
       } finally {
         btn.disabled = false;
         btn.innerText = 'Pull Now';
+      }
+    }
+
+    async function loadGarminStatus() {
+      try {
+        const res = await fetch('/api/garmin/status');
+        if (!res.ok) return;
+        const g = await res.json();
+
+        const gBadge = document.getElementById('garminModeBadge');
+        if (gBadge) {
+          if (g.connected) {
+            gBadge.innerText = g.mode === 'DIRECT_CONNECT_API' ? 'Direct API Connected' : 'Intervals Cloud Relay Active';
+            gBadge.style.color = 'var(--success)';
+            gBadge.style.background = 'rgba(16,185,129,0.2)';
+          } else {
+            gBadge.innerText = 'Not Configured';
+            gBadge.style.color = 'var(--text-muted)';
+            gBadge.style.background = 'rgba(107,114,128,0.2)';
+          }
+        }
+
+        const gStatus = document.getElementById('garminStatus');
+        if (gStatus) {
+          gStatus.innerText = g.connected ? (g.mode === 'DIRECT_CONNECT_API' ? 'Direct API' : 'Relay Active') : 'Not Configured';
+          gStatus.style.color = g.connected ? 'var(--success)' : 'var(--text-muted)';
+        }
+
+        const gUp = document.getElementById('garminUploadStatus');
+        if (gUp) {
+          gUp.innerText = g.upload_workouts ? 'Auto-Push Enabled' : 'Disabled';
+          gUp.style.color = g.upload_workouts ? 'var(--success)' : 'var(--text-muted)';
+        }
+
+        const gWell = document.getElementById('garminWellnessStatus');
+        if (gWell) {
+          gWell.innerText = g.download_wellness ? 'Enabled (Body Battery/HRV)' : 'Disabled';
+          gWell.style.color = g.download_wellness ? 'var(--success)' : 'var(--text-muted)';
+        }
+
+        const gPwr = document.getElementById('garminPowerMode');
+        if (gPwr) gPwr.innerText = g.power_target_mode || 'POWER_LAP';
+
+        const gUser = document.getElementById('garminUserIdText');
+        if (gUser) gUser.innerText = g.user_id ? g.user_id : 'Default Athlete';
+
+        const gMode = document.getElementById('garminModeText');
+        if (gMode) gMode.innerText = g.mode;
+
+        const gDir = document.getElementById('garminDirectText');
+        if (gDir) {
+          gDir.innerText = g.direct_api_ready ? 'OAuth Ready' : 'FIT Compiler Ready';
+          gDir.style.color = g.direct_api_ready ? 'var(--success)' : '#38bdf8';
+        }
+
+        const gTol = document.getElementById('garminToleranceText');
+        if (gTol) gTol.innerText = `HR ±${g.hr_range_pct}% | Pace ±${g.pace_range_pct}%`;
+      } catch (err) {
+        console.debug('Failed loading Garmin status:', err);
+      }
+    }
+
+    async function toggleGarminRelay() {
+      const btn = document.getElementById('btnGarminRelay');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerText = 'Updating...';
+      }
+      try {
+        const res = await fetch('/api/garmin/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'toggle_relay', upload_workouts: true, download_wellness: true })
+        });
+        const data = await res.json();
+        showToast('Garmin cloud relay updated successfully!');
+        loadGarminStatus();
+      } catch (err) {
+        alert('Failed to update Garmin relay: ' + err);
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerText = 'Update Relay Settings';
+        }
       }
     }
 

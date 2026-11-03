@@ -114,3 +114,5 @@ def test_export_all():
         assert pathlib.Path(results["ics"]).is_file()
         assert pathlib.Path(results["json"]).is_file()
         assert int(results["zwo_count"]) >= 1
+        assert int(results["garmin_count"]) >= 1
+        assert pathlib.Path(results["garmin_dir"]).is_dir()

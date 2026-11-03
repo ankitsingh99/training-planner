@@ -76,12 +76,14 @@ class AdaptPulseRequestHandler(BaseHTTPRequestHandler):
             settings = Config.load()
             has_api_key = bool(settings.api_key and len(settings.api_key) > 5)
             has_tp_token = bool(settings.tp_access_token and len(settings.tp_access_token) > 5)
+            has_garmin_token = bool(getattr(settings, "garmin_access_token", None) and len(settings.garmin_access_token) > 5)
             self._send_json({
                 "status": "online",
                 "app": "AdaptPulse",
                 "version": "0.3.0",
                 "intervals_connected": has_api_key,
                 "trainingpeaks_connected": has_tp_token,
+                "garmin_connected": has_garmin_token,
                 "athlete_id": settings.athlete_id,
             })
             return
@@ -131,7 +133,21 @@ class AdaptPulseRequestHandler(BaseHTTPRequestHandler):
             planner = DynamicRollingPlanner(prof)
             events = planner.generate_plan(report, weeks_to_plan=1)
 
-            if fmt == "zwo":
+            if fmt == "fit":
+                target_event = next((e for e in events if e.category != "NOTE"), events[0] if events else None)
+                if target_event:
+                    fit_bytes = PlanExporter.event_to_garmin_fit(target_event)
+                    clean_name = "".join(c if c.isalnum() or c in "._-" else "_" for c in (target_event.name or "workout"))
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/octet-stream")
+                    self.send_header("Content-Disposition", f'attachment; filename="{clean_name}.fit"')
+                    self.end_headers()
+                    self.wfile.write(fit_bytes)
+                    return
+                else:
+                    self._send_text("No workouts found to export FIT", status=404)
+                    return
+            elif fmt == "zwo":
                 # Returns first cycling workout or combined
                 bike_events = [e for e in events if e.type == "Ride"]
                 if bike_events:
@@ -219,6 +235,18 @@ class AdaptPulseRequestHandler(BaseHTTPRequestHandler):
         if path == "/api/coros/evolab":
             hub_report = self._compute_coros_evolab()
             self._send_json(hub_report)
+            return
+
+        # 14. Garmin Connect Status API
+        if path == "/api/garmin/status":
+            from intervals_plan.integrations.garmin_client import GarminClient
+            cfg = Config.load()
+            garmin_client = GarminClient.from_config(cfg)
+            int_client = None
+            if cfg.api_key and len(cfg.api_key) > 5:
+                int_client = IntervalsClient(api_key=cfg.api_key, athlete_id=cfg.athlete_id, base_url=cfg.base_url)
+            status = garmin_client.check_status(int_client)
+            self._send_json(status.to_dict())
             return
 
         self._send_json({"error": "Endpoint not found"}, status=404)
@@ -372,6 +400,40 @@ class AdaptPulseRequestHandler(BaseHTTPRequestHandler):
                 hours_elapsed=elapsed,
             )
             self._send_json(te_res.to_dict())
+            return
+
+        # 10. Garmin Sync & Relay API
+        if path == "/api/garmin/sync":
+            from intervals_plan.integrations.garmin_client import GarminClient
+            cfg = Config.load()
+            garmin_client = GarminClient.from_config(cfg)
+            int_client = None
+            if cfg.api_key and len(cfg.api_key) > 5:
+                int_client = IntervalsClient(api_key=cfg.api_key, athlete_id=cfg.athlete_id, base_url=cfg.base_url)
+
+            action = req_data.get("action", "toggle_relay")
+            if action == "toggle_relay" and int_client:
+                upload_w = bool(req_data.get("upload_workouts", True))
+                download_w = bool(req_data.get("download_wellness", True))
+                res = garmin_client.enable_intervals_relay(int_client, upload_workouts=upload_w, download_wellness=download_w)
+                self._send_json(res)
+                return
+            elif action == "upload_direct":
+                prof = AthleteProfileConfig.load()
+                report = self._compute_report()
+                planner = DynamicRollingPlanner(prof)
+                events = planner.generate_plan(report, weeks_to_plan=1)
+                target = next((e for e in events if e.category != "NOTE"), None)
+                if target:
+                    res = garmin_client.upload_workout_direct(target)
+                    self._send_json(res)
+                    return
+                else:
+                    self._send_json({"error": "No workout found to upload"}, status=400)
+                    return
+
+            status = garmin_client.check_status(int_client)
+            self._send_json({"status": "synced", "garmin": status.to_dict()})
             return
 
         self._send_json({"error": "Endpoint not found"}, status=404)

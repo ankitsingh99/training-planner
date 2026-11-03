@@ -39,6 +39,7 @@ def test_web_ui_endpoints():
             assert data["status"] == "online"
             assert "trainingpeaks_connected" in data
             assert "intervals_connected" in data
+            assert "garmin_connected" in data
 
         # 3. Profile API (GET)
         with urllib.request.urlopen(f"{base_url}/api/profile") as res:
@@ -281,7 +282,35 @@ def test_web_ui_endpoints():
             assert "anaerobic_te" in te_data
             assert "recovery_hours" in te_data
 
-        # 21. 404 test on GET and POST
+        # 21. Garmin FIT Export API (GET)
+        with urllib.request.urlopen(f"{base_url}/api/export?format=fit") as res:
+            assert res.status == 200
+            fit_bytes = res.read()
+            assert len(fit_bytes) > 20
+            assert b".FIT" in fit_bytes
+
+        # 22. Garmin Status API (GET)
+        with urllib.request.urlopen(f"{base_url}/api/garmin/status") as res:
+            assert res.status == 200
+            g_stat = json.loads(res.read().decode("utf-8"))
+            assert "connected" in g_stat
+            assert "mode" in g_stat
+            assert "device_names" in g_stat
+
+        # 23. Garmin Sync API (POST)
+        garmin_sync_req = urllib.request.Request(
+            f"{base_url}/api/garmin/sync",
+            data=json.dumps({"action": "status"}).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(garmin_sync_req) as res:
+            assert res.status == 200
+            sync_res = json.loads(res.read().decode("utf-8"))
+            assert sync_res["status"] == "synced"
+            assert "garmin" in sync_res
+
+        # 24. 404 test on GET and POST
         req_404 = urllib.request.Request(f"{base_url}/api/nonexistent")
         try:
             urllib.request.urlopen(req_404)

@@ -58,6 +58,12 @@ class Config:
     openrouter_api_key: str = field(default="")
     openrouter_model: str = field(default="openrouter/free")
     openrouter_base_url: str = field(default="https://openrouter.ai/api/v1")
+    # Garmin Connect API settings
+    garmin_access_token: str = field(default="")
+    garmin_consumer_key: str = field(default="")
+    garmin_consumer_secret: str = field(default="")
+    garmin_user_id: str = field(default="")
+    garmin_base_url: str = field(default="https://connectapi.garmin.com")
 
     @classmethod
     def load(cls, prompt_if_missing: bool = False) -> "Config":
@@ -83,6 +89,13 @@ class Config:
         or_model = os.environ.get("OPENROUTER_MODEL", "openrouter/free").strip().strip("'\"")
         or_base_url = os.environ.get("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1").strip().strip("'\"")
 
+        # Garmin settings
+        garmin_token = os.environ.get("GARMIN_ACCESS_TOKEN", "").strip().strip("'\"")
+        garmin_key = os.environ.get("GARMIN_CONSUMER_KEY", "").strip().strip("'\"")
+        garmin_sec = os.environ.get("GARMIN_CONSUMER_SECRET", "").strip().strip("'\"")
+        garmin_uid = os.environ.get("GARMIN_USER_ID", "").strip().strip("'\"")
+        garmin_base = os.environ.get("GARMIN_BASE_URL", "https://connectapi.garmin.com").strip().strip("'\"")
+
         cfg = cls(
             api_key=key,
             athlete_id=athlete_id,
@@ -96,6 +109,11 @@ class Config:
             openrouter_api_key=or_key,
             openrouter_model=or_model,
             openrouter_base_url=or_base_url,
+            garmin_access_token=garmin_token,
+            garmin_consumer_key=garmin_key,
+            garmin_consumer_secret=garmin_sec,
+            garmin_user_id=garmin_uid,
+            garmin_base_url=garmin_base,
         )
         cfg.ensure_dirs()
         return cfg
@@ -116,6 +134,7 @@ class Config:
             f"Intervals Key:        {redact_secret(self.api_key)}\n"
             f"TrainingPeaks Token:  {redact_secret(self.tp_access_token)}\n"
             f"OpenRouter Model:     {self.openrouter_model}\n"
-            f"OpenRouter Key:       {redact_secret(self.openrouter_api_key)}"
+            f"OpenRouter Key:       {redact_secret(self.openrouter_api_key)}\n"
+            f"Garmin Access Token:  {redact_secret(self.garmin_access_token)}"
         )
 

@@ -164,6 +164,23 @@ class PlanExporter:
         data = [e.to_dict() for e in events]
         return json.dumps(data, indent=2)
 
+    @staticmethod
+    def event_to_garmin_fit(event: IntervalsEvent) -> bytes:
+        """
+        Compile an IntervalsEvent into a Garmin binary .fit workout file.
+        Compatible with Garmin Edge, Forerunner, and Fenix via GARMIN/NEWFILES.
+        """
+        from intervals_plan.integrations.garmin_client import GarminClient
+        client = GarminClient()
+        return client.generate_fit_workout(event)
+
+    @staticmethod
+    def event_to_garmin_json(event: IntervalsEvent) -> Dict[str, Any]:
+        """Convert an IntervalsEvent into a Garmin Connect Workout JSON object."""
+        from intervals_plan.integrations.garmin_client import GarminClient
+        client = GarminClient()
+        return client.convert_event_to_garmin_json(event)
+
     @classmethod
     def export_all(
         cls,
@@ -203,5 +220,19 @@ class PlanExporter:
                 zwo_count += 1
         results["zwo_count"] = str(zwo_count)
         results["zwo_dir"] = str(zwo_dir) if zwo_count > 0 else ""
+
+        # 4. Export Garmin .fit workouts for all structured activities
+        garmin_dir = output_dir / "garmin_workouts"
+        garmin_count = 0
+        for i, event in enumerate(events):
+            fit_bytes = cls.event_to_garmin_fit(event)
+            if fit_bytes:
+                garmin_dir.mkdir(parents=True, exist_ok=True)
+                clean_title = "".join(c if c.isalnum() or c in "._- " else "_" for c in (event.name or f"workout_{i}"))
+                fpath = garmin_dir / f"{clean_title.strip().replace(' ', '_')}.fit"
+                fpath.write_bytes(fit_bytes)
+                garmin_count += 1
+        results["garmin_count"] = str(garmin_count)
+        results["garmin_dir"] = str(garmin_dir) if garmin_count > 0 else ""
 
         return results
