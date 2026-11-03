@@ -243,15 +243,36 @@ class AdaptPulseRequestHandler(BaseHTTPRequestHandler):
 
         # 2. Plan Preview
         if path == "/api/plan/preview":
+            from intervals_plan.coros_evolab import CorosEvoLabEngine
             weeks = int(req_data.get("weeks", 1))
             prof = AthleteProfileConfig.load()
             report = self._compute_report()
             planner = DynamicRollingPlanner(prof)
             events = planner.generate_plan(report, weeks_to_plan=weeks)
+            events_data = []
+            for e in events:
+                ed = e.to_dict()
+                dur_secs = e.moving_time if (e.moving_time and e.category != "NOTE") else (2700 if e.category != "NOTE" else 0)
+                load_rate = 55.0 if e.type == "Run" else (45.0 if e.type == "Ride" else 40.0)
+                load_val = round((dur_secs / 3600.0) * load_rate, 1) if e.category != "NOTE" else 0.0
+                te = CorosEvoLabEngine.calculate_training_effect(
+                    duration_seconds=dur_secs,
+                    load_tss=load_val,
+                    hr_avg=155,
+                    lthr=prof.lthr_run,
+                )
+                ed["training_effect"] = {
+                    "aerobic_te": te.aerobic_te,
+                    "aerobic_label": te.aerobic_label,
+                    "anaerobic_te": te.anaerobic_te,
+                    "anaerobic_label": te.anaerobic_label,
+                    "recovery_hours": te.recovery_hours,
+                }
+                events_data.append(ed)
             self._send_json({
                 "weeks": weeks,
                 "event_count": len(events),
-                "events": [e.to_dict() for e in events]
+                "events": events_data
             })
             return
 

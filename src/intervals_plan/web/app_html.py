@@ -539,7 +539,6 @@ def get_app_html() -> str:
       <button class="nav-btn" onclick="switchTab('analysis')">Analysis</button>
       <button class="nav-btn" onclick="switchTab('goals')">Goals & Profile</button>
       <button class="nav-btn" onclick="switchTab('planner')">Calendar & Plan</button>
-      <button class="nav-btn" onclick="switchTab('coros-hub')">COROS Training Hub</button>
       <button class="nav-btn" onclick="switchTab('sync')">Ecosystem & Sync</button>
       <button class="nav-btn" onclick="switchTab('export')">Export Center</button>
     </nav>
@@ -600,6 +599,76 @@ def get_app_html() -> str:
           <div class="card-title">Body Fat %</div>
           <div class="card-value" id="dashBodyFatVal" style="color:#f59e0b;">--</div>
           <div class="card-subtext" id="dashBodyFatSubtext">Bioimpedance Analysis</div>
+        </div>
+      </div>
+
+      <!-- EvoLab Recovery & Fatigue Telemetry Grid -->
+      <div class="grid-2" style="margin-bottom: 1.5rem;">
+        <!-- Physical Recovery Timer Card -->
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.75rem;">
+            <div class="card-title" style="margin-bottom:0;">Physical Recovery Timer</div>
+            <span id="corosRecoveryBadge" class="periodization-badge" style="background:rgba(16,185,129,0.2); color:var(--success);">READY (90%+)</span>
+          </div>
+
+          <div style="display:flex; align-items:baseline; gap:0.5rem; margin-bottom:0.25rem;">
+            <div style="font-size:2.25rem; font-weight:800; color:#fff;" id="corosRecoveryHours">0.0h</div>
+            <div style="font-size:0.8125rem; color:var(--text-muted);">until 100% full recovery</div>
+          </div>
+
+          <div style="margin-bottom:0.75rem;">
+            <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:var(--text-muted); margin-bottom:4px;">
+              <span>Recovery Completion</span>
+              <strong id="corosRecoveryPctText" style="color:#10b981;">100%</strong>
+            </div>
+            <div class="gauge-bar-bg" style="height:10px;">
+              <div id="corosRecoveryFill" class="gauge-fill" style="width:100%; background:var(--success);"></div>
+            </div>
+          </div>
+
+          <p style="font-size:0.8125rem; color:var(--text-muted); margin:0;" id="corosRecoveryGuidance">
+            Your body is fully recovered and primed for high-intensity intervals or long aerobic volume.
+          </p>
+        </div>
+
+        <!-- Fatigue Index & Intensity Trend Card -->
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.75rem;">
+            <div class="card-title" style="margin-bottom:0;">Fatigue Index & Intensity Trend</div>
+            <span id="corosFatigueBadge" class="periodization-badge" style="background:rgba(16,185,129,0.2); color:var(--success);">OPTIMIZED</span>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:0.25rem;">
+            <div style="display:flex; align-items:baseline; gap:0.4rem;">
+              <span style="font-size:2rem; font-weight:800; color:#f59e0b;" id="corosFatigueScore">--</span>
+              <span style="font-size:0.8125rem; color:var(--text-muted);">/ 100</span>
+            </div>
+            <span id="corosFatigueZoneText" style="font-size:0.8125rem; font-weight:600; color:#38bdf8;">Optimized Zone</span>
+          </div>
+
+          <div class="gauge-container" style="margin-bottom: 0.6rem;">
+            <div class="gauge-bar-bg" style="height:10px;">
+              <div id="corosFatigueFill" class="gauge-fill" style="width:50%; background:var(--accent);"></div>
+            </div>
+            <div class="gauge-ticks">
+              <span>0 (Fresh)</span>
+              <span>20 (Taper)</span>
+              <span>40 (Sweet Spot)</span>
+              <span>60 (High)</span>
+              <span>80+ (Overreach)</span>
+            </div>
+          </div>
+
+          <p class="card-subtext" id="corosFatigueDesc" style="margin:0 0 0.5rem 0; font-size:0.8125rem;">
+            Evaluating fatigue dynamics...
+          </p>
+
+          <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:var(--text-muted); border-top:1px dashed #334155; padding-top:0.4rem;">
+            <span>Capacity: <strong style="color:#06b6d4;" id="corosBaseFitness">--</strong> CTL</span>
+            <span>Impact: <strong style="color:#f43f5e;" id="corosLoadImpact">--</strong> ATL</span>
+            <span>7d Load: <strong style="color:#10b981;" id="coros7dLoad">--</strong></span>
+          </div>
+          <div style="font-size:0.6875rem; color:var(--text-muted); margin-top:2px;" id="corosLoadRangeText">Target: -- - --</div>
         </div>
       </div>
 
@@ -896,6 +965,132 @@ def get_app_html() -> str:
               <tr><td colspan="5" style="text-align:center; color:var(--text-muted);">Loading disciplines...</td></tr>
             </tbody>
           </table>
+        </div>
+      </div>
+
+      <!-- Grid 2: Running Fitness & Race Predictor -->
+      <div class="grid-2" style="margin-bottom: 1.5rem;">
+        <!-- Running Fitness Card -->
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.75rem;">
+            <div class="card-title" style="margin-bottom:0;">Running Fitness (EvoLab 4-Pillars)</div>
+            <div style="font-size:1.25rem; font-weight:800; color:#38bdf8;" id="corosOverallFitness">-- / 100</div>
+          </div>
+          <div style="font-size:0.8125rem; color:var(--text-muted); margin-bottom:1rem;">
+            Calibrated Threshold Pace: <strong id="corosThreshPace" style="color:#fff;">--:-- /km</strong>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:0.75rem;">
+            <div>
+              <div style="display:flex; justify-content:space-between; font-size:0.8125rem; margin-bottom:3px;">
+                <span>Base (Aerobic Endurance / &gt;30km)</span>
+                <strong id="corosBaseScore" style="color:#10b981;">--</strong>
+              </div>
+              <div class="gauge-bar-bg" style="height:6px;">
+                <div id="corosBaseBar" class="gauge-fill" style="width:60%; background:#10b981;"></div>
+              </div>
+            </div>
+
+            <div>
+              <div style="display:flex; justify-content:space-between; font-size:0.8125rem; margin-bottom:3px;">
+                <span>Endurance (Lactate Threshold / ~10km)</span>
+                <strong id="corosEnduranceScore" style="color:#06b6d4;">--</strong>
+              </div>
+              <div class="gauge-bar-bg" style="height:6px;">
+                <div id="corosEnduranceBar" class="gauge-fill" style="width:65%; background:#06b6d4;"></div>
+              </div>
+            </div>
+
+            <div>
+              <div style="display:flex; justify-content:space-between; font-size:0.8125rem; margin-bottom:3px;">
+                <span>Speed (VO2 Max Aerobic Power / ~3km)</span>
+                <strong id="corosSpeedScore" style="color:#a855f7;">--</strong>
+              </div>
+              <div class="gauge-bar-bg" style="height:6px;">
+                <div id="corosSpeedBar" class="gauge-fill" style="width:70%; background:#a855f7;"></div>
+              </div>
+            </div>
+
+            <div>
+              <div style="display:flex; justify-content:space-between; font-size:0.8125rem; margin-bottom:3px;">
+                <span>Sprint (Neuromuscular Anaerobic / ~400m)</span>
+                <strong id="corosSprintScore" style="color:#f59e0b;">--</strong>
+              </div>
+              <div class="gauge-bar-bg" style="height:6px;">
+                <div id="corosSprintBar" class="gauge-fill" style="width:60%; background:#f59e0b;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Race Predictor Card -->
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.75rem;">
+            <div class="card-title" style="margin-bottom:0;">Race Predictor (Riegel / Cameron Model)</div>
+            <span class="periodization-badge" style="background:rgba(56,189,248,0.2); color:#38bdf8;">Calibrated Pacing</span>
+          </div>
+          <p style="font-size:0.8125rem; color:var(--text-muted); margin-bottom:0.75rem;">
+            Predicted finish times and target paces derived from threshold efficiency and rolling aerobic volume.
+          </p>
+
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Event</th>
+                <th>Distance</th>
+                <th>Predicted Time</th>
+                <th>Target Pace</th>
+              </tr>
+            </thead>
+            <tbody id="corosRaceTableBody">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Training Effect Simulator Card -->
+      <div class="card" style="margin-bottom: 1.5rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+          <div class="card-title" style="margin-bottom:0;">Workout Training Effect (TE) & Recovery Estimator</div>
+          <span class="periodization-badge" style="background:rgba(16,185,129,0.2); color:var(--success);">Aerobic & Anaerobic Dynamics</span>
+        </div>
+        <p style="font-size:0.8125rem; color:var(--text-muted); margin-bottom:1rem;">
+          Simulate the physiological stimulus and post-workout recovery demand of planned sessions based on duration, TSS, and intensity.
+        </p>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr auto; gap:0.75rem; align-items:end; margin-bottom:1rem;">
+          <div>
+            <label style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:4px;">Duration (mins)</label>
+            <input type="number" id="teInputMins" value="60" style="width:100%; background:#0f172a; border:1px solid var(--border); border-radius:4px; color:#fff; padding:0.4rem 0.5rem; font-size:0.8125rem;">
+          </div>
+          <div>
+            <label style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:4px;">Load (TSS)</label>
+            <input type="number" id="teInputLoad" value="65" style="width:100%; background:#0f172a; border:1px solid var(--border); border-radius:4px; color:#fff; padding:0.4rem 0.5rem; font-size:0.8125rem;">
+          </div>
+          <div>
+            <label style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:4px;">Avg Heart Rate</label>
+            <input type="number" id="teInputHr" value="155" style="width:100%; background:#0f172a; border:1px solid var(--border); border-radius:4px; color:#fff; padding:0.4rem 0.5rem; font-size:0.8125rem;">
+          </div>
+          <button class="btn btn-secondary" style="font-size:0.8125rem; padding:0.45rem 1rem;" onclick="calcCorosTE()">Calculate Impact</button>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:0.75rem;">
+          <div style="background:#0f172a; border:1px solid var(--border); border-radius:6px; padding:0.75rem;">
+            <div style="font-size:0.75rem; color:var(--text-muted);">Aerobic Training Effect</div>
+            <div style="font-size:1.5rem; font-weight:800; color:#10b981;" id="corosAeroTeVal">--</div>
+            <div style="font-size:0.75rem; color:var(--text-muted);" id="corosAeroTeLabel">Maintaining</div>
+          </div>
+          <div style="background:#0f172a; border:1px solid var(--border); border-radius:6px; padding:0.75rem;">
+            <div style="font-size:0.75rem; color:var(--text-muted);">Anaerobic Training Effect</div>
+            <div style="font-size:1.5rem; font-weight:800; color:#f59e0b;" id="corosAnaeroTeVal">--</div>
+            <div style="font-size:0.75rem; color:var(--text-muted);" id="corosAnaeroTeLabel">Maintaining</div>
+          </div>
+          <div style="background:#0f172a; border:1px solid var(--border); border-radius:6px; padding:0.75rem;">
+            <div style="font-size:0.75rem; color:var(--text-muted);">Required Recovery Time</div>
+            <div style="font-size:1.5rem; font-weight:800; color:#38bdf8;" id="simTeRecovery">--h</div>
+            <div style="font-size:0.75rem; color:var(--text-muted);">Post-session rest</div>
+          </div>
         </div>
       </div>
 
@@ -1254,215 +1449,6 @@ def get_app_html() -> str:
       </div>
     </div>
 
-    <!-- TAB 7: COROS TRAINING HUB & EVOLAB -->
-    <div id="tab-coros-hub" class="tab-content">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1.5rem; flex-wrap:wrap; gap:1rem;">
-        <div>
-          <h2 style="font-size:1.5rem; font-weight:800; color:#fff; margin-bottom:0.25rem;">COROS Training Hub & EvoLab Analytics</h2>
-          <p style="font-size:0.875rem; color:var(--text-muted); margin:0;">
-            Real-time synchronization with COROS EvoLab metrics, Running Fitness evaluation, and training load recommendations.
-          </p>
-        </div>
-        <div style="display:flex; gap:0.5rem; align-items:center;">
-          <span id="corosHubSyncStatus" class="periodization-badge" style="background:rgba(16,185,129,0.2); color:var(--success);">COROS Cloud Linked</span>
-          <button class="btn btn-secondary" style="font-size:0.75rem; padding:0.35rem 0.75rem;" onclick="loadCorosHub()">Refresh EvoLab</button>
-        </div>
-      </div>
-
-      <!-- Grid 4: EvoLab Core Telemetry -->
-      <div class="grid-4" style="margin-bottom: 1.5rem;">
-        <div class="card">
-          <div class="card-title">Base Fitness (42d Rolling)</div>
-          <div class="card-value" id="corosBaseFitness" style="color:#06b6d4;">--</div>
-          <div class="card-subtext">Long-term physiological capacity (CTL)</div>
-        </div>
-
-        <div class="card">
-          <div class="card-title">Load Impact (7d Rolling)</div>
-          <div class="card-value" id="corosLoadImpact" style="color:#f43f5e;">--</div>
-          <div class="card-subtext">Short-term training stress (ATL)</div>
-        </div>
-
-        <div class="card">
-          <div class="card-title">Fatigue Index (0 - 100)</div>
-          <div class="card-value" id="corosFatigueScore" style="color:#f59e0b;">--</div>
-          <div class="card-subtext" id="corosFatigueZoneText">Optimized Zone</div>
-        </div>
-
-        <div class="card">
-          <div class="card-title">7-Day Training Load</div>
-          <div class="card-value" id="coros7dLoad" style="color:#10b981;">--</div>
-          <div class="card-subtext" id="corosLoadRangeText">Target: -- - --</div>
-        </div>
-      </div>
-
-      <!-- Fatigue Gauge & Intensity Trend -->
-      <div class="card" style="margin-bottom: 1.5rem;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.75rem;">
-          <div class="card-title" style="margin-bottom:0;">EvoLab Fatigue & Intensity Trend</div>
-          <span id="corosFatigueBadge" class="periodization-badge" style="background:rgba(16,185,129,0.2); color:var(--success);">OPTIMIZED</span>
-        </div>
-        <div class="gauge-container" style="margin-bottom: 0.75rem;">
-          <div class="gauge-bar-bg" style="height:12px;">
-            <div id="corosFatigueFill" class="gauge-fill" style="width:50%; background:var(--accent);"></div>
-          </div>
-          <div class="gauge-ticks">
-            <span>0 (Minimal)</span>
-            <span>20 (Performance / Taper)</span>
-            <span>40 (Optimized Sweet Spot)</span>
-            <span>60 (High Fatigue)</span>
-            <span>80+ (Excessive)</span>
-          </div>
-        </div>
-        <p class="card-subtext" id="corosFatigueDesc" style="margin:0; font-size:0.8125rem;">
-          Evaluating fatigue dynamics...
-        </p>
-      </div>
-
-      <!-- Grid 2: Running Fitness & Race Predictor -->
-      <div class="grid-2" style="margin-bottom: 1.5rem;">
-        <!-- Running Fitness Card -->
-        <div class="card">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.75rem;">
-            <div class="card-title" style="margin-bottom:0;">Running Fitness (EvoLab 4-Pillars)</div>
-            <div style="font-size:1.25rem; font-weight:800; color:#38bdf8;" id="corosOverallFitness">-- / 100</div>
-          </div>
-          <div style="font-size:0.8125rem; color:var(--text-muted); margin-bottom:1rem;">
-            Calibrated Threshold Pace: <strong id="corosThreshPace" style="color:#fff;">--:-- /km</strong>
-          </div>
-
-          <div style="display:flex; flex-direction:column; gap:0.75rem;">
-            <div>
-              <div style="display:flex; justify-content:space-between; font-size:0.8125rem; margin-bottom:3px;">
-                <span>Base (Aerobic Endurance / &gt;30km)</span>
-                <strong id="corosBaseScore" style="color:#10b981;">--</strong>
-              </div>
-              <div class="gauge-bar-bg" style="height:6px;">
-                <div id="corosBaseBar" class="gauge-fill" style="width:60%; background:#10b981;"></div>
-              </div>
-            </div>
-
-            <div>
-              <div style="display:flex; justify-content:space-between; font-size:0.8125rem; margin-bottom:3px;">
-                <span>Endurance (Lactate Threshold / ~10km)</span>
-                <strong id="corosEnduranceScore" style="color:#06b6d4;">--</strong>
-              </div>
-              <div class="gauge-bar-bg" style="height:6px;">
-                <div id="corosEnduranceBar" class="gauge-fill" style="width:65%; background:#06b6d4;"></div>
-              </div>
-            </div>
-
-            <div>
-              <div style="display:flex; justify-content:space-between; font-size:0.8125rem; margin-bottom:3px;">
-                <span>Speed (VO2 Max Aerobic Power / ~3km)</span>
-                <strong id="corosSpeedScore" style="color:#a855f7;">--</strong>
-              </div>
-              <div class="gauge-bar-bg" style="height:6px;">
-                <div id="corosSpeedBar" class="gauge-fill" style="width:70%; background:#a855f7;"></div>
-              </div>
-            </div>
-
-            <div>
-              <div style="display:flex; justify-content:space-between; font-size:0.8125rem; margin-bottom:3px;">
-                <span>Sprint (Neuromuscular Anaerobic / ~400m)</span>
-                <strong id="corosSprintScore" style="color:#f59e0b;">--</strong>
-              </div>
-              <div class="gauge-bar-bg" style="height:6px;">
-                <div id="corosSprintBar" class="gauge-fill" style="width:60%; background:#f59e0b;"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Race Predictor Card -->
-        <div class="card">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.75rem;">
-            <div class="card-title" style="margin-bottom:0;">COROS Race Predictor</div>
-            <span class="periodization-badge" style="background:rgba(56,189,248,0.2); color:#38bdf8;">Riegel / Cameron Model</span>
-          </div>
-          <p style="font-size:0.8125rem; color:var(--text-muted); margin-bottom:1rem;">
-            Calculated finish times and pacing benchmarks based on threshold efficiency and aerobic training volume.
-          </p>
-
-          <table class="table">
-            <thead>
-              <tr>
-                <th>Event</th>
-                <th>Distance</th>
-                <th>Predicted Time</th>
-                <th>Predicted Pace</th>
-              </tr>
-            </thead>
-            <tbody id="corosRaceTableBody">
-              <!-- Populated dynamically -->
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Grid 2: Training Effect & Recovery Timer Simulator -->
-      <div class="grid-2">
-        <!-- Training Effect Calculator -->
-        <div class="card">
-          <div class="card-title" style="margin-bottom:0.75rem;">Training Effect (TE) Estimator</div>
-          <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:0.5rem; margin-bottom:0.75rem;">
-            <div>
-              <label style="font-size:0.75rem; color:var(--text-muted);">Duration (mins)</label>
-              <input type="number" id="teInputMins" value="60" style="width:100%; background:#0f172a; border:1px solid var(--border); border-radius:4px; color:#fff; padding:0.35rem 0.5rem; font-size:0.8125rem;">
-            </div>
-            <div>
-              <label style="font-size:0.75rem; color:var(--text-muted);">Load (TSS)</label>
-              <input type="number" id="teInputLoad" value="65" style="width:100%; background:#0f172a; border:1px solid var(--border); border-radius:4px; color:#fff; padding:0.35rem 0.5rem; font-size:0.8125rem;">
-            </div>
-            <div>
-              <label style="font-size:0.75rem; color:var(--text-muted);">Avg Heart Rate</label>
-              <input type="number" id="teInputHr" value="155" style="width:100%; background:#0f172a; border:1px solid var(--border); border-radius:4px; color:#fff; padding:0.35rem 0.5rem; font-size:0.8125rem;">
-            </div>
-          </div>
-          <button class="btn btn-secondary" style="font-size:0.75rem; padding:0.35rem 0.75rem; margin-bottom:0.75rem;" onclick="calcCorosTE()">Compute Session Effect</button>
-
-          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.75rem;">
-            <div style="background:#0f172a; border:1px solid var(--border); border-radius:6px; padding:0.6rem;">
-              <div style="font-size:0.75rem; color:var(--text-muted);">Aerobic Training Effect</div>
-              <div style="font-size:1.25rem; font-weight:800; color:#10b981;" id="corosAeroTeVal">--</div>
-              <div style="font-size:0.7rem; color:var(--text-muted);" id="corosAeroTeLabel">Maintaining</div>
-            </div>
-            <div style="background:#0f172a; border:1px solid var(--border); border-radius:6px; padding:0.6rem;">
-              <div style="font-size:0.75rem; color:var(--text-muted);">Anaerobic Training Effect</div>
-              <div style="font-size:1.25rem; font-weight:800; color:#f59e0b;" id="corosAnaeroTeVal">--</div>
-              <div style="font-size:0.7rem; color:var(--text-muted);" id="corosAnaeroTeLabel">Maintaining</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Recovery Timer Card -->
-        <div class="card">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.75rem;">
-            <div class="card-title" style="margin-bottom:0;">COROS Recovery Timer</div>
-            <span id="corosRecoveryBadge" class="periodization-badge" style="background:rgba(16,185,129,0.2); color:var(--success);">READY (90%+)</span>
-          </div>
-
-          <div style="text-align:center; padding:1rem 0;">
-            <div style="font-size:2.25rem; font-weight:800; color:#fff;" id="corosRecoveryHours">0.0h</div>
-            <div style="font-size:0.8125rem; color:var(--text-muted); margin-top:2px;">Time until 100% full recovery</div>
-          </div>
-
-          <div style="margin-bottom:0.75rem;">
-            <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:var(--text-muted); margin-bottom:4px;">
-              <span>Recovery Percentage</span>
-              <strong id="corosRecoveryPctText" style="color:#10b981;">100%</strong>
-            </div>
-            <div class="gauge-bar-bg" style="height:10px;">
-              <div id="corosRecoveryFill" class="gauge-fill" style="width:100%; background:var(--success);"></div>
-            </div>
-          </div>
-
-          <p style="font-size:0.8125rem; color:var(--text-muted); margin:0;" id="corosRecoveryGuidance">
-            Your body is fully recovered and primed for high-intensity intervals or long aerobic volume.
-          </p>
-        </div>
-      </div>
-    </div>
   </main>
 
   <!-- WORKOUT STEP INSPECTOR MODAL -->
@@ -1475,6 +1461,16 @@ def get_app_html() -> str:
       <div style="margin-bottom: 1.25rem;">
         <h4 style="font-size: 0.8125rem; text-transform:uppercase; color:var(--accent); margin-bottom: 0.5rem;">Target Coaching Notes</h4>
         <p id="modalWorkoutDesc" style="font-size: 0.875rem; color: #d1d5db; line-height: 1.5;"></p>
+      </div>
+
+      <!-- Training Effect & Recovery Demand Box -->
+      <div id="modalTeBox" style="background:#0f172a; border:1px solid #1e293b; border-radius:8px; padding:0.75rem 1rem; margin-bottom: 1.25rem;">
+        <h4 style="font-size: 0.8125rem; text-transform:uppercase; color:#38bdf8; margin-bottom: 0.35rem;">EvoLab Training Effect & Recovery Demand</h4>
+        <div style="display:flex; gap:1.5rem; font-size:0.8125rem; color:var(--text-muted); flex-wrap:wrap;">
+          <div>Aerobic TE: <strong id="modalAeroTe" style="color:#10b981;">--</strong></div>
+          <div>Anaerobic TE: <strong id="modalAnaeroTe" style="color:#f59e0b;">--</strong></div>
+          <div>Required Recovery: <strong id="modalRecovHours" style="color:#38bdf8;">--</strong></div>
+        </div>
       </div>
 
       <!-- Nutrition & Fueling Box -->
@@ -2038,6 +2034,8 @@ def get_app_html() -> str:
         });
         const data = await res.json();
         renderCorosTE(data);
+        const simRec = document.getElementById('simTeRecovery');
+        if (simRec) simRec.innerText = (data.recovery_hours || 0).toFixed(0) + 'h';
       } catch (err) {
         console.error('Failed computing training effect:', err);
       }
@@ -3114,10 +3112,22 @@ def get_app_html() -> str:
           else if (evt.type === 'Brick' || evt.type === 'Duathlon') tagClass = 'tag-brick';
           if (evt.name && (evt.name.includes('Quality') || evt.name.includes('Intervals') || evt.name.includes('CSS') || evt.name.includes('SweetSpot'))) tagClass = 'tag-quality';
 
+          let teBadge = '';
+          if (evt.training_effect && evt.category !== 'NOTE') {
+            const te = evt.training_effect;
+            teBadge = `
+              <div style="display:flex; gap:4px; margin-top:5px; font-size:0.6875rem; flex-wrap:wrap;">
+                <span style="background:rgba(16,185,129,0.2); color:#10b981; padding:1px 5px; border-radius:3px; font-weight:600;">Aero ${te.aerobic_te}</span>
+                <span style="background:rgba(56,189,248,0.2); color:#38bdf8; padding:1px 5px; border-radius:3px; font-weight:600;">~${Math.round(te.recovery_hours)}h Recov</span>
+              </div>
+            `;
+          }
+
           card.innerHTML = `
             <span class="workout-tag ${tagClass}">${evt.type || 'Workout'}</span>
             <div class="workout-title">${evt.name}</div>
             <div class="workout-meta">${evt.category === 'NOTE' ? 'Rest / Note' : 'Structured Session'}</div>
+            ${teBadge}
           `;
           dayCol.appendChild(card);
         } else {
@@ -3136,6 +3146,18 @@ def get_app_html() -> str:
       document.getElementById('modalWorkoutTitle').innerText = evt.name;
       document.getElementById('modalWorkoutMeta').innerText = (evt.type || 'Workout') + ' • ' + (evt.start_date_local || '');
       document.getElementById('modalWorkoutDesc').innerText = evt.description || 'No detailed coaching notes.';
+
+      const teBox = document.getElementById('modalTeBox');
+      if (teBox) {
+        if (evt.training_effect && evt.category !== 'NOTE') {
+          teBox.style.display = 'block';
+          document.getElementById('modalAeroTe').innerText = evt.training_effect.aerobic_te.toFixed(1) + ' (' + evt.training_effect.aerobic_label + ')';
+          document.getElementById('modalAnaeroTe').innerText = evt.training_effect.anaerobic_te.toFixed(1) + ' (' + evt.training_effect.anaerobic_label + ')';
+          document.getElementById('modalRecovHours').innerText = Math.round(evt.training_effect.recovery_hours) + ' hours';
+        } else {
+          teBox.style.display = 'none';
+        }
+      }
 
       // Fetch intra-workout fueling recommendation
       const durMins = Math.max(20, Math.round((evt.moving_time || 3600) / 60));
