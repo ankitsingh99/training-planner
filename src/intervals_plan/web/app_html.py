@@ -298,6 +298,23 @@ def get_app_html() -> str:
       color: #10b981;
     }
 
+    .muscle-poly {
+      cursor: pointer;
+      stroke: rgba(255, 255, 255, 0.25);
+      stroke-width: 1.5px;
+      transition: fill 0.2s ease, filter 0.2s ease, stroke 0.2s ease;
+    }
+    .muscle-poly:hover {
+      filter: brightness(1.35) drop-shadow(0 0 6px rgba(56, 189, 248, 0.7));
+      stroke: #38bdf8;
+      stroke-width: 2px;
+    }
+    .muscle-poly.active-selected {
+      stroke: #ffffff;
+      stroke-width: 2.5px;
+      filter: drop-shadow(0 0 8px #38bdf8);
+    }
+
     main {
       flex: 1;
       padding: 2rem;
@@ -776,6 +793,7 @@ def get_app_html() -> str:
     </div>
     <nav>
       <button class="nav-btn active" onclick="switchTab('dashboard')">Dashboard</button>
+      <button class="nav-btn" onclick="switchTab('strength')">Strength & Muscle Map</button>
       <button class="nav-btn" onclick="switchTab('analysis')">Analysis</button>
       <button class="nav-btn" onclick="switchTab('goals')">Goals & Profile</button>
       <button class="nav-btn" onclick="switchTab('planner')">Calendar & Plan</button>
@@ -1132,6 +1150,328 @@ def get_app_html() -> str:
             <button class="btn btn-secondary" style="font-size:0.75rem; padding:0.35rem 0.6rem;" onclick="simulateWbal('steady')">Simulate Threshold Cruise</button>
           </div>
           <div id="wbalSimResult" style="display:none; margin-top:0.6rem; font-size:0.75rem; color:#94a3b8; background:#0f172a; border-radius:4px; padding:0.4rem 0.6rem;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB STRENGTH: STRENGTH TRAINING & ANATOMICAL MUSCLE MAP -->
+    <div id="tab-strength" class="tab-content">
+      <!-- Hypertrophy & Concurrent Status Header Row -->
+      <div class="grid-3" style="margin-bottom: 1.5rem;">
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.5rem;">
+            <div class="card-title" style="margin-bottom:0;">
+              <span>Systemic Muscle Recovery <span class="info-btn" tabindex="0" role="button" aria-label="About Muscle Recovery">i<span class="info-popover popover-left"><span class="popover-title">Muscle Fiber Recovery</span><span class="popover-def">Composite neuromuscular readiness across all 13 primary muscle groups based on 48-72h protein synthesis repair curves.</span><span class="popover-rel"><strong>Relevance:</strong> Guide session timing: train muscles only when recovery exceeds 85-90% for maximum mechanical tension.</span></span></span></span>
+            </div>
+            <span id="strengthSystemicBadge" class="periodization-badge" style="background:rgba(16,185,129,0.2); color:var(--success);">90% Primed</span>
+          </div>
+          <div style="font-size:2rem; font-weight:800; color:#fff;" id="strengthSystemicVal">90%</div>
+          <div class="gauge-bar-bg" style="height:8px; margin:0.5rem 0;">
+            <div id="strengthSystemicFill" class="gauge-fill" style="width:90%; background:var(--success);"></div>
+          </div>
+          <p class="card-subtext" style="margin:0;">Derived from Strava gym logs & Intervals weight sessions.</p>
+        </div>
+
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.5rem;">
+            <div class="card-title" style="margin-bottom:0;">
+              <span>RP Volume Landmarks <span class="info-btn" tabindex="0" role="button" aria-label="About RP Volume Landmarks">i<span class="info-popover"><span class="popover-title">Hypertrophy Volume Landmarks</span><span class="popover-def">Dr. Mike Israetel / RP model tracking weekly direct working sets against MEV (Minimum Effective) and MAV (Maximum Adaptive).</span><span class="popover-rel"><strong>Relevance:</strong> Staying within MAV (12-20 sets/week) drives progressive overload without overreaching past MRV.</span></span></span></span>
+            </div>
+            <span id="strengthVolumeStatusBadge" class="periodization-badge" style="background:rgba(56,189,248,0.2); color:#38bdf8;">Optimal MAV</span>
+          </div>
+          <div style="font-size:2rem; font-weight:800; color:#38bdf8;" id="strengthTotalSetsVal">72 Sets</div>
+          <div style="font-size:0.8125rem; color:var(--text-muted); margin-top:4px;" id="strengthVolumeSummaryText">
+            Aggregated across 13 major muscle groups this week.
+          </div>
+          <p class="card-subtext" style="margin:0.25rem 0 0 0;">Weekly target: 12-18 sets per muscle group.</p>
+        </div>
+
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.5rem;">
+            <div class="card-title" style="margin-bottom:0;">
+              <span>AMPK vs mTORC1 Guard <span class="info-btn" tabindex="0" role="button" aria-label="About AMPK vs mTORC1">i<span class="info-popover popover-right"><span class="popover-title">Molecular Interference Guard</span><span class="popover-def">Tracks session proximity between endurance (AMPK) and resistance (mTORC1) stimuli to prevent molecular interference.</span><span class="popover-rel"><strong>Relevance:</strong> Separate heavy leg sessions from endurance workouts by >= 6-8 hours to safeguard muscle protein synthesis.</span></span></span></span>
+            </div>
+            <span id="strengthInterferenceBadge" class="periodization-badge" style="background:rgba(16,185,129,0.2); color:var(--success);">Clear (No Conflict)</span>
+          </div>
+          <div style="font-size:1.1rem; font-weight:700; color:#10b981; margin:0.25rem 0;" id="strengthInterferenceHeadline">
+            Optimal Concurrent Separation
+          </div>
+          <p style="font-size:0.75rem; color:var(--text-muted); margin:0; line-height:1.45;" id="strengthInterferenceDesc">
+            Last lower body session separated by &gt;8 hours from endurance runs/rides. Molecular protein synthesis uncompromised.
+          </p>
+        </div>
+      </div>
+
+      <!-- Main Interactive Anatomical Muscle Map & Live Inspector -->
+      <div class="grid-2" style="margin-bottom: 1.5rem;">
+        <!-- Left Column: Dual Anatomical Muscle Map SVG -->
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem; flex-wrap:wrap; gap:0.5rem;">
+            <div>
+              <div class="card-title" style="margin-bottom:0.25rem;">
+                <span>Interactive Anatomical Muscle Map <span class="info-btn" tabindex="0" role="button" aria-label="About Muscle Map">i<span class="info-popover popover-left"><span class="popover-title">Anatomical Muscle Map</span><span class="popover-def">Dual Front and Back vector models color-coded by weekly set volume and recovery readiness.</span><span class="popover-rel"><strong>Relevance:</strong> Click any muscle group to view sets, RP volume landmark state, and targeted exercises.</span></span></span></span>
+              </div>
+              <div style="font-size:0.75rem; color:var(--text-muted);">Front (Anterior) & Back (Posterior) Views. Click any muscle to inspect.</div>
+            </div>
+            <span class="periodization-badge" style="background:rgba(56,189,248,0.2); color:#38bdf8;">13 Muscle Groups</span>
+          </div>
+
+          <!-- Anatomical SVG Body Map Container -->
+          <div style="background: #0f172a; border: 1px solid var(--border); border-radius: 8px; padding: 1rem 0; display:flex; justify-content:center; align-items:center; position:relative;">
+            <svg id="muscleMapSvg" width="100%" height="380" viewBox="0 0 560 380" role="img" aria-label="Interactive Dual-View Anatomical Muscle Map">
+              <!-- Background / Figure Outlines -->
+              <g id="figure-labels" style="font-size:11px; fill:#64748b; font-weight:700; text-anchor:middle;">
+                <text x="140" y="24">ANTERIOR (FRONT)</text>
+                <text x="420" y="24">POSTERIOR (BACK)</text>
+              </g>
+
+              <!-- FRONT ANATOMICAL FIGURE (Center x=140) -->
+              <g id="front-figure" transform="translate(0, 10)">
+                <!-- Head / Neck -->
+                <circle cx="140" cy="50" r="18" fill="#1e293b" stroke="#334155" stroke-width="1.5" />
+                <path d="M 132 68 L 148 68 L 152 82 L 128 82 Z" fill="#1e293b" stroke="#334155" stroke-width="1.5" />
+
+                <!-- Anterior / Side Delts (Shoulders Front) -->
+                <!-- Left Shoulder Front (Viewer Left: x ~ 100) -->
+                <path id="muscle-shoulders_front-left" class="muscle-poly" data-muscle="shoulders_front" onclick="inspectMuscle('shoulders_front')"
+                  d="M 112 84 Q 96 90 98 114 Q 112 118 118 100 Z" fill="#334155" title="Anterior Deltoids" />
+                <!-- Right Shoulder Front (Viewer Right: x ~ 180) -->
+                <path id="muscle-shoulders_front-right" class="muscle-poly" data-muscle="shoulders_front" onclick="inspectMuscle('shoulders_front')"
+                  d="M 168 84 Q 184 90 182 114 Q 168 118 162 100 Z" fill="#334155" title="Anterior Deltoids" />
+
+                <!-- Lateral Delts (Viewer Left & Right Outers) -->
+                <path id="muscle-shoulders_side-left" class="muscle-poly" data-muscle="shoulders_side" onclick="inspectMuscle('shoulders_side')"
+                  d="M 96 94 Q 84 104 88 124 Q 98 126 102 112 Z" fill="#334155" title="Lateral Deltoids" />
+                <path id="muscle-shoulders_side-right" class="muscle-poly" data-muscle="shoulders_side" onclick="inspectMuscle('shoulders_side')"
+                  d="M 184 94 Q 196 104 192 124 Q 182 126 178 112 Z" fill="#334155" title="Lateral Deltoids" />
+
+                <!-- Pectoralis Major (Chest) -->
+                <path id="muscle-chest-left" class="muscle-poly" data-muscle="chest" onclick="inspectMuscle('chest')"
+                  d="M 118 84 L 138 86 L 138 126 Q 116 128 112 112 Z" fill="#334155" title="Chest (Pectorals)" />
+                <path id="muscle-chest-right" class="muscle-poly" data-muscle="chest" onclick="inspectMuscle('chest')"
+                  d="M 162 84 L 142 86 L 142 126 Q 164 128 168 112 Z" fill="#334155" title="Chest (Pectorals)" />
+
+                <!-- Biceps Brachii -->
+                <path id="muscle-biceps-left" class="muscle-poly" data-muscle="biceps" onclick="inspectMuscle('biceps')"
+                  d="M 94 124 Q 82 144 86 164 Q 98 166 104 142 Z" fill="#334155" title="Biceps Brachii" />
+                <path id="muscle-biceps-right" class="muscle-poly" data-muscle="biceps" onclick="inspectMuscle('biceps')"
+                  d="M 186 124 Q 198 144 194 164 Q 182 166 176 142 Z" fill="#334155" title="Biceps Brachii" />
+
+                <!-- Forearms Front -->
+                <path d="M 86 166 Q 78 190 76 214 Q 88 214 94 186 Z" fill="#1e293b" stroke="#334155" stroke-width="1.5" />
+                <path d="M 194 166 Q 202 190 204 214 Q 192 214 186 186 Z" fill="#1e293b" stroke="#334155" stroke-width="1.5" />
+
+                <!-- Rectus Abdominis / Core (Abs) -->
+                <path id="muscle-abs" class="muscle-poly" data-muscle="abs" onclick="inspectMuscle('abs')"
+                  d="M 122 130 L 158 130 L 154 188 L 126 188 Z" fill="#334155" title="Rectus Abdominis (Abs & Core)" />
+
+                <!-- Quadriceps Femoris (Left & Right Thighs) -->
+                <path id="muscle-quads-left" class="muscle-poly" data-muscle="quads" onclick="inspectMuscle('quads')"
+                  d="M 116 194 Q 104 230 112 280 Q 134 282 136 220 Z" fill="#334155" title="Quadriceps Femoris" />
+                <path id="muscle-quads-right" class="muscle-poly" data-muscle="quads" onclick="inspectMuscle('quads')"
+                  d="M 164 194 Q 176 230 168 280 Q 146 282 144 220 Z" fill="#334155" title="Quadriceps Femoris" />
+
+                <!-- Anterior Calves & Shins -->
+                <path id="muscle-calves-front-left" class="muscle-poly" data-muscle="calves" onclick="inspectMuscle('calves')"
+                  d="M 112 288 Q 106 318 114 354 Q 126 354 128 314 Z" fill="#334155" title="Calves / Tibialis" />
+                <path id="muscle-calves-front-right" class="muscle-poly" data-muscle="calves" onclick="inspectMuscle('calves')"
+                  d="M 168 288 Q 174 318 166 354 Q 154 354 152 314 Z" fill="#334155" title="Calves / Tibialis" />
+              </g>
+
+              <!-- BACK ANATOMICAL FIGURE (Center x=420) -->
+              <g id="back-figure" transform="translate(0, 10)">
+                <!-- Head / Neck -->
+                <circle cx="420" cy="50" r="18" fill="#1e293b" stroke="#334155" stroke-width="1.5" />
+                <path d="M 412 68 L 428 68 L 432 80 L 408 80 Z" fill="#1e293b" stroke="#334155" stroke-width="1.5" />
+
+                <!-- Trapezius & Upper Back -->
+                <path id="muscle-upper_back" class="muscle-poly" data-muscle="upper_back" onclick="inspectMuscle('upper_back')"
+                  d="M 408 80 L 432 80 L 444 116 L 420 134 L 396 116 Z" fill="#334155" title="Trapezius & Rhomboids" />
+
+                <!-- Rear Deltoids -->
+                <path id="muscle-shoulders_rear-left" class="muscle-poly" data-muscle="shoulders_rear" onclick="inspectMuscle('shoulders_rear')"
+                  d="M 392 86 Q 374 94 378 116 Q 394 116 398 98 Z" fill="#334155" title="Rear Deltoids" />
+                <path id="muscle-shoulders_rear-right" class="muscle-poly" data-muscle="shoulders_rear" onclick="inspectMuscle('shoulders_rear')"
+                  d="M 448 86 Q 466 94 462 116 Q 446 116 442 98 Z" fill="#334155" title="Rear Deltoids" />
+
+                <!-- Triceps Brachii -->
+                <path id="muscle-triceps-left" class="muscle-poly" data-muscle="triceps" onclick="inspectMuscle('triceps')"
+                  d="M 374 120 Q 362 142 366 164 Q 378 164 384 140 Z" fill="#334155" title="Triceps Brachii" />
+                <path id="muscle-triceps-right" class="muscle-poly" data-muscle="triceps" onclick="inspectMuscle('triceps')"
+                  d="M 466 120 Q 478 142 474 164 Q 462 164 456 140 Z" fill="#334155" title="Triceps Brachii" />
+
+                <!-- Latissimus Dorsi (Lats V-Taper) -->
+                <path id="muscle-lats-left" class="muscle-poly" data-muscle="lats" onclick="inspectMuscle('lats')"
+                  d="M 396 118 L 418 136 L 416 182 L 398 164 Z" fill="#334155" title="Latissimus Dorsi" />
+                <path id="muscle-lats-right" class="muscle-poly" data-muscle="lats" onclick="inspectMuscle('lats')"
+                  d="M 444 118 L 422 136 L 424 182 L 442 164 Z" fill="#334155" title="Latissimus Dorsi" />
+
+                <!-- Forearms Back -->
+                <path d="M 366 166 Q 358 190 356 214 Q 368 214 374 186 Z" fill="#1e293b" stroke="#334155" stroke-width="1.5" />
+                <path d="M 474 166 Q 482 190 484 214 Q 472 214 466 186 Z" fill="#1e293b" stroke="#334155" stroke-width="1.5" />
+
+                <!-- Gluteus Maximus & Medius (Glutes) -->
+                <path id="muscle-glutes-left" class="muscle-poly" data-muscle="glutes" onclick="inspectMuscle('glutes')"
+                  d="M 400 186 Q 388 208 402 232 Q 418 232 418 190 Z" fill="#334155" title="Gluteus Maximus" />
+                <path id="muscle-glutes-right" class="muscle-poly" data-muscle="glutes" onclick="inspectMuscle('glutes')"
+                  d="M 440 186 Q 452 208 438 232 Q 422 232 422 190 Z" fill="#334155" title="Gluteus Maximus" />
+
+                <!-- Hamstrings (Biceps Femoris) -->
+                <path id="muscle-hamstrings-left" class="muscle-poly" data-muscle="hamstrings" onclick="inspectMuscle('hamstrings')"
+                  d="M 402 236 Q 392 260 400 282 Q 416 282 418 240 Z" fill="#334155" title="Hamstrings" />
+                <path id="muscle-hamstrings-right" class="muscle-poly" data-muscle="hamstrings" onclick="inspectMuscle('hamstrings')"
+                  d="M 438 236 Q 448 260 440 282 Q 424 282 422 240 Z" fill="#334155" title="Hamstrings" />
+
+                <!-- Calves (Gastrocnemius & Soleus) -->
+                <path id="muscle-calves-back-left" class="muscle-poly" data-muscle="calves" onclick="inspectMuscle('calves')"
+                  d="M 398 288 Q 386 318 396 354 Q 412 354 414 314 Z" fill="#334155" title="Calves (Gastrocnemius)" />
+                <path id="muscle-calves-back-right" class="muscle-poly" data-muscle="calves" onclick="inspectMuscle('calves')"
+                  d="M 442 288 Q 454 318 444 354 Q 428 354 426 314 Z" fill="#334155" title="Calves (Gastrocnemius)" />
+              </g>
+            </svg>
+          </div>
+
+          <!-- Color Legend -->
+          <div class="chart-legend" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-top:0.75rem;">
+            <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
+              <span class="chart-legend-item" style="color:#10b981;"><span class="legend-dot" style="background:#10b981;"></span>Optimal MAV</span>
+              <span class="chart-legend-item" style="color:#f59e0b;"><span class="legend-dot" style="background:#f59e0b;"></span>Near MRV Ceiling</span>
+              <span class="chart-legend-item" style="color:#ef4444;"><span class="legend-dot" style="background:#ef4444;"></span>Over MRV / High Strain</span>
+              <span class="chart-legend-item" style="color:#64748b;"><span class="legend-dot" style="background:#334155;"></span>Below MEV / Maintenance</span>
+            </div>
+            <div style="font-size:0.7rem; color:var(--text-muted);">
+              Click any muscle group to inspect detailed sets & recovery.
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column: Live Muscle Group Inspector -->
+        <div class="card" id="muscleInspectorCard">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.75rem;">
+            <div>
+              <div class="card-title" style="margin-bottom:0.25rem;">
+                <span id="inspectMuscleName">Chest (Pectoralis Major & Minor)</span>
+              </div>
+              <div style="font-size:0.75rem; color:var(--text-muted);" id="inspectMuscleSubtitle">Anterior Torso & Horizontal Pressing</div>
+            </div>
+            <span id="inspectLandmarkBadge" class="periodization-badge" style="background:rgba(16,185,129,0.2); color:var(--success);">OPTIMAL MAV</span>
+          </div>
+
+          <!-- Weekly Sets & Volume Spectrum Bar -->
+          <div style="background:#0f172a; border:1px solid var(--border); border-radius:8px; padding:1rem; margin-bottom:1rem;">
+            <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:0.5rem;">
+              <div>
+                <span style="font-size:2rem; font-weight:800; color:#38bdf8;" id="inspectWeeklySets">14.0</span>
+                <span style="font-size:0.875rem; color:var(--text-muted); margin-left:4px;">working sets this week</span>
+              </div>
+              <div style="font-size:0.75rem; color:var(--text-muted);">
+                Target MAV: <strong style="color:#10b981;" id="inspectTargetMav">14 sets</strong> (MRV: <span id="inspectMrvVal">22</span>)
+              </div>
+            </div>
+
+            <!-- Volume Landmark Spectrum Gauge -->
+            <div style="margin-bottom:0.5rem;">
+              <div class="gauge-bar-bg" style="height:10px;">
+                <div id="inspectVolumeFill" class="gauge-fill" style="width:65%; background:var(--success);"></div>
+              </div>
+              <div class="gauge-ticks">
+                <span id="inspectTickMv">MV: 4</span>
+                <span id="inspectTickMev">MEV: 8</span>
+                <span id="inspectTickMav">MAV: 14</span>
+                <span id="inspectTickMrv">MRV: 22+</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recovery Readiness & Timing -->
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.75rem; margin-bottom:1rem;">
+            <div style="background:#0f172a; border:1px solid var(--border); border-radius:6px; padding:0.6rem 0.75rem;">
+              <div style="font-size:0.75rem; color:var(--text-muted);">Recovery Readiness</div>
+              <div style="font-size:1.25rem; font-weight:700; color:#10b981;" id="inspectRecoveryPct">100% Fully Recovered</div>
+              <div style="font-size:0.7rem; color:var(--text-muted);" id="inspectHoursElapsed">Last trained ~48h ago</div>
+            </div>
+
+            <div style="background:#0f172a; border:1px solid var(--border); border-radius:6px; padding:0.6rem 0.75rem;">
+              <div style="font-size:0.75rem; color:var(--text-muted);">Interference Risk</div>
+              <div style="font-size:1.25rem; font-weight:700; color:#38bdf8;" id="inspectInterferenceRisk">None Detected</div>
+              <div style="font-size:0.7rem; color:var(--text-muted);" id="inspectInterferenceDesc">&gt;8h separation from endurance</div>
+            </div>
+          </div>
+
+          <!-- Coaching Prescription & Exercise Recommendations -->
+          <div style="background:#111827; border:1px solid #1f2937; border-radius:6px; padding:0.75rem; margin-bottom:0.75rem;">
+            <div style="font-size:0.75rem; font-weight:700; color:#38bdf8; text-transform:uppercase; margin-bottom:4px;">Scientific Coaching Prescription</div>
+            <div style="font-size:0.8125rem; color:#e2e8f0; line-height:1.45;" id="inspectPrescriptionText">
+              Chest volume is perfectly positioned in the Maximum Adaptive Volume sweet spot. Maintain 2-3 RIR on compound barbell pressing and push cable flyes to 0-1 RIR.
+            </div>
+          </div>
+
+          <!-- Key Recommended Hypertrophy Exercises -->
+          <div>
+            <div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; font-weight:700; margin-bottom:0.35rem;">Key Stimulus Exercises</div>
+            <div id="inspectExercisePills" style="display:flex; flex-wrap:wrap; gap:0.35rem;">
+              <span class="periodization-badge" style="background:#1e293b; color:#cbd5e1;">Incline Barbell Press</span>
+              <span class="periodization-badge" style="background:#1e293b; color:#cbd5e1;">Flat Dumbbell Press</span>
+              <span class="periodization-badge" style="background:#1e293b; color:#cbd5e1;">Cable Crossovers</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Personalized 6-Day PPL Hypertrophy Program (Hybrid Athlete Blueprint) -->
+      <div class="card" style="margin-bottom: 1.5rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; flex-wrap:wrap; gap:0.5rem;">
+          <div>
+            <div class="card-title" style="margin-bottom:0.25rem;">
+              <span>Personalized 6-Day Hybrid PPL Blueprint (Hypertrophy + Endurance) <span class="info-btn" tabindex="0" role="button" aria-label="About 6-Day PPL">i<span class="info-popover popover-left"><span class="popover-title">Hybrid 6-Day PPL</span><span class="popover-def">Scientifically periodized hypertrophy routine optimized with concurrent cardio sequencing (Push A / Pull A / Legs A / Push B / Pull B / Legs B).</span><span class="popover-rel"><strong>Relevance:</strong> Designed specifically for your intermediate lifting background to optimize muscle protein synthesis without compromising running/cycling.</span></span></span></span>
+            </div>
+            <p class="card-subtext" style="margin-bottom:0;">
+              Full Commercial Gym | 6-Day Push / Pull / Legs | >= 6-Hour Concurrent Cardio Buffer
+            </p>
+          </div>
+          <span class="periodization-badge" style="background:rgba(16,185,129,0.2); color:var(--success);">Personalized Plan Ready</span>
+        </div>
+
+        <!-- 6-Day PPL Day Selection Buttons -->
+        <div style="display:flex; gap:0.5rem; margin-bottom:1rem; overflow-x:auto; padding-bottom:4px;" id="pplDayNav">
+          <button class="btn chart-filter-btn active" id="btnPplDay0" onclick="showPplDay(0)">Day 1: Push A</button>
+          <button class="btn btn-secondary chart-filter-btn" id="btnPplDay1" onclick="showPplDay(1)">Day 2: Pull A</button>
+          <button class="btn btn-secondary chart-filter-btn" id="btnPplDay2" onclick="showPplDay(2)">Day 3: Legs A</button>
+          <button class="btn btn-secondary chart-filter-btn" id="btnPplDay3" onclick="showPplDay(3)">Day 4: Push B</button>
+          <button class="btn btn-secondary chart-filter-btn" id="btnPplDay4" onclick="showPplDay(4)">Day 5: Pull B</button>
+          <button class="btn btn-secondary chart-filter-btn" id="btnPplDay5" onclick="showPplDay(5)">Day 6: Legs B</button>
+          <button class="btn btn-secondary chart-filter-btn" id="btnPplDay6" onclick="showPplDay(6)">Day 7: Recovery</button>
+        </div>
+
+        <!-- Active PPL Day Display Card -->
+        <div style="background:#0f172a; border:1px solid var(--border); border-radius:8px; padding:1.25rem;" id="pplActiveDayBox">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem; flex-wrap:wrap; gap:0.5rem;">
+            <div>
+              <h3 style="font-size:1.15rem; color:#38bdf8; margin:0;" id="pplDayTitle">Day 1: Push A (Chest & Front/Side Delts Dominant)</h3>
+              <div style="font-size:0.8125rem; color:var(--text-muted); margin-top:2px;" id="pplDayFocus">
+                Horizontal pressing mechanical tension & upper chest fiber recruitment
+              </div>
+            </div>
+            <div style="background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.3); border-radius:4px; padding:0.35rem 0.6rem; font-size:0.75rem; color:#38bdf8;" id="pplDayCardioRule">
+              Endurance: Easy Zone 2 cycling (30-45 mins) in afternoon or evening (>=6h separation).
+            </div>
+          </div>
+
+          <table class="table" style="margin-top:0.75rem;">
+            <thead>
+              <tr>
+                <th>Exercise</th>
+                <th>Working Sets</th>
+                <th>Target Reps</th>
+                <th>Intensity (RIR)</th>
+                <th>Rest Interval</th>
+                <th>Primary Target</th>
+              </tr>
+            </thead>
+            <tbody id="pplExerciseTableBody">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -2272,6 +2612,9 @@ def get_app_html() -> str:
         // Load COROS Training Hub & EvoLab Telemetry
         loadCorosHub();
 
+        // Load Strength Training & Muscle Map Telemetry
+        loadStrengthData();
+
         // Update Joe Friel Telemetry Data Quality Auditor
         if (qualityData) {
           const qb = document.getElementById('dataQualityBadge');
@@ -2357,6 +2700,309 @@ def get_app_html() -> str:
         if (resBox) {
           resBox.style.display = 'block';
           resBox.innerHTML = '<strong>Skiba Model Output:</strong> Max Depletion: ' + (s.wbal_max_depletion_j / 1000).toFixed(1) + ' kJ (' + s.wbal_usage_pct + '%) | Below 30%: ' + s.seconds_below_30pct + 's | Reconstitution Ratio: ' + s.wbal_recovery_ratio + 'x | Depletion Events: ' + s.wbal_depletion_events;
+        }
+      }
+    }
+
+    let currentStrengthData = null;
+    let currentPplPlan = null;
+    let activeInspectedMuscle = 'chest';
+    let activePplDayIndex = 0;
+
+    const MUSCLE_EXERCISE_TIPS = {
+      chest: {
+        subtitle: 'Anterior Torso & Horizontal Pressing',
+        exercises: ['Incline Barbell Press', 'Flat Dumbbell Press', 'Cable Crossover', 'Dips'],
+        prescription: 'Chest volume is in the MAV zone. Keep heavy barbell pressing at 2-3 RIR and push cable isolation to 0-1 RIR with 3-second eccentric stretches.'
+      },
+      lats: {
+        subtitle: 'Posterior Torso V-Taper & Vertical Pulling',
+        exercises: ['Neutral-Grip Lat Pulldown', 'Weighted Pullups', 'Single-Arm DB Row'],
+        prescription: 'Focus on full lat elongation at the top of pulldowns. Keep elbows driving down to the hip pockets rather than pulling with biceps.'
+      },
+      upper_back: {
+        subtitle: 'Traps, Rhomboids & Scapular Retraction',
+        exercises: ['Chest-Supported T-Bar Row', 'Face Pulls', 'Barbell Shrugs'],
+        prescription: 'Provides critical scapular stability for cycling posture and running arm swing. Squeeze shoulder blades together for 1s pause.'
+      },
+      shoulders_side: {
+        subtitle: 'Medial Deltoid Lateral Abduction',
+        exercises: ['Cable Lateral Raise', 'Dumbbell Lateral Raise', 'Behind-the-Back Cable Raise'],
+        prescription: 'High frequency and volume responder. Can handle 16-22 sets/week with short rest intervals and 12-20 rep ranges.'
+      },
+      shoulders_rear: {
+        subtitle: 'Posterior Deltoid & External Rotator Cuff',
+        exercises: ['Incline Rear Delt Flyes', 'Rope Face Pulls to Forehead', 'Reverse Pec Deck'],
+        prescription: 'Crucial postural antidote to forward-rolled cycling shoulders and aero-tuck positions.'
+      },
+      shoulders_front: {
+        subtitle: 'Anterior Deltoid & Vertical Pressing',
+        exercises: ['Seated DB Overhead Press', 'Military Press', 'Incline Press Overlap'],
+        prescription: 'Receives substantial indirect volume from chest pressing. Minimal direct volume (4-8 sets) is needed to avoid anterior shoulder impingement.'
+      },
+      biceps: {
+        subtitle: 'Elbow Flexion & Supination',
+        exercises: ['Incline Dumbbell Curl', 'EZ-Bar Preacher Curl', 'Standing Cable Hammer Curl'],
+        prescription: 'Perform curls with strict elbow pinning. Incline DB curls maximize long-head stretch; hammer curls recruit the brachialis for arm width.'
+      },
+      triceps: {
+        subtitle: 'Elbow Extension & Arm Thickness',
+        exercises: ['Overhead Cable Triceps Extension', 'Triceps Rope Pushdown', 'Dips'],
+        prescription: 'Include overhead extensions to stimulate the long head, which is unworked in flat pressing movements.'
+      },
+      quads: {
+        subtitle: 'Knee Extension & Squat Mechanics',
+        exercises: ['High-Bar Back Squat', 'Hack Squat', 'Leg Press', 'Walking Lunges'],
+        prescription: 'Separate heavy quad training by at least 6-8 hours from running or cycling sessions to avoid molecular mTORC1 interference and patellar tendon strain.'
+      },
+      hamstrings: {
+        subtitle: 'Hip Extension & Knee Flexion',
+        exercises: ['Romanian Deadlift (RDL)', 'Seated Leg Curl', 'Lying Leg Curl'],
+        prescription: 'Seated leg curls train the hamstrings at long muscle lengths (superior hypertrophy). RDLs develop powerful posterior chain drive for endurance sports.'
+      },
+      glutes: {
+        subtitle: 'Hip Extension & Pelvic Stabilization',
+        exercises: ['Barbell Hip Thrust', 'Bulgarian Split Squat', 'Deep Squats'],
+        prescription: 'Key power generator in cycling stroke and running gait. Focus on complete hip lockout at the top of hip thrusts.'
+      },
+      calves: {
+        subtitle: 'Plantarflexion & Achilles Energy Return',
+        exercises: ['Standing Single-Leg Calf Raise', 'Seated Calf Raise'],
+        prescription: 'Standing raises target the gastrocnemius; seated raises target the soleus. Crucial durability foundation to absorb 3x bodyweight impact when running.'
+      },
+      abs: {
+        subtitle: 'Core Anti-Extension & Spinal Flexion',
+        exercises: ['Hanging Leg Raise', 'Cable Crunch', 'Ab Rollout', 'Plank'],
+        prescription: 'Resist rotational shear and maintain pelvic neutral in aero and running positions. Perform 10-15 controlled reps with deliberate exhalation.'
+      }
+    };
+
+    async function loadStrengthData() {
+      try {
+        const [mapRes, planRes] = await Promise.all([
+          fetch('/api/strength/muscle-map'),
+          fetch('/api/strength/plan')
+        ]);
+        currentStrengthData = await mapRes.json();
+        currentPplPlan = await planRes.json();
+
+        if (currentStrengthData) {
+          // 1. Update Systemic Recovery Score
+          const score = currentStrengthData.systemic_muscle_recovery_score || 90;
+          const scoreValEl = document.getElementById('strengthSystemicVal');
+          if (scoreValEl) scoreValEl.innerText = score + '%';
+          const fillEl = document.getElementById('strengthSystemicFill');
+          if (fillEl) {
+            fillEl.style.width = score + '%';
+            fillEl.style.background = score >= 80 ? 'var(--success)' : (score >= 60 ? 'var(--warning)' : 'var(--danger)');
+          }
+          const scoreBadgeEl = document.getElementById('strengthSystemicBadge');
+          if (scoreBadgeEl) {
+            scoreBadgeEl.innerText = score >= 85 ? `${score}% Primed` : (score >= 65 ? `${score}% Recovering` : `${score}% Fatigued`);
+            scoreBadgeEl.style.color = score >= 80 ? 'var(--success)' : (score >= 60 ? 'var(--warning)' : 'var(--danger)');
+            scoreBadgeEl.style.background = score >= 80 ? 'rgba(16,185,129,0.2)' : 'rgba(245,158,11,0.2)';
+          }
+
+          // 2. Total Volume Sets Summary
+          const groups = currentStrengthData.muscle_groups || {};
+          let totalSets = 0;
+          let mavCount = 0;
+          let nearMrvCount = 0;
+          let overMrvCount = 0;
+
+          for (const [mKey, mData] of Object.entries(groups)) {
+            totalSets += mData.weekly_sets || 0;
+            if (mData.landmark_state === 'OPTIMAL_MAV') mavCount++;
+            else if (mData.landmark_state === 'NEAR_MRV') nearMrvCount++;
+            else if (mData.landmark_state === 'OVER_MRV') overMrvCount++;
+
+            // Update SVG muscle paths
+            const fillColor = mData.landmark_state === 'OPTIMAL_MAV' ? '#10b981' :
+                              (mData.landmark_state === 'NEAR_MRV' ? '#f59e0b' :
+                              (mData.landmark_state === 'OVER_MRV' ? '#ef4444' : '#334155'));
+
+            // Select all matching SVG elements (could be multiple like left/right)
+            document.querySelectorAll(`[data-muscle="${mKey}"]`).forEach(el => {
+              el.setAttribute('fill', fillColor);
+            });
+          }
+
+          const totSetsEl = document.getElementById('strengthTotalSetsVal');
+          if (totSetsEl) totSetsEl.innerText = Math.round(totalSets) + ' Sets';
+
+          const volBadgeEl = document.getElementById('strengthVolumeStatusBadge');
+          if (volBadgeEl) {
+            if (overMrvCount > 0) {
+              volBadgeEl.innerText = `${overMrvCount} Muscles Over MRV`;
+              volBadgeEl.style.color = 'var(--danger)';
+              volBadgeEl.style.background = 'rgba(239,68,68,0.2)';
+            } else if (nearMrvCount > 2) {
+              volBadgeEl.innerText = 'High Volume (Near MRV)';
+              volBadgeEl.style.color = 'var(--warning)';
+              volBadgeEl.style.background = 'rgba(245,158,11,0.2)';
+            } else {
+              volBadgeEl.innerText = `${mavCount} Muscles in MAV`;
+              volBadgeEl.style.color = 'var(--success)';
+              volBadgeEl.style.background = 'rgba(16,185,129,0.2)';
+            }
+          }
+
+          // 3. Inspect default muscle
+          inspectMuscle(activeInspectedMuscle);
+        }
+
+        // 4. Render Active PPL Workout Day
+        if (currentPplPlan && currentPplPlan.sessions) {
+          showPplDay(activePplDayIndex);
+        }
+      } catch (err) {
+        console.debug('Failed to load strength data:', err);
+      }
+    }
+
+    function inspectMuscle(muscleKey) {
+      activeInspectedMuscle = muscleKey;
+
+      // Update SVG visual selection outline
+      document.querySelectorAll('.muscle-poly').forEach(el => el.classList.remove('active-selected'));
+      document.querySelectorAll(`[data-muscle="${muscleKey}"]`).forEach(el => el.classList.add('active-selected'));
+
+      if (!currentStrengthData || !currentStrengthData.muscle_groups) return;
+      const mData = currentStrengthData.muscle_groups[muscleKey] || {
+        name: muscleKey,
+        display_name: muscleKey.replace('_', ' ').toUpperCase(),
+        weekly_sets: 12,
+        mv: 4, mev: 8, mav: 14, mrv: 20,
+        landmark_state: 'OPTIMAL_MAV',
+        recovery_pct: 100,
+        hours_since_trained: 48,
+        interference_risk: 'NONE',
+        notes: 'Optimal progressive overload.'
+      };
+
+      const tips = MUSCLE_EXERCISE_TIPS[muscleKey] || {
+        subtitle: 'Primary Skeletal Muscle Group',
+        exercises: ['Compound Press / Pull', 'Isolation Movements'],
+        prescription: 'Maintain progressive overload within 1-3 Reps in Reserve (RIR).'
+      };
+
+      // Populate Inspector UI
+      const nameEl = document.getElementById('inspectMuscleName');
+      if (nameEl) nameEl.innerText = mData.display_name;
+
+      const subEl = document.getElementById('inspectMuscleSubtitle');
+      if (subEl) subEl.innerText = tips.subtitle;
+
+      const badgeEl = document.getElementById('inspectLandmarkBadge');
+      if (badgeEl) {
+        badgeEl.innerText = mData.landmark_state.replace('_', ' ');
+        if (mData.landmark_state === 'OPTIMAL_MAV') {
+          badgeEl.style.background = 'rgba(16,185,129,0.2)';
+          badgeEl.style.color = 'var(--success)';
+        } else if (mData.landmark_state === 'NEAR_MRV') {
+          badgeEl.style.background = 'rgba(245,158,11,0.2)';
+          badgeEl.style.color = 'var(--warning)';
+        } else if (mData.landmark_state === 'OVER_MRV') {
+          badgeEl.style.background = 'rgba(239,68,68,0.2)';
+          badgeEl.style.color = 'var(--danger)';
+        } else {
+          badgeEl.style.background = 'rgba(100,116,139,0.2)';
+          badgeEl.style.color = '#94a3b8';
+        }
+      }
+
+      const setsEl = document.getElementById('inspectWeeklySets');
+      if (setsEl) setsEl.innerText = mData.weekly_sets.toFixed(1);
+
+      const targetMavEl = document.getElementById('inspectTargetMav');
+      if (targetMavEl) targetMavEl.innerText = `${mData.mav} sets`;
+
+      const mrvValEl = document.getElementById('inspectMrvVal');
+      if (mrvValEl) mrvValEl.innerText = mData.mrv;
+
+      // Progress bar (scaled against MRV)
+      const maxScale = Math.max(mData.mrv + 4, 24);
+      const pct = Math.min(100, Math.max(5, (mData.weekly_sets / maxScale) * 100));
+      const fillEl = document.getElementById('inspectVolumeFill');
+      if (fillEl) {
+        fillEl.style.width = pct + '%';
+        fillEl.style.background = mData.landmark_state === 'OPTIMAL_MAV' ? 'var(--success)' :
+                                  (mData.landmark_state === 'NEAR_MRV' ? 'var(--warning)' :
+                                  (mData.landmark_state === 'OVER_MRV' ? 'var(--danger)' : '#64748b'));
+      }
+
+      const tMv = document.getElementById('inspectTickMv');
+      if (tMv) tMv.innerText = `MV: ${mData.mv}`;
+      const tMev = document.getElementById('inspectTickMev');
+      if (tMev) tMev.innerText = `MEV: ${mData.mev}`;
+      const tMav = document.getElementById('inspectTickMav');
+      if (tMav) tMav.innerText = `MAV: ${mData.mav}`;
+      const tMrv = document.getElementById('inspectTickMrv');
+      if (tMrv) tMrv.innerText = `MRV: ${mData.mrv}+`;
+
+      // Recovery
+      const recPctEl = document.getElementById('inspectRecoveryPct');
+      if (recPctEl) {
+        recPctEl.innerText = `${mData.recovery_pct}% ${mData.recovery_pct >= 90 ? 'Fully Recovered' : 'Recovering'}`;
+        recPctEl.style.color = mData.recovery_pct >= 85 ? 'var(--success)' : (mData.recovery_pct >= 65 ? 'var(--warning)' : 'var(--danger)');
+      }
+
+      const hoursEl = document.getElementById('inspectHoursElapsed');
+      if (hoursEl) {
+        hoursEl.innerText = mData.hours_since_trained !== null ? `Last trained ~${mData.hours_since_trained.toFixed(0)}h ago` : 'No recent direct session';
+      }
+
+      // Interference
+      const intEl = document.getElementById('inspectInterferenceRisk');
+      if (intEl) {
+        intEl.innerText = mData.interference_risk === 'NONE' ? 'None Detected' : (mData.interference_risk === 'LOW' ? 'Low Risk' : `${mData.interference_risk} Conflict`);
+        intEl.style.color = mData.interference_risk === 'NONE' ? '#38bdf8' : (mData.interference_risk === 'LOW' ? 'var(--warning)' : 'var(--danger)');
+      }
+
+      const prescEl = document.getElementById('inspectPrescriptionText');
+      if (prescEl) prescEl.innerText = mData.notes || tips.prescription;
+
+      const pillsEl = document.getElementById('inspectExercisePills');
+      if (pillsEl) {
+        pillsEl.innerHTML = tips.exercises.map(ex => `<span class="periodization-badge" style="background:#1e293b; color:#cbd5e1;">${ex}</span>`).join(' ');
+      }
+    }
+
+    function showPplDay(dayIdx) {
+      activePplDayIndex = dayIdx;
+      document.querySelectorAll('#pplDayNav .chart-filter-btn').forEach((btn, idx) => {
+        btn.classList.toggle('active', idx === dayIdx);
+        btn.classList.toggle('btn-secondary', idx !== dayIdx);
+      });
+
+      if (!currentPplPlan || !currentPplPlan.sessions) return;
+      const s = currentPplPlan.sessions[dayIdx];
+      if (!s) return;
+
+      const titleEl = document.getElementById('pplDayTitle');
+      if (titleEl) titleEl.innerText = `${s.day}: ${s.title}`;
+
+      const focusEl = document.getElementById('pplDayFocus');
+      if (focusEl) focusEl.innerText = s.focus;
+
+      const ruleEl = document.getElementById('pplDayCardioRule');
+      if (ruleEl) ruleEl.innerText = 'Cardio Coordination: ' + s.endurance_guidance;
+
+      const tbody = document.getElementById('pplExerciseTableBody');
+      if (tbody) {
+        if (!s.exercises || s.exercises.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">Active recovery day. No heavy lifting.</td></tr>';
+        } else {
+          tbody.innerHTML = s.exercises.map(ex => `
+            <tr>
+              <td><strong style="color:#f3f4f6;">${ex.name}</strong></td>
+              <td style="color:#38bdf8; font-weight:700;">${ex.sets} Sets</td>
+              <td>${ex.reps}</td>
+              <td><span class="periodization-badge" style="background:rgba(56,189,248,0.15); color:#38bdf8;">${ex.rir}</span></td>
+              <td style="color:var(--text-muted);">${ex.rest}</td>
+              <td style="color:#10b981; font-weight:600;">${ex.primary}</td>
+            </tr>
+          `).join('');
         }
       }
     }

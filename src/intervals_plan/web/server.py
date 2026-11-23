@@ -249,6 +249,22 @@ class AdaptPulseRequestHandler(BaseHTTPRequestHandler):
             self._send_json(status.to_dict())
             return
 
+        # 15. Strength & Muscle Map API (Hypertrophy / RP Volume Landmarks)
+        if path == "/api/strength/muscle-map":
+            from intervals_plan.strength_engine import StrengthEngine
+            acts = self._get_all_activities()
+            engine = StrengthEngine()
+            map_data = engine.evaluate_muscle_map(acts)
+            self._send_json(map_data)
+            return
+
+        # 16. Strength 6-Day PPL Personalized Program API
+        if path == "/api/strength/plan":
+            from intervals_plan.strength_engine import StrengthEngine
+            plan = StrengthEngine.get_personalized_6day_ppl()
+            self._send_json(plan)
+            return
+
         self._send_json({"error": "Endpoint not found"}, status=404)
 
     def do_POST(self) -> None:
@@ -458,7 +474,78 @@ class AdaptPulseRequestHandler(BaseHTTPRequestHandler):
                 }, status=500)
             return
 
+        # 12. Strength Gym Session Logging API
+        if path == "/api/strength/log":
+            from intervals_plan.strength_engine import StravaGymWorkoutParser
+            parsed = StravaGymWorkoutParser.parse_activity(req_data)
+            self._send_json({
+                "status": "logged",
+                "activity": req_data.get("name", "Gym Session"),
+                "muscle_sets": parsed,
+                "timestamp": datetime.datetime.now().isoformat()
+            })
+            return
+
         self._send_json({"error": "Endpoint not found"}, status=404)
+
+    def _get_all_activities(self) -> List[Dict[str, Any]]:
+        """Retrieve recent 30-day activities or robust hybrid athlete sample dataset."""
+        settings = Config.load()
+        if settings.api_key and len(settings.api_key) > 5:
+            try:
+                client = IntervalsClient(
+                    api_key=settings.api_key,
+                    athlete_id=settings.athlete_id,
+                    base_url=settings.base_url,
+                )
+                today = datetime.date.today()
+                start = today - datetime.timedelta(days=29)
+                raw_acts = client.get_activities(start.isoformat(), today.isoformat()) or []
+                acts = self._enrich_activities(raw_acts, start, today)
+                if acts:
+                    return [a.to_dict() if hasattr(a, "to_dict") else a for a in acts]
+            except Exception:
+                pass
+
+        today = datetime.date.today()
+        return [
+            {
+                "id": "act_push_1",
+                "name": "Push Day (Chest, Shoulders, Triceps)",
+                "type": "WeightTraining",
+                "start_date_local": (today - datetime.timedelta(days=1)).isoformat() + "T17:30:00",
+                "moving_time": 3600,
+                "icu_training_load": 45,
+                "description": "Incline DB Press 4x8, Flat Bench 3x10, Lateral Raises 4x15, Cable Flyes 3x12, Tricep Pushdowns 3x12"
+            },
+            {
+                "id": "act_pull_1",
+                "name": "Pull Day (Lats, Upper Back, Biceps)",
+                "type": "WeightTraining",
+                "start_date_local": (today - datetime.timedelta(days=3)).isoformat() + "T18:00:00",
+                "moving_time": 3300,
+                "icu_training_load": 40,
+                "description": "Lat Pulldowns 4x10, Chest-Supported Rows 4x8, Face Pulls 4x15, Incline DB Curls 3x10, Hammer Curls 3x12"
+            },
+            {
+                "id": "act_legs_1",
+                "name": "Leg Day (Quads, Hamstrings, Calves)",
+                "type": "WeightTraining",
+                "start_date_local": (today - datetime.timedelta(days=5)).isoformat() + "T16:00:00",
+                "moving_time": 3900,
+                "icu_training_load": 55,
+                "description": "Back Squats 4x8, Leg Press 3x12, Seated Leg Curls 4x10, Standing Calf Raises 4x15, Cable Crunches 3x15"
+            },
+            {
+                "id": "act_run_1",
+                "name": "Aerobic Base Run",
+                "type": "Run",
+                "start_date_local": (today - datetime.timedelta(days=2)).isoformat() + "T07:00:00",
+                "moving_time": 2700,
+                "icu_training_load": 45,
+                "distance": 8000
+            }
+        ]
 
     def _compute_data_quality(self) -> Dict[str, Any]:
         """Audit athlete profile and telemetry data quality using Joe Friel principles."""

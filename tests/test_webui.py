@@ -335,7 +335,39 @@ def test_web_ui_endpoints():
                 assert sync_data["activities_analyzed"] == 12
                 assert sync_data["plan_events_created"] == 3
 
-        # 25. 404 test on GET and POST
+        # 25. Strength & Muscle Map API (GET)
+        with urllib.request.urlopen(f"{base_url}/api/strength/muscle-map") as res:
+            assert res.status == 200
+            s_map = json.loads(res.read().decode("utf-8"))
+            assert "muscle_groups" in s_map
+            assert "chest" in s_map["muscle_groups"]
+
+        # 26. Strength Personalized 6-Day PPL Plan API (GET)
+        with urllib.request.urlopen(f"{base_url}/api/strength/plan") as res:
+            assert res.status == 200
+            s_plan = json.loads(res.read().decode("utf-8"))
+            assert "sessions" in s_plan
+            assert len(s_plan["sessions"]) == 7
+
+        # 27. Strength Gym Workout Log API (POST)
+        log_payload = json.dumps({
+            "name": "Chest & Triceps Push Session",
+            "description": "Incline bench 4x8, Cable fly 3x12, Tricep pushdowns 3x12",
+            "moving_time": 3000
+        }).encode("utf-8")
+        req_strength_log = urllib.request.Request(
+            f"{base_url}/api/strength/log",
+            data=log_payload,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req_strength_log) as res:
+            assert res.status == 200
+            log_res = json.loads(res.read().decode("utf-8"))
+            assert log_res["status"] == "logged"
+            assert "chest" in log_res["muscle_sets"]
+
+        # 28. 404 test on GET and POST
         req_404 = urllib.request.Request(f"{base_url}/api/nonexistent")
         try:
             urllib.request.urlopen(req_404)
