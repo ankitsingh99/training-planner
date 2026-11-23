@@ -230,10 +230,11 @@ class OmniSyncEngine:
                             self.intervals.delete_event(ev.id)
                             manifest.pop(str(ev.id), None)
 
-                    # 2. Updates
-                    for ev in diff.to_update:
-                        if ev.id:
-                            self.intervals.update_event(ev)
+                    # 2. Updates (diff.to_update contains EventDiff objects)
+                    for ediff in diff.to_update:
+                        target_ev = ediff.event
+                        if target_ev.id:
+                            self.intervals.update_event(target_ev)
 
                     # 3. Creations (Intervals.icu bulk upsert endpoint)
                     created_events = []
