@@ -194,6 +194,110 @@ def get_app_html() -> str:
       to { transform: rotate(360deg); }
     }
 
+    .info-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      color: var(--color-text-muted);
+      font-family: var(--font-sans);
+      font-size: 0.625rem;
+      font-style: italic;
+      font-weight: 700;
+      line-height: 1;
+      cursor: help;
+      position: relative;
+      margin-left: 0.375rem;
+      vertical-align: middle;
+      transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+      user-select: none;
+      flex-shrink: 0;
+      text-transform: none;
+    }
+    .info-btn:hover,
+    .info-btn:focus-visible {
+      color: #ffffff;
+      background: rgba(56, 189, 248, 0.25);
+      border-color: #38bdf8;
+      outline: none;
+    }
+    .info-popover {
+      visibility: hidden;
+      opacity: 0;
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%) translateY(4px);
+      width: 250px;
+      max-width: 80vw;
+      background: #0f172a;
+      color: var(--color-text);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 0 1px 1px rgba(255, 255, 255, 0.05);
+      border-radius: 6px;
+      padding: 0.625rem 0.75rem;
+      font-size: 0.75rem;
+      font-style: normal;
+      font-weight: 400;
+      line-height: 1.45;
+      text-align: left;
+      z-index: 1000;
+      pointer-events: none;
+      transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s ease;
+      white-space: normal;
+      word-break: normal;
+    }
+    .info-btn:hover .info-popover,
+    .info-btn:focus-visible .info-popover {
+      visibility: visible;
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+      pointer-events: auto;
+    }
+    .info-popover.popover-left {
+      left: 0;
+      transform: translateY(4px);
+    }
+    .info-btn:hover .info-popover.popover-left,
+    .info-btn:focus-visible .info-popover.popover-left {
+      transform: translateY(0);
+    }
+    .info-popover.popover-right {
+      left: auto;
+      right: -6px;
+      transform: translateY(4px);
+    }
+    .info-btn:hover .info-popover.popover-right,
+    .info-btn:focus-visible .info-popover.popover-right {
+      transform: translateY(0);
+    }
+    .popover-title {
+      display: block;
+      font-weight: 700;
+      color: #38bdf8;
+      margin-bottom: 0.25rem;
+      font-size: 0.75rem;
+    }
+    .popover-def {
+      display: block;
+      color: #e2e8f0;
+      margin-bottom: 0.35rem;
+    }
+    .popover-rel {
+      display: block;
+      color: #94a3b8;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      padding-top: 0.35rem;
+      font-size: 0.71875rem;
+    }
+    .popover-rel strong {
+      color: #10b981;
+    }
+
     main {
       flex: 1;
       padding: 2rem;
@@ -716,25 +820,37 @@ def get_app_html() -> str:
         <!-- 4-Column Executive Key Indicators -->
         <div class="grid-4" style="margin-bottom:1rem; gap:1rem;">
           <div style="background:rgba(15,23,42,0.6); padding:0.75rem; border-radius:6px; border:1px solid rgba(255,255,255,0.05);">
-            <div style="font-size:0.6875rem; text-transform:uppercase; color:var(--text-muted); font-weight:700;">Autonomic Readiness</div>
+            <div style="font-size:0.6875rem; text-transform:uppercase; color:var(--text-muted); font-weight:700; display:flex; align-items:center;">
+              <span>Autonomic Readiness</span>
+              <span class="info-btn" tabindex="0" role="button" aria-label="About Autonomic Readiness">i<span class="info-popover popover-left"><span class="popover-title">Autonomic Readiness</span><span class="popover-def">Composite physiological readiness score reflecting autonomic nervous system balance from resting HR, HRV, and sleep.</span><span class="popover-rel"><strong>Relevance:</strong> High readiness indicates capacity for high-intensity intervals; low readiness calls for aerobic recovery.</span></span></span>
+            </div>
             <div id="execReadinessHeadline" style="font-size:1.125rem; font-weight:800; color:var(--success); margin:2px 0;">Optimal Overload</div>
             <div id="execReadinessDesc" style="font-size:0.75rem; color:var(--text-muted);">RHR stable (56 bpm, +0.5 delta). Fully primed for volume & quality.</div>
           </div>
 
           <div style="background:rgba(15,23,42,0.6); padding:0.75rem; border-radius:6px; border:1px solid rgba(255,255,255,0.05);">
-            <div style="font-size:0.6875rem; text-transform:uppercase; color:var(--text-muted); font-weight:700;">Workload Ratio (ACWR)</div>
+            <div style="font-size:0.6875rem; text-transform:uppercase; color:var(--text-muted); font-weight:700; display:flex; align-items:center;">
+              <span>Workload Ratio (ACWR)</span>
+              <span class="info-btn" tabindex="0" role="button" aria-label="About ACWR">i<span class="info-popover"><span class="popover-title">Acute:Chronic Workload Ratio</span><span class="popover-def">Ratio of acute 7-day fatigue to chronic 28-day fitness base (Gabbett model).</span><span class="popover-rel"><strong>Relevance:</strong> Sweet spot is 0.8-1.3. Spikes over 1.5 increase non-contact soft tissue injury risk.</span></span></span>
+            </div>
             <div id="execAcwrHeadline" style="font-size:1.125rem; font-weight:800; color:#38bdf8; margin:2px 0;">0.47 Under-Training</div>
             <div id="execAcwrDesc" style="font-size:0.75rem; color:var(--text-muted);">Chronic base dropping; gradual progressive volume recommended.</div>
           </div>
 
           <div style="background:rgba(15,23,42,0.6); padding:0.75rem; border-radius:6px; border:1px solid rgba(255,255,255,0.05);">
-            <div style="font-size:0.6875rem; text-transform:uppercase; color:var(--text-muted); font-weight:700;">Sleep & Nocturnal Recovery</div>
+            <div style="font-size:0.6875rem; text-transform:uppercase; color:var(--text-muted); font-weight:700; display:flex; align-items:center;">
+              <span>Sleep & Nocturnal Recovery</span>
+              <span class="info-btn" tabindex="0" role="button" aria-label="About Sleep and Recovery">i<span class="info-popover"><span class="popover-title">Nocturnal Sleep & Recovery</span><span class="popover-def">Total nocturnal sleep duration, sleep stages (deep and REM), and overnight SpO2 stability.</span><span class="popover-rel"><strong>Relevance:</strong> Deep sleep repairs muscle tissue and releases growth hormones; 7.0-8.5 hours required for adaptation.</span></span></span>
+            </div>
             <div id="execSleepHeadline" style="font-size:1.125rem; font-weight:800; color:#a855f7; margin:2px 0;">7.5h Stable</div>
             <div id="execSleepDesc" style="font-size:0.75rem; color:var(--text-muted);">SpO2 97-98.5%. Healthy deep/REM restorative sleep architecture.</div>
           </div>
 
           <div style="background:rgba(15,23,42,0.6); padding:0.75rem; border-radius:6px; border:1px solid rgba(255,255,255,0.05);">
-            <div style="font-size:0.6875rem; text-transform:uppercase; color:var(--text-muted); font-weight:700;">Body Composition (BIA)</div>
+            <div style="font-size:0.6875rem; text-transform:uppercase; color:var(--text-muted); font-weight:700; display:flex; align-items:center;">
+              <span>Body Composition (BIA)</span>
+              <span class="info-btn" tabindex="0" role="button" aria-label="About Body Composition">i<span class="info-popover popover-right"><span class="popover-title">Body Composition (BIA)</span><span class="popover-def">Scale weight, bioimpedance body fat percentage, and calculated skeletal lean mass.</span><span class="popover-rel"><strong>Relevance:</strong> Determines power-to-weight ratio (W/kg) and running economy while safeguarding lean muscle mass.</span></span></span>
+            </div>
             <div id="execBodyHeadline" style="font-size:1.125rem; font-weight:800; color:#10b981; margin:2px 0;">78.9 kg | 27.0% Fat</div>
             <div id="execBodyDesc" style="font-size:0.75rem; color:var(--text-muted);">57.5 kg Lean Mass (~30.5 kg Skeletal Muscle). Calibrated power-to-weight.</div>
           </div>
@@ -751,22 +867,30 @@ def get_app_html() -> str:
 
       <div class="grid-4" style="margin-bottom: 1.5rem;">
         <div class="card">
-          <div class="card-title">Physiological Readiness</div>
+          <div class="card-title">
+            <span>Physiological Readiness <span class="info-btn" tabindex="0" role="button" aria-label="About Physiological Readiness">i<span class="info-popover popover-left"><span class="popover-title">Physiological Readiness</span><span class="popover-def">Daily score (0-100) synthesizing resting heart rate delta, HRV RMSSD, and rolling workload.</span><span class="popover-rel"><strong>Relevance:</strong> High scores (>70) indicate readiness for key quality sessions; low scores (<50) recommend restorative sessions.</span></span></span></span>
+          </div>
           <div class="card-value" id="readinessScore">--</div>
           <div class="card-subtext" id="readinessState">Calculating...</div>
         </div>
         <div class="card">
-          <div class="card-title">ACWR (Tim Gabbett)</div>
+          <div class="card-title">
+            <span>ACWR (Tim Gabbett) <span class="info-btn" tabindex="0" role="button" aria-label="About ACWR">i<span class="info-popover"><span class="popover-title">ACWR (Acute:Chronic Workload Ratio)</span><span class="popover-def">Compares 7-day fatigue load to 28-day fitness base using rolling exponential models.</span><span class="popover-rel"><strong>Relevance:</strong> Values between 0.8 and 1.3 provide safe progressive overload; values >1.5 elevate injury hazards.</span></span></span></span>
+          </div>
           <div class="card-value" id="acwrRatio">--</div>
           <div class="card-subtext" id="acwrStatus">Sweet Spot: 0.8 - 1.3</div>
         </div>
         <div class="card">
-          <div class="card-title">Performance Balance (TSB)</div>
+          <div class="card-title">
+            <span>Performance Balance (TSB) <span class="info-btn" tabindex="0" role="button" aria-label="About Training Stress Balance">i<span class="info-popover"><span class="popover-title">Training Stress Balance (TSB)</span><span class="popover-def">CTL (Fitness) minus ATL (Fatigue). Reflects athlete freshness versus training strain.</span><span class="popover-rel"><strong>Relevance:</strong> -10 to -30 during hard training blocks; +5 to +20 during taper for peak race performance.</span></span></span></span>
+          </div>
           <div class="card-value" id="tsbValue">--</div>
           <div class="card-subtext" id="pmcSubtext">Fitness vs Fatigue</div>
         </div>
         <div class="card">
-          <div class="card-title">Resting HR (3d vs 30d)</div>
+          <div class="card-title">
+            <span>Resting HR (3d vs 30d) <span class="info-btn" tabindex="0" role="button" aria-label="About Resting HR">i<span class="info-popover popover-right"><span class="popover-title">Resting Heart Rate Delta</span><span class="popover-def">Comparison of 3-day rolling resting pulse against your 30-day baseline during sleep.</span><span class="popover-rel"><strong>Relevance:</strong> An increase >=4 bpm indicates systemic fatigue, poor recovery, dehydration, or onset of illness.</span></span></span></span>
+          </div>
           <div class="card-value" id="rhrDelta">--</div>
           <div class="card-subtext" id="rhrSubtext">Baseline stability</div>
         </div>
@@ -775,22 +899,30 @@ def get_app_html() -> str:
       <!-- Biometrics & Wellness Telemetry Cards -->
       <div class="grid-4" style="margin-bottom: 1.5rem;">
         <div class="card">
-          <div class="card-title">Sleep Duration & Stages</div>
+          <div class="card-title">
+            <span>Sleep Duration & Stages <span class="info-btn" tabindex="0" role="button" aria-label="About Sleep Stages">i<span class="info-popover popover-left"><span class="popover-title">Sleep Architecture</span><span class="popover-def">Total sleep hours and restorative distribution across deep slow-wave, REM, and light sleep.</span><span class="popover-rel"><strong>Relevance:</strong> Deep sleep promotes physical tissue regeneration; REM sleep restores cognitive and nervous resilience.</span></span></span></span>
+          </div>
           <div class="card-value" id="dashSleepVal" style="color:#a855f7;">--</div>
           <div class="card-subtext" id="dashSleepSubtext">Samsung Health / Health Connect</div>
         </div>
         <div class="card">
-          <div class="card-title">Blood Oxygen (SpO2)</div>
+          <div class="card-title">
+            <span>Blood Oxygen (SpO2) <span class="info-btn" tabindex="0" role="button" aria-label="About Blood Oxygen">i<span class="info-popover"><span class="popover-title">Blood Oxygen Saturation</span><span class="popover-def">Nocturnal arterial oxygen saturation percentage measured by optical pulse oximetry.</span><span class="popover-rel"><strong>Relevance:</strong> Healthy baseline is 95-100%. Levels <93% indicate impaired recovery, respiratory issues, or altitude stress.</span></span></span></span>
+          </div>
           <div class="card-value" id="dashSpo2Val" style="color:#06b6d4;">--</div>
           <div class="card-subtext" id="dashSpo2Subtext">Optimal &gt;95%</div>
         </div>
         <div class="card">
-          <div class="card-title">Body Composition (Weight)</div>
+          <div class="card-title">
+            <span>Body Composition (Weight) <span class="info-btn" tabindex="0" role="button" aria-label="About Weight">i<span class="info-popover"><span class="popover-title">Body Weight</span><span class="popover-def">Daily scale morning weight in kilograms recorded under consistent post-wake conditions.</span><span class="popover-rel"><strong>Relevance:</strong> Used directly to compute W/kg threshold power and pace energy expenditure dynamics.</span></span></span></span>
+          </div>
           <div class="card-value" id="dashWeightVal" style="color:#10b981;">--</div>
           <div class="card-subtext" id="dashWeightSubtext">Scale Telemetry</div>
         </div>
         <div class="card">
-          <div class="card-title">Body Fat %</div>
+          <div class="card-title">
+            <span>Body Fat % <span class="info-btn" tabindex="0" role="button" aria-label="About Body Fat">i<span class="info-popover popover-right"><span class="popover-title">Body Fat Percentage</span><span class="popover-def">Estimated percentage of adipose tissue from bioimpedance scale telemetry.</span><span class="popover-rel"><strong>Relevance:</strong> Helps ensure weight loss preserves lean skeletal muscle mass while optimizing race body composition.</span></span></span></span>
+          </div>
           <div class="card-value" id="dashBodyFatVal" style="color:#f59e0b;">--</div>
           <div class="card-subtext" id="dashBodyFatSubtext">Bioimpedance Analysis</div>
         </div>
@@ -801,7 +933,9 @@ def get_app_html() -> str:
         <!-- Physical Recovery Timer Card -->
         <div class="card">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.75rem;">
-            <div class="card-title" style="margin-bottom:0;">Physical Recovery Timer</div>
+            <div class="card-title" style="margin-bottom:0;">
+              <span>Physical Recovery Timer <span class="info-btn" tabindex="0" role="button" aria-label="About Recovery Timer">i<span class="info-popover popover-left"><span class="popover-title">Physical Recovery Timer</span><span class="popover-def">Dynamic hours countdown modeling complete physiological restoration from recent session loads.</span><span class="popover-rel"><strong>Relevance:</strong> Guides training readiness: 90-100% allows hard intervals; under 70% suggests recovery or easy base.</span></span></span></span>
+            </div>
             <span id="corosRecoveryBadge" class="periodization-badge" style="background:rgba(16,185,129,0.2); color:var(--success);">READY (90%+)</span>
           </div>
 
@@ -828,7 +962,9 @@ def get_app_html() -> str:
         <!-- Fatigue Index & Intensity Trend Card -->
         <div class="card">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.75rem;">
-            <div class="card-title" style="margin-bottom:0;">Fatigue Index & Intensity Trend</div>
+            <div class="card-title" style="margin-bottom:0;">
+              <span>Fatigue Index & Intensity Trend <span class="info-btn" tabindex="0" role="button" aria-label="About Fatigue Index">i<span class="info-popover popover-right"><span class="popover-title">Fatigue Index</span><span class="popover-def">Scaled gauge (0-100) quantifying accumulated cardiovascular and muscular strain.</span><span class="popover-rel"><strong>Relevance:</strong> 40-60 is the optimal overload zone; >80 indicates overreaching and elevated overtraining risk.</span></span></span></span>
+            </div>
             <span id="corosFatigueBadge" class="periodization-badge" style="background:rgba(16,185,129,0.2); color:var(--success);">OPTIMIZED</span>
           </div>
 
@@ -869,7 +1005,9 @@ def get_app_html() -> str:
       <div class="grid-2">
         <div class="card">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.75rem;">
-            <div class="card-title" style="margin-bottom:0;">Weekly Load Distribution & Target</div>
+            <div class="card-title" style="margin-bottom:0;">
+              <span>Weekly Load Distribution & Target <span class="info-btn" tabindex="0" role="button" aria-label="About Weekly Load">i<span class="info-popover popover-left"><span class="popover-title">Weekly Load & Volume</span><span class="popover-def">7-day cumulative training hours and Training Stress Score (TSS) compared against plan target.</span><span class="popover-rel"><strong>Relevance:</strong> Keeps volume ramp rate controlled within 5-10% to prevent overtraining.</span></span></span></span>
+            </div>
             <span id="weeklyLoadBadge" class="periodization-badge" style="background:rgba(16,185,129,0.2); color:var(--success);">--h / --h</span>
           </div>
 
@@ -946,7 +1084,9 @@ def get_app_html() -> str:
         <!-- Card 1: Friel Data Quality Auditor -->
         <div class="card">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.75rem;">
-            <div class="card-title" style="margin-bottom:0;">Telemetry Data Quality (Joe Friel Audit)</div>
+            <div class="card-title" style="margin-bottom:0;">
+              <span>Telemetry Data Quality (Joe Friel Audit) <span class="info-btn" tabindex="0" role="button" aria-label="About Data Quality">i<span class="info-popover popover-left"><span class="popover-title">Data Quality Audit</span><span class="popover-def">Algorithmic validation of LTHR, FTP, max HR, and sensor continuity against Joe Friel rules.</span><span class="popover-rel"><strong>Relevance:</strong> Erroneous threshold settings distort all load, zone, and readiness calculations.</span></span></span></span>
+            </div>
             <span id="dataQualityBadge" class="periodization-badge" style="background:rgba(16,185,129,0.2); color:var(--success);">Audit: Good</span>
           </div>
           <p style="font-size:0.8125rem; color:var(--text-muted); margin-bottom:0.75rem;" id="dataQualityFix">
@@ -960,7 +1100,9 @@ def get_app_html() -> str:
         <!-- Card 2: Skiba W'bal Anaerobic Capacity & DFA a1 -->
         <div class="card">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.75rem;">
-            <div class="card-title" style="margin-bottom:0;">Anaerobic Battery (Skiba W') & DFA Alpha 1</div>
+            <div class="card-title" style="margin-bottom:0;">
+              <span>Anaerobic Battery (Skiba W') & DFA Alpha 1 <span class="info-btn" tabindex="0" role="button" aria-label="About W prime and DFA a1">i<span class="info-popover popover-right"><span class="popover-title">Skiba W' & DFA Alpha 1</span><span class="popover-def">W' is finite anaerobic work capacity above Critical Power; DFA a1 tracks fractal HRV threshold shifts.</span><span class="popover-rel"><strong>Relevance:</strong> W' governs surge capacity in races; DFA a1=0.75 identifies aerobic threshold (LT1) without blood tests.</span></span></span></span>
+            </div>
             <span id="wbalStatusBadge" class="periodization-badge" style="background:rgba(6,182,212,0.2); color:#06b6d4;">Battery: 100% Full</span>
           </div>
           <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.75rem; margin-bottom:0.75rem;">
@@ -999,7 +1141,9 @@ def get_app_html() -> str:
       <div class="card" style="margin-bottom: 1.5rem;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem; flex-wrap:wrap; gap:0.5rem;">
           <div>
-            <div class="card-title" style="margin-bottom:0.25rem;">Performance Management Chart (Banister / Coggan PMC)</div>
+            <div class="card-title" style="margin-bottom:0.25rem;">
+              <span>Performance Management Chart (Banister / Coggan PMC) <span class="info-btn" tabindex="0" role="button" aria-label="About PMC">i<span class="info-popover popover-left"><span class="popover-title">Performance Management Chart</span><span class="popover-def">Classic impulse-response model showing Fitness (CTL 42d), Fatigue (ATL 7d), and Form (TSB).</span><span class="popover-rel"><strong>Relevance:</strong> Allows precise tracking of long-term fitness accumulation and race taper timing.</span></span></span></span>
+            </div>
             <div style="font-size:0.8125rem; color:var(--color-text-muted);" id="pmcDateRange">Interactive 30-Day Multi-Series Telemetry (Click point to inspect)</div>
           </div>
           <!-- Interactive Series Toggles -->
@@ -1033,7 +1177,9 @@ def get_app_html() -> str:
       <div class="grid-2" style="margin-bottom: 1.5rem;">
         <div class="card">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
-            <div class="card-title" style="margin-bottom:0;">Acute:Chronic Workload Ratio (ACWR Trend)</div>
+            <div class="card-title" style="margin-bottom:0;">
+              <span>Acute:Chronic Workload Ratio (ACWR Trend) <span class="info-btn" tabindex="0" role="button" aria-label="About ACWR Trend">i<span class="info-popover popover-left"><span class="popover-title">ACWR Trend</span><span class="popover-def">Historical rolling ratio of acute to chronic workload plotted across 30 days.</span><span class="popover-rel"><strong>Relevance:</strong> Identifies whether recent workload spikes into caution (1.3-1.5) or danger (>1.5) zones.</span></span></span></span>
+            </div>
             <span id="acwrRatioBadge" class="periodization-badge" style="background:rgba(16,185,129,0.2); color:var(--success);">Sweet Spot</span>
           </div>
           <div class="chart-box-compact" id="acwrChartContainer" style="cursor:crosshair;">
@@ -1052,7 +1198,9 @@ def get_app_html() -> str:
 
         <div class="card">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
-            <div class="card-title" style="margin-bottom:0;">Autonomic Recovery: Resting HR Trend</div>
+            <div class="card-title" style="margin-bottom:0;">
+              <span>Autonomic Recovery: Resting HR Trend <span class="info-btn" tabindex="0" role="button" aria-label="About RHR Trend">i<span class="info-popover popover-right"><span class="popover-title">Resting HR Trend</span><span class="popover-def">Daily nocturnal resting heart rate tracked against your 30-day baseline average.</span><span class="popover-rel"><strong>Relevance:</strong> Sustained elevations indicate unrecovered sympathetic nervous system state.</span></span></span></span>
+            </div>
             <span id="rhrStrainBadge" class="periodization-badge" style="background:rgba(16,185,129,0.2); color:var(--success);">Autonomic Green</span>
           </div>
           <div class="chart-box-compact" id="rhrChartContainer" style="cursor:crosshair;">
@@ -1073,7 +1221,9 @@ def get_app_html() -> str:
       <div class="grid-2" style="margin-bottom: 1.5rem;">
         <div class="card">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
-            <div class="card-title" style="margin-bottom:0;">Sleep Duration & Recovery Stages (Rolling 30 Days)</div>
+            <div class="card-title" style="margin-bottom:0;">
+              <span>Sleep Duration & Recovery Stages (Rolling 30 Days) <span class="info-btn" tabindex="0" role="button" aria-label="About Sleep Duration">i<span class="info-popover popover-left"><span class="popover-title">Sleep Duration History</span><span class="popover-def">30-day sleep duration tracking with comparison against the 7-hour baseline target.</span><span class="popover-rel"><strong>Relevance:</strong> Chronic sleep deficits severely impair glycogen resynthesis and neuromuscular recovery.</span></span></span></span>
+            </div>
             <div style="font-size:0.8125rem; color:var(--color-text-muted);" id="sleepSummaryText">-- hrs avg</div>
           </div>
           <div class="chart-box-compact" id="sleepChartContainer" style="cursor:crosshair;">
@@ -1090,7 +1240,9 @@ def get_app_html() -> str:
 
         <div class="card">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
-            <div class="card-title" style="margin-bottom:0;">Blood Oxygen (SpO2) & Body Weight Trends</div>
+            <div class="card-title" style="margin-bottom:0;">
+              <span>Blood Oxygen (SpO2) & Body Weight Trends <span class="info-btn" tabindex="0" role="button" aria-label="About SpO2 and Weight Trends">i<span class="info-popover popover-right"><span class="popover-title">SpO2 & Weight Trends</span><span class="popover-def">Combined trends of blood oxygen saturation and morning scale weight.</span><span class="popover-rel"><strong>Relevance:</strong> Monitors metabolic trends and warns of respiratory stress or unexpected weight fluctuations.</span></span></span></span>
+            </div>
             <div style="font-size:0.8125rem; color:var(--color-text-muted);" id="vitalsSummaryText">Samsung Health / Scale</div>
           </div>
           <div class="chart-box-compact" id="vitalsChartContainer" style="cursor:crosshair;">
@@ -1110,7 +1262,9 @@ def get_app_html() -> str:
       <div class="card" style="margin-bottom: 1.5rem;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem; flex-wrap:wrap; gap:0.5rem;">
           <div>
-            <div class="card-title" style="margin-bottom:0.25rem;">Daily Training Load & Volume (Stacked Discipline TSS)</div>
+            <div class="card-title" style="margin-bottom:0.25rem;">
+              <span>Daily Training Load & Volume (Stacked Discipline TSS) <span class="info-btn" tabindex="0" role="button" aria-label="About Daily Load">i<span class="info-popover popover-left"><span class="popover-title">Daily Training Load (TSS)</span><span class="popover-def">Daily Training Stress Score segmented by discipline (Ride, Run, Swim, Brick, Other).</span><span class="popover-rel"><strong>Relevance:</strong> Shows cross-training distribution and volume-intensity balance across sports.</span></span></span></span>
+            </div>
             <div style="font-size:0.8125rem; color:var(--color-text-muted);" id="totalVolumeLoadSummary">-- hrs | -- TSS</div>
           </div>
           <!-- Interactive Timeframe & Scroll Filters -->
@@ -1149,7 +1303,9 @@ def get_app_html() -> str:
       <!-- Grid 2: Polarization & Discipline Breakdown -->
       <div class="grid-2" style="margin-bottom: 1.5rem;">
         <div class="card">
-          <div class="card-title">Stephen Seiler 80/20 Intensity Polarization</div>
+          <div class="card-title">
+            <span>Stephen Seiler 80/20 Intensity Polarization <span class="info-btn" tabindex="0" role="button" aria-label="About 80/20 Polarization">i<span class="info-popover popover-left"><span class="popover-title">Intensity Polarization</span><span class="popover-def">Time distribution across Low (Z1-Z2), Moderate (Z3), and High (Z4-Z5) intensity zones.</span><span class="popover-rel"><strong>Relevance:</strong> 80% low-intensity builds mitochondrial density; avoiding the "black hole" of excessive moderate intensity.</span></span></span></span>
+          </div>
           <div style="margin: 1.5rem 0;">
             <div style="display:flex; height: 28px; border-radius: 6px; overflow: hidden; margin-bottom: 0.75rem;">
               <div id="barLow" style="width: 80%; background: #10b981;" title="Low Intensity Zone 1-2"></div>
@@ -1166,7 +1322,9 @@ def get_app_html() -> str:
         </div>
 
         <div class="card">
-          <div class="card-title">Completed Discipline Breakdown (Last 30 Days)</div>
+          <div class="card-title">
+            <span>Completed Discipline Breakdown (Last 30 Days) <span class="info-btn" tabindex="0" role="button" aria-label="About Discipline Breakdown">i<span class="info-popover popover-right"><span class="popover-title">Discipline Breakdown</span><span class="popover-def">30-day cumulative volume, session count, TSS load, and distance partitioned by sport.</span><span class="popover-rel"><strong>Relevance:</strong> Verifies multi-sport cross-training balance and sport-specific training load share.</span></span></span></span>
+          </div>
           <table class="table">
             <thead>
               <tr>
@@ -1189,7 +1347,9 @@ def get_app_html() -> str:
         <!-- Running Fitness Card -->
         <div class="card">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.75rem;">
-            <div class="card-title" style="margin-bottom:0;">Running Fitness (EvoLab 4-Pillars)</div>
+            <div class="card-title" style="margin-bottom:0;">
+              <span>Running Fitness (EvoLab 4-Pillars) <span class="info-btn" tabindex="0" role="button" aria-label="About Running Fitness">i<span class="info-popover popover-left"><span class="popover-title">Running Fitness</span><span class="popover-def">Composite index evaluating Base aerobic endurance, Lactate Threshold endurance, VO2 Max speed, and Sprint power.</span><span class="popover-rel"><strong>Relevance:</strong> Pinpoints your physiological limiter to guide targeted threshold vs endurance workouts.</span></span></span></span>
+            </div>
             <div style="font-size:1.25rem; font-weight:800; color:#38bdf8;" id="corosOverallFitness">-- / 100</div>
           </div>
           <div style="font-size:0.8125rem; color:var(--text-muted); margin-bottom:1rem;">
@@ -1242,7 +1402,9 @@ def get_app_html() -> str:
         <!-- Race Predictor Card -->
         <div class="card">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.75rem;">
-            <div class="card-title" style="margin-bottom:0;">Race Predictor (Riegel / Cameron Model)</div>
+            <div class="card-title" style="margin-bottom:0;">
+              <span>Race Predictor (Riegel / Cameron Model) <span class="info-btn" tabindex="0" role="button" aria-label="About Race Predictor">i<span class="info-popover popover-right"><span class="popover-title">Race Predictor</span><span class="popover-def">Predicted finish times and target paces derived from threshold efficiency and rolling aerobic volume.</span><span class="popover-rel"><strong>Relevance:</strong> Provides realistic, non-wishful race pacing targets for 5k, 10k, Half, and Marathon.</span></span></span></span>
+            </div>
             <span class="periodization-badge" style="background:rgba(56,189,248,0.2); color:#38bdf8;">Calibrated Pacing</span>
           </div>
           <p style="font-size:0.8125rem; color:var(--text-muted); margin-bottom:0.75rem;">
@@ -1268,7 +1430,9 @@ def get_app_html() -> str:
       <!-- Training Effect Simulator Card -->
       <div class="card" style="margin-bottom: 1.5rem;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
-          <div class="card-title" style="margin-bottom:0;">Workout Training Effect (TE) & Recovery Estimator</div>
+          <div class="card-title" style="margin-bottom:0;">
+            <span>Workout Training Effect (TE) & Recovery Estimator <span class="info-btn" tabindex="0" role="button" aria-label="About Training Effect">i<span class="info-popover popover-left"><span class="popover-title">Training Effect (TE)</span><span class="popover-def">Metric from 0.0 to 5.0 predicting aerobic and anaerobic cardiorespiratory adaptations.</span><span class="popover-rel"><strong>Relevance:</strong> Validates whether a workout achieved the intended stimulus (e.g. 3.0-3.9 for threshold build).</span></span></span></span>
+          </div>
           <span class="periodization-badge" style="background:rgba(16,185,129,0.2); color:var(--success);">Aerobic & Anaerobic Dynamics</span>
         </div>
         <p style="font-size:0.8125rem; color:var(--text-muted); margin-bottom:1rem;">
@@ -1313,7 +1477,9 @@ def get_app_html() -> str:
       <!-- Plan Compliance & Execution Card -->
       <div class="card" style="margin-bottom: 1.5rem;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
-          <div class="card-title" style="margin-bottom:0;">Plan Compliance & Execution (Rolling 28 Days)</div>
+          <div class="card-title" style="margin-bottom:0;">
+            <span>Plan Compliance & Execution (Rolling 28 Days) <span class="info-btn" tabindex="0" role="button" aria-label="About Plan Compliance">i<span class="info-popover popover-left"><span class="popover-title">Plan Compliance</span><span class="popover-def">Tracks completed vs planned workouts, volume hours, and TSS adherence.</span><span class="popover-rel"><strong>Relevance:</strong> Optimal compliance is 80-110%; protects against under-training or chronic overreaching.</span></span></span></span>
+          </div>
           <span id="compRatingBadge" class="periodization-badge" style="background:rgba(16,185,129,0.2); color:var(--success);">Optimal</span>
         </div>
         <div class="grid-3" style="margin-bottom: 1rem;">
@@ -1338,7 +1504,9 @@ def get_app_html() -> str:
 
       <!-- Post-Workout Aerobic Decoupling & Debrief Card -->
       <div class="card">
-        <div class="card-title">Aerobic Decoupling & Post-Workout Session Debrief</div>
+        <div class="card-title">
+          <span>Aerobic Decoupling & Post-Workout Session Debrief <span class="info-btn" tabindex="0" role="button" aria-label="About Aerobic Decoupling">i<span class="info-popover popover-left"><span class="popover-title">Aerobic Decoupling (Pw:HR / Pa:HR)</span><span class="popover-def">Measures cardiac drift: the percentage divergence between output and heart rate over time.</span><span class="popover-rel"><strong>Relevance:</strong> Drift &lt;5% indicates solid aerobic base; drift &gt;5% indicates cardiac fatigue, heat stress, or dehydration.</span></span></span></span>
+        </div>
         <p class="card-subtext" style="margin-bottom:1rem;">Evaluate cardiac drift (Pw:HR or Pa:HR % drift) and aerobic efficiency stability to adapt next-day recovery.</p>
         <div class="grid-2">
           <div>
