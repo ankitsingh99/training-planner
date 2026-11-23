@@ -16,35 +16,84 @@ def get_app_html() -> str:
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AdaptPulse | Sports Science Training Suite</title>
-  <style>
+  <style>/* hallmark: modern-minimal / dark / athlete-engineering */
     :root {
-      --bg: #090d16;
-      --card-bg: #111827;
-      --card-border: #1f2937;
-      --text-main: #f3f4f6;
-      --text-muted: #9ca3af;
-      --accent: #06b6d4;
-      --accent-hover: #0891b2;
-      --success: #10b981;
-      --warning: #f59e0b;
-      --danger: #ef4444;
-      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --color-bg-deep: #050811;
+      --color-bg: #0b1120;
+      --color-surface: #111c30;
+      --color-surface-hover: #16243d;
+      --color-surface-active: #1d3052;
+      --color-surface-sunken: #070d18;
+      --color-border: #1e2e4a;
+      --color-border-subtle: rgba(255, 255, 255, 0.08);
+      --color-border-hover: #334b75;
+      --color-text: #f1f5f9;
+      --color-text-muted: #94a3b8;
+      --color-text-dim: #64748b;
+      --color-accent: #38bdf8;
+      --color-accent-hover: #0ea5e9;
+      --color-accent-subtle: rgba(56, 189, 248, 0.15);
+      --color-accent-dim: rgba(56, 189, 248, 0.25);
+      --color-success: #10b981;
+      --color-success-hover: #059669;
+      --color-success-subtle: rgba(16, 185, 129, 0.15);
+      --color-warning: #f59e0b;
+      --color-warning-subtle: rgba(245, 158, 11, 0.15);
+      --color-danger: #ef4444;
+      --color-danger-hover: #dc2626;
+      --color-danger-subtle: rgba(239, 68, 68, 0.15);
+      --color-purple: #c084fc;
+      --color-purple-subtle: rgba(192, 132, 252, 0.15);
+      --color-focus: #38bdf8;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      --radius-sm: 4px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --radius-full: 9999px;
+      --transition-fast: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, opacity 0.15s ease, transform 0.15s ease;
+
+      /* Semantic aliases for backwards compatibility */
+      --bg: var(--color-bg);
+      --card-bg: var(--color-surface);
+      --card-border: var(--color-border);
+      --text-main: var(--color-text);
+      --text-muted: var(--color-text-muted);
+      --accent: var(--color-accent);
+      --accent-hover: var(--color-accent-hover);
+      --success: var(--color-success);
+      --warning: var(--color-warning);
+      --danger: var(--color-danger);
+      --font: var(--font-sans);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      background-color: var(--bg);
-      color: var(--text-main);
-      font-family: var(--font);
+    html, body {
+      overflow-x: clip;
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      font-family: var(--font-sans);
       min-height: 100vh;
       display: flex;
       flex-direction: column;
     }
 
+    /* Focus Rings */
+    button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+      outline: 2px solid var(--color-focus);
+      outline-offset: 2px;
+    }
+
+    /* Tabular Numerals on all metrics */
+    .card-value, .metric-number, .stat-value, .chart-tooltip, table, .table td, .table th, .tabular, .gauge-ticks, .periodization-badge, .diagnostic-panel {
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum";
+    }
+
     header {
-      background: #0f172a;
-      border-bottom: 1px solid var(--card-border);
-      padding: 1rem 2rem;
+      background: var(--color-surface-sunken);
+      border-bottom: 1px solid var(--color-border);
+      padding: 0.875rem 2rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -61,29 +110,29 @@ def get_app_html() -> str:
     .brand-logo {
       width: 32px;
       height: 32px;
-      background: linear-gradient(135deg, var(--accent), var(--success));
-      border-radius: 8px;
+      background: linear-gradient(135deg, var(--color-accent), var(--color-success));
+      border-radius: var(--radius-md);
       display: flex;
       align-items: center;
       justify-content: center;
       font-weight: 800;
-      color: #000;
+      color: var(--color-bg-deep);
       font-size: 1.1rem;
     }
     .brand-title {
       font-size: 1.25rem;
       font-weight: 700;
-      letter-spacing: -0.025em;
+      letter-spacing: -0.02em;
+      color: var(--color-text);
     }
     .brand-tag {
-      font-size: 0.75rem;
-      color: var(--accent);
-      background: rgba(6, 182, 212, 0.15);
+      font-size: 0.6875rem;
+      color: var(--color-accent);
+      background: var(--color-accent-subtle);
       padding: 2px 8px;
-      border-radius: 9999px;
+      border-radius: var(--radius-full);
       font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.02em;
     }
 
     nav {
@@ -92,23 +141,27 @@ def get_app_html() -> str:
     }
     .nav-btn {
       background: transparent;
-      border: none;
-      color: var(--text-muted);
+      border: 1px solid transparent;
+      color: var(--color-text-muted);
       padding: 0.5rem 1rem;
-      border-radius: 6px;
+      border-radius: var(--radius-md);
       font-size: 0.875rem;
       font-weight: 600;
       cursor: pointer;
-      transition: all 0.15s ease;
+      transition: var(--transition-fast);
     }
     .nav-btn:hover {
-      color: var(--text-main);
-      background: rgba(255, 255, 255, 0.05);
+      color: var(--color-text);
+      background: var(--color-surface-hover);
+      border-color: var(--color-border-subtle);
+    }
+    .nav-btn:active {
+      transform: translateY(1px);
     }
     .nav-btn.active {
-      color: var(--accent);
-      background: rgba(6, 182, 212, 0.12);
-      border: 1px solid rgba(6, 182, 212, 0.3);
+      color: var(--color-accent);
+      background: var(--color-accent-subtle);
+      border-color: var(--color-accent-dim);
     }
 
     .header-actions {
@@ -118,10 +171,10 @@ def get_app_html() -> str:
     }
     .status-badge {
       font-size: 0.75rem;
-      padding: 4px 10px;
-      border-radius: 9999px;
-      background: rgba(16, 185, 129, 0.15);
-      color: var(--success);
+      padding: 4px 12px;
+      border-radius: var(--radius-full);
+      background: var(--color-success-subtle);
+      color: var(--color-success);
       border: 1px solid rgba(16, 185, 129, 0.3);
       font-weight: 600;
     }
@@ -151,17 +204,16 @@ def get_app_html() -> str:
     }
 
     .card {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 12px;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
       padding: 1.5rem;
       position: relative;
     }
     .card-title {
-      font-size: 0.875rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--text-muted);
+      font-size: 0.8125rem;
+      letter-spacing: normal;
+      color: var(--color-text-muted);
       font-weight: 600;
       margin-bottom: 0.5rem;
       display: flex;
@@ -172,11 +224,11 @@ def get_app_html() -> str:
       font-size: 2.25rem;
       font-weight: 800;
       letter-spacing: -0.025em;
-      color: var(--text-main);
+      color: var(--color-text);
     }
     .card-subtext {
       font-size: 0.8125rem;
-      color: var(--text-muted);
+      color: var(--color-text-muted);
       margin-top: 0.5rem;
     }
 
@@ -186,7 +238,8 @@ def get_app_html() -> str:
     }
     .gauge-bar-bg {
       height: 12px;
-      background: #1f2937;
+      background: var(--color-surface-sunken);
+      border: 1px solid var(--color-border);
       border-radius: 6px;
       position: relative;
       overflow: hidden;
@@ -194,60 +247,66 @@ def get_app_html() -> str:
     .gauge-fill {
       height: 100%;
       border-radius: 6px;
-      transition: width 0.5s ease;
+      transition: opacity 0.3s ease;
     }
     .gauge-ticks {
       display: flex;
       justify-content: space-between;
-      margin-top: 6px;
+      margin-top: 8px;
       font-size: 0.75rem;
-      color: var(--text-muted);
+      color: var(--color-text-muted);
     }
 
     .alert-box {
-      background: rgba(245, 158, 11, 0.1);
+      background: var(--color-warning-subtle);
       border: 1px solid rgba(245, 158, 11, 0.3);
-      border-radius: 8px;
+      border-radius: var(--radius-md);
       padding: 1rem;
       margin-bottom: 1.5rem;
     }
     .alert-title {
       font-size: 0.875rem;
       font-weight: 700;
-      color: var(--warning);
+      color: var(--color-warning);
       margin-bottom: 0.25rem;
     }
     .alert-desc {
       font-size: 0.8125rem;
-      color: #d1d5db;
+      color: var(--color-text-muted);
       line-height: 1.5;
     }
 
     .btn {
-      background: var(--accent);
-      color: #000;
-      border: none;
+      background: var(--color-accent);
+      color: var(--color-bg-deep);
+      border: 1px solid transparent;
       padding: 0.625rem 1.25rem;
       font-size: 0.875rem;
       font-weight: 700;
-      border-radius: 6px;
+      border-radius: var(--radius-md);
       cursor: pointer;
-      transition: background 0.15s ease;
+      transition: var(--transition-fast);
       display: inline-flex;
       align-items: center;
       gap: 0.5rem;
     }
-    .btn:hover { background: var(--accent-hover); }
+    .btn:hover { background: var(--color-accent-hover); }
+    .btn:active { transform: translateY(1px); }
+    .btn:disabled { opacity: 0.55; cursor: not-allowed; }
     .btn-secondary {
-      background: #374151;
-      color: #f3f4f6;
+      background: var(--color-surface-active);
+      color: var(--color-text);
+      border-color: var(--color-border);
     }
-    .btn-secondary:hover { background: #4b5563; }
+    .btn-secondary:hover {
+      background: var(--color-border-hover);
+      border-color: var(--color-accent);
+    }
     .btn-danger {
-      background: var(--danger);
-      color: #fff;
+      background: var(--color-danger);
+      color: var(--color-text);
     }
-    .btn-danger:hover { background: #dc2626; }
+    .btn-danger:hover { background: var(--color-danger-hover); }
 
     /* Form Inputs */
     .form-group {
@@ -257,22 +316,28 @@ def get_app_html() -> str:
       display: block;
       font-size: 0.8125rem;
       font-weight: 600;
-      color: var(--text-muted);
+      color: var(--color-text-muted);
       margin-bottom: 0.375rem;
     }
     .form-input, .form-select {
       width: 100%;
-      background: #1f2937;
-      border: 1px solid #374151;
-      color: #f3f4f6;
+      background: var(--color-surface-sunken);
+      border: 1px solid var(--color-border);
+      color: var(--color-text);
       padding: 0.625rem 0.875rem;
-      border-radius: 6px;
+      border-radius: var(--radius-md);
       font-size: 0.875rem;
-      outline: none;
-      transition: border 0.15s;
+      outline: 2px solid transparent;
+      outline-offset: -2px;
+      transition: border-color 0.15s ease, background-color 0.15s ease;
     }
-    .form-input:focus, .form-select:focus {
-      border-color: var(--accent);
+    .form-input:hover, .form-select:hover {
+      background: var(--color-surface);
+      border-color: var(--color-border-hover);
+    }
+    .form-input:focus-visible, .form-select:focus-visible {
+      border-color: var(--color-accent);
+      outline-color: var(--color-focus);
     }
     .range-wrap {
       display: flex;
@@ -282,7 +347,7 @@ def get_app_html() -> str:
     .range-val {
       font-size: 1.25rem;
       font-weight: 700;
-      color: var(--accent);
+      color: var(--color-accent);
       min-width: 60px;
     }
 
@@ -300,64 +365,65 @@ def get_app_html() -> str:
       .calendar-grid { grid-template-columns: 1fr; }
     }
     .day-col {
-      background: #111827;
-      border: 1px solid var(--card-border);
-      border-radius: 8px;
+      background: var(--color-surface-sunken);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
       padding: 1rem;
       min-height: 220px;
       display: flex;
       flex-direction: column;
+      color: var(--color-text);
     }
     .day-header {
       font-size: 0.75rem;
-      text-transform: uppercase;
       font-weight: 700;
-      color: var(--text-muted);
-      border-bottom: 1px solid #1f2937;
+      color: var(--color-text-muted);
+      border-bottom: 1px solid var(--color-border);
       padding-bottom: 0.5rem;
       margin-bottom: 0.75rem;
       display: flex;
       justify-content: space-between;
     }
     .workout-card {
-      background: #1e293b;
-      border: 1px solid #334155;
-      border-radius: 6px;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
       padding: 0.75rem;
       cursor: pointer;
-      transition: all 0.15s;
+      color: var(--color-text);
+      transition: border-color 0.15s ease, transform 0.15s ease;
       flex: 1;
     }
     .workout-card:hover {
-      border-color: var(--accent);
+      border-color: var(--color-accent);
       transform: translateY(-2px);
     }
     .workout-tag {
       font-size: 0.6875rem;
-      padding: 2px 6px;
-      border-radius: 4px;
+      padding: 4px 8px;
+      border-radius: var(--radius-sm);
       font-weight: 700;
       display: inline-block;
       margin-bottom: 0.375rem;
     }
-    .tag-run { background: rgba(6, 182, 212, 0.2); color: #38bdf8; }
-    .tag-ride { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+    .tag-run { background: var(--color-accent-subtle); color: var(--color-accent); }
+    .tag-ride { background: var(--color-success-subtle); color: var(--color-success); }
     .tag-swim { background: rgba(14, 165, 233, 0.25); color: #38bdf8; }
-    .tag-brick { background: rgba(168, 85, 247, 0.25); color: #c084fc; }
-    .tag-duathlon { background: rgba(245, 158, 11, 0.25); color: #fbbf24; }
-    .tag-rest { background: rgba(107, 114, 128, 0.2); color: #9ca3af; }
-    .tag-quality { background: rgba(244, 63, 94, 0.2); color: #fb7185; }
+    .tag-brick { background: var(--color-purple-subtle); color: var(--color-purple); }
+    .tag-duathlon { background: var(--color-warning-subtle); color: var(--color-warning); }
+    .tag-rest { background: rgba(107, 114, 128, 0.2); color: var(--color-text-muted); }
+    .tag-quality { background: var(--color-danger-subtle); color: #fb7185; }
 
     .workout-title {
       font-size: 0.8125rem;
       font-weight: 700;
-      color: #f3f4f6;
+      color: var(--color-text);
       margin-bottom: 0.375rem;
       line-height: 1.3;
     }
     .workout-meta {
       font-size: 0.6875rem;
-      color: var(--text-muted);
+      color: var(--color-text-muted);
     }
 
     /* Modal / Drawer */
@@ -365,7 +431,8 @@ def get_app_html() -> str:
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.75);
+      background: rgba(5, 8, 17, 0.85);
+      backdrop-filter: blur(4px);
       z-index: 100;
       align-items: center;
       justify-content: center;
@@ -373,9 +440,9 @@ def get_app_html() -> str:
     }
     .modal-overlay.active { display: flex; }
     .modal {
-      background: #111827;
-      border: 1px solid #374151;
-      border-radius: 12px;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
       max-width: 650px;
       width: 100%;
       max-height: 85vh;
@@ -389,37 +456,37 @@ def get_app_html() -> str:
       right: 1.25rem;
       background: none;
       border: none;
-      color: var(--text-muted);
+      color: var(--color-text-muted);
       font-size: 1.5rem;
       cursor: pointer;
     }
 
     /* Watch Preview Box */
     .coros-preview-box {
-      background: #000;
-      border: 3px solid #334155;
+      background: var(--color-bg-deep);
+      border: 3px solid var(--color-border);
       border-radius: 24px;
       padding: 1.5rem;
       margin-top: 1.25rem;
-      font-family: monospace;
-      color: #38bdf8;
+      font-family: var(--font-mono);
+      color: var(--color-accent);
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
     }
     .coros-screen-header {
       font-size: 0.75rem;
-      color: #94a3b8;
-      border-bottom: 1px dashed #334155;
+      color: var(--color-text-muted);
+      border-bottom: 1px dashed var(--color-border);
       padding-bottom: 0.5rem;
       margin-bottom: 0.75rem;
     }
 
-    /* SVG Charts */
+    /* SVG Interactive Charts */
     .chart-scroll-container {
       width: 100%;
       overflow-x: auto;
       overflow-y: hidden;
       scrollbar-width: thin;
-      scrollbar-color: #475569 #0f172a;
+      scrollbar-color: var(--color-border-hover) var(--color-surface-sunken);
       -webkit-overflow-scrolling: touch;
       position: relative;
     }
@@ -427,54 +494,93 @@ def get_app_html() -> str:
       height: 6px;
     }
     .chart-scroll-container::-webkit-scrollbar-track {
-      background: #0f172a;
-      border-radius: 4px;
+      background: var(--color-surface-sunken);
+      border-radius: var(--radius-sm);
     }
     .chart-scroll-container::-webkit-scrollbar-thumb {
-      background: #475569;
-      border-radius: 4px;
+      background: var(--color-border-hover);
+      border-radius: var(--radius-sm);
     }
     .chart-scroll-container::-webkit-scrollbar-thumb:hover {
-      background: #64748b;
+      background: var(--color-text-dim);
+    }
+    .chart-filter-btn {
+      transition: var(--transition-fast);
     }
     .chart-filter-btn.active {
-      background: var(--accent) !important;
-      color: #000 !important;
+      background: var(--color-accent) !important;
+      color: var(--color-bg-deep) !important;
       font-weight: 700 !important;
+    }
+
+    /* Interactive Series Toggle Buttons */
+    .chart-toggle-btn {
+      background: var(--color-surface-sunken);
+      border: 1px solid var(--color-border);
+      color: var(--color-text-muted);
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.3rem 0.65rem;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: var(--transition-fast);
+    }
+    .chart-toggle-btn:hover {
+      background: var(--color-surface-hover);
+      color: var(--color-text);
+      border-color: var(--color-border-hover);
+    }
+    .chart-toggle-btn:active {
+      transform: translateY(1px);
+    }
+    .chart-toggle-btn.active {
+      background: var(--color-surface-active);
+      color: var(--color-text);
+      border-color: var(--color-accent);
+    }
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
     }
 
     .chart-box {
       width: 100%;
       height: 280px;
-      background: #0f172a;
-      border-radius: 8px;
+      background: var(--color-surface-sunken);
+      border-radius: var(--radius-md);
       padding: 0.75rem 1rem;
-      border: 1px solid var(--card-border);
+      border: 1px solid var(--color-border);
       position: relative;
     }
     .chart-box-compact {
       width: 100%;
-      height: 200px;
-      background: #0f172a;
-      border-radius: 8px;
+      height: 210px;
+      background: var(--color-surface-sunken);
+      border-radius: var(--radius-md);
       padding: 0.75rem 1rem;
-      border: 1px solid var(--card-border);
+      border: 1px solid var(--color-border);
       position: relative;
     }
     .chart-tooltip {
       position: absolute;
       display: none;
-      background: rgba(15, 23, 42, 0.95);
-      border: 1px solid #334155;
-      border-radius: 6px;
-      padding: 0.5rem 0.75rem;
+      background: rgba(7, 13, 24, 0.95);
+      border: 1px solid var(--color-border-hover);
+      border-radius: var(--radius-md);
+      padding: 0.6rem 0.85rem;
       font-size: 0.75rem;
-      color: #f1f5f9;
+      color: var(--color-text);
       pointer-events: none;
       z-index: 50;
       white-space: nowrap;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
-      line-height: 1.4;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.75);
+      line-height: 1.45;
+      backdrop-filter: blur(6px);
     }
     .chart-legend {
       display: flex;
@@ -491,6 +597,13 @@ def get_app_html() -> str:
       font-weight: 600;
     }
 
+    /* Diagnostic Inspection Panel */
+    .diagnostic-panel {
+      font-size: 0.8125rem;
+      line-height: 1.45;
+      color: var(--color-text);
+    }
+
     .table {
       width: 100%;
       border-collapse: collapse;
@@ -500,27 +613,35 @@ def get_app_html() -> str:
     .table th {
       text-align: left;
       padding: 0.75rem 1rem;
-      border-bottom: 1px solid var(--card-border);
-      color: var(--text-muted);
+      border-bottom: 1px solid var(--color-border);
+      color: var(--color-text-muted);
       font-weight: 600;
     }
     .table td {
       padding: 0.75rem 1rem;
-      border-bottom: 1px solid #1f2937;
+      border-bottom: 1px solid var(--color-border);
     }
 
     .toast {
       position: fixed;
       bottom: 2rem;
       right: 2rem;
-      background: #1e293b;
-      border: 1px solid var(--accent);
-      color: #fff;
+      background: var(--color-surface);
+      border: 1px solid var(--color-accent);
+      color: var(--color-text);
       padding: 0.75rem 1.5rem;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      border-radius: var(--radius-md);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.6);
       z-index: 200;
       display: none;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
     }
   </style>
 </head>
@@ -857,20 +978,35 @@ def get_app_html() -> str:
     <!-- TAB 2: ANALYSIS & PMC -->
     <div id="tab-analysis" class="tab-content">
       <div class="card" style="margin-bottom: 1.5rem;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
-          <div class="card-title" style="margin-bottom:0;">Performance Management Chart (Banister / Coggan PMC - Rolling 30 Days)</div>
-          <div style="font-size:0.8125rem; color:var(--text-muted);" id="pmcDateRange">Rolling 30-Day Timeseries</div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem; flex-wrap:wrap; gap:0.5rem;">
+          <div>
+            <div class="card-title" style="margin-bottom:0.25rem;">Performance Management Chart (Banister / Coggan PMC)</div>
+            <div style="font-size:0.8125rem; color:var(--color-text-muted);" id="pmcDateRange">Interactive 30-Day Multi-Series Telemetry (Click point to inspect)</div>
+          </div>
+          <!-- Interactive Series Toggles -->
+          <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+            <button type="button" class="chart-toggle-btn active" id="pmcToggleCTL" onclick="togglePmcSeries('ctl')" aria-pressed="true">
+              <span class="legend-dot" style="background:#06b6d4;"></span>Fitness (CTL)
+            </button>
+            <button type="button" class="chart-toggle-btn active" id="pmcToggleATL" onclick="togglePmcSeries('atl')" aria-pressed="true">
+              <span class="legend-dot" style="background:#f43f5e;"></span>Fatigue (ATL)
+            </button>
+            <button type="button" class="chart-toggle-btn active" id="pmcToggleTSB" onclick="togglePmcSeries('tsb')" aria-pressed="true">
+              <span class="legend-dot" style="background:#10b981;"></span>Form (TSB)
+            </button>
+          </div>
         </div>
-        <div class="chart-box" id="pmcChartContainer">
-          <div class="chart-tooltip" id="pmcTooltip"></div>
-          <svg id="pmcChartSvg" width="100%" height="100%" viewBox="0 0 800 240" preserveAspectRatio="none">
+        <div class="chart-box" id="pmcChartContainer" style="cursor:crosshair;">
+          <div class="chart-tooltip" id="pmcTooltip" role="tooltip"></div>
+          <svg id="pmcChartSvg" width="100%" height="100%" viewBox="0 0 800 240" preserveAspectRatio="none" role="img" aria-label="Performance Management Chart">
           </svg>
         </div>
+        <div id="pmcDayInspector" class="diagnostic-panel" style="display:none; margin-top:0.75rem; background:var(--color-surface-sunken); border:1px solid var(--color-border); border-radius:var(--radius-md); padding:0.75rem 1rem;"></div>
         <div class="chart-legend">
-          <span class="chart-legend-item" style="color:#06b6d4;">— CTL (Fitness 42d)</span>
-          <span class="chart-legend-item" style="color:#f43f5e;">— ATL (Fatigue 7d)</span>
-          <span class="chart-legend-item" style="color:#10b981;">-- TSB (Form = CTL - ATL)</span>
-          <span class="chart-legend-item" style="color:#64748b;">··· Baseline (TSB = 0)</span>
+          <span class="chart-legend-item" style="color:#06b6d4;">Fitness (CTL 42d)</span>
+          <span class="chart-legend-item" style="color:#f43f5e;">Fatigue (ATL 7d)</span>
+          <span class="chart-legend-item" style="color:#10b981;">Form (TSB = CTL - ATL)</span>
+          <span class="chart-legend-item" style="color:var(--color-text-dim);">Neutral Form Line (TSB = 0)</span>
         </div>
       </div>
 
@@ -881,16 +1017,17 @@ def get_app_html() -> str:
             <div class="card-title" style="margin-bottom:0;">Acute:Chronic Workload Ratio (ACWR Trend)</div>
             <span id="acwrRatioBadge" class="periodization-badge" style="background:rgba(16,185,129,0.2); color:var(--success);">Sweet Spot</span>
           </div>
-          <div class="chart-box-compact" id="acwrChartContainer">
-            <div class="chart-tooltip" id="acwrTooltip"></div>
-            <svg id="acwrChartSvg" width="100%" height="100%" viewBox="0 0 450 180" preserveAspectRatio="none">
+          <div class="chart-box-compact" id="acwrChartContainer" style="cursor:crosshair;">
+            <div class="chart-tooltip" id="acwrTooltip" role="tooltip"></div>
+            <svg id="acwrChartSvg" width="100%" height="100%" viewBox="0 0 450 180" preserveAspectRatio="none" role="img" aria-label="Acute to Chronic Workload Ratio Chart">
             </svg>
           </div>
+          <div id="acwrDayInspector" class="diagnostic-panel" style="display:none; margin-top:0.5rem; background:var(--color-surface-sunken); border:1px solid var(--color-border); border-radius:var(--radius-sm); padding:0.4rem 0.6rem;"></div>
           <div class="chart-legend">
-            <span class="chart-legend-item" style="color:#38bdf8;">— ACWR Ratio</span>
-            <span class="chart-legend-item" style="color:#10b981;">■ Sweet Spot (0.8-1.3)</span>
-            <span class="chart-legend-item" style="color:#f59e0b;">■ Caution (1.3-1.5)</span>
-            <span class="chart-legend-item" style="color:#ef4444;">■ Danger (>1.5)</span>
+            <span class="chart-legend-item" style="color:#38bdf8;">ACWR Ratio</span>
+            <span class="chart-legend-item" style="color:#10b981;">Sweet Spot (0.8-1.3)</span>
+            <span class="chart-legend-item" style="color:#f59e0b;">Caution (1.3-1.5)</span>
+            <span class="chart-legend-item" style="color:#ef4444;">Danger (&gt;1.5)</span>
           </div>
         </div>
 
@@ -899,15 +1036,16 @@ def get_app_html() -> str:
             <div class="card-title" style="margin-bottom:0;">Autonomic Recovery: Resting HR Trend</div>
             <span id="rhrStrainBadge" class="periodization-badge" style="background:rgba(16,185,129,0.2); color:var(--success);">Autonomic Green</span>
           </div>
-          <div class="chart-box-compact" id="rhrChartContainer">
-            <div class="chart-tooltip" id="rhrTooltip"></div>
-            <svg id="rhrChartSvg" width="100%" height="100%" viewBox="0 0 450 180" preserveAspectRatio="none">
+          <div class="chart-box-compact" id="rhrChartContainer" style="cursor:crosshair;">
+            <div class="chart-tooltip" id="rhrTooltip" role="tooltip"></div>
+            <svg id="rhrChartSvg" width="100%" height="100%" viewBox="0 0 450 180" preserveAspectRatio="none" role="img" aria-label="Resting Heart Rate Chart">
             </svg>
           </div>
+          <div id="rhrDayInspector" class="diagnostic-panel" style="display:none; margin-top:0.5rem; background:var(--color-surface-sunken); border:1px solid var(--color-border); border-radius:var(--radius-sm); padding:0.4rem 0.6rem;"></div>
           <div class="chart-legend">
-            <span class="chart-legend-item" style="color:#38bdf8;">● Daily Resting HR</span>
-            <span class="chart-legend-item" style="color:#94a3b8;">-- 30d Baseline</span>
-            <span class="chart-legend-item" style="color:#ef4444;">-- +4 bpm Strain Alert</span>
+            <span class="chart-legend-item" style="color:#38bdf8;">Daily Resting HR</span>
+            <span class="chart-legend-item" style="color:#94a3b8;">30d Baseline</span>
+            <span class="chart-legend-item" style="color:#ef4444;">+4 bpm Strain Alert</span>
           </div>
         </div>
       </div>
@@ -917,32 +1055,34 @@ def get_app_html() -> str:
         <div class="card">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
             <div class="card-title" style="margin-bottom:0;">Sleep Duration & Recovery Stages (Rolling 30 Days)</div>
-            <div style="font-size:0.8125rem; color:var(--text-muted);" id="sleepSummaryText">-- hrs avg</div>
+            <div style="font-size:0.8125rem; color:var(--color-text-muted);" id="sleepSummaryText">-- hrs avg</div>
           </div>
-          <div class="chart-box-compact" id="sleepChartContainer">
-            <div class="chart-tooltip" id="sleepTooltip"></div>
-            <svg id="sleepChartSvg" width="100%" height="100%" viewBox="0 0 450 180" preserveAspectRatio="none">
+          <div class="chart-box-compact" id="sleepChartContainer" style="cursor:crosshair;">
+            <div class="chart-tooltip" id="sleepTooltip" role="tooltip"></div>
+            <svg id="sleepChartSvg" width="100%" height="100%" viewBox="0 0 450 180" preserveAspectRatio="none" role="img" aria-label="Sleep Duration and Recovery Chart">
             </svg>
           </div>
+          <div id="sleepDayInspector" class="diagnostic-panel" style="display:none; margin-top:0.5rem; background:var(--color-surface-sunken); border:1px solid var(--color-border); border-radius:var(--radius-sm); padding:0.4rem 0.6rem;"></div>
           <div class="chart-legend">
-            <span class="chart-legend-item" style="color:#a855f7;">■ Sleep Duration (Hrs)</span>
-            <span class="chart-legend-item" style="color:#10b981;">-- 7h Target Baseline</span>
+            <span class="chart-legend-item" style="color:#c084fc;">Sleep Duration (Hrs)</span>
+            <span class="chart-legend-item" style="color:#10b981;">7h Target Baseline</span>
           </div>
         </div>
 
         <div class="card">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
             <div class="card-title" style="margin-bottom:0;">Blood Oxygen (SpO2) & Body Weight Trends</div>
-            <div style="font-size:0.8125rem; color:var(--text-muted);" id="vitalsSummaryText">Samsung Health / Scale</div>
+            <div style="font-size:0.8125rem; color:var(--color-text-muted);" id="vitalsSummaryText">Samsung Health / Scale</div>
           </div>
-          <div class="chart-box-compact" id="vitalsChartContainer">
-            <div class="chart-tooltip" id="vitalsTooltip"></div>
-            <svg id="vitalsChartSvg" width="100%" height="100%" viewBox="0 0 450 180" preserveAspectRatio="none">
+          <div class="chart-box-compact" id="vitalsChartContainer" style="cursor:crosshair;">
+            <div class="chart-tooltip" id="vitalsTooltip" role="tooltip"></div>
+            <svg id="vitalsChartSvg" width="100%" height="100%" viewBox="0 0 450 180" preserveAspectRatio="none" role="img" aria-label="Blood Oxygen and Weight Chart">
             </svg>
           </div>
+          <div id="vitalsDayInspector" class="diagnostic-panel" style="display:none; margin-top:0.5rem; background:var(--color-surface-sunken); border:1px solid var(--color-border); border-radius:var(--radius-sm); padding:0.4rem 0.6rem;"></div>
           <div class="chart-legend">
-            <span class="chart-legend-item" style="color:#06b6d4;">● SpO2 (%)</span>
-            <span class="chart-legend-item" style="color:#10b981;">● Weight (kg)</span>
+            <span class="chart-legend-item" style="color:#06b6d4;">SpO2 (%)</span>
+            <span class="chart-legend-item" style="color:#10b981;">Weight (kg)</span>
           </div>
         </div>
       </div>
@@ -952,11 +1092,13 @@ def get_app_html() -> str:
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem; flex-wrap:wrap; gap:0.5rem;">
           <div>
             <div class="card-title" style="margin-bottom:0.25rem;">Daily Training Load & Volume (Stacked Discipline TSS)</div>
-            <div style="font-size:0.8125rem; color:var(--text-muted);" id="totalVolumeLoadSummary">-- hrs | -- TSS</div>
+            <div style="font-size:0.8125rem; color:var(--color-text-muted);" id="totalVolumeLoadSummary">-- hrs | -- TSS</div>
           </div>
           <!-- Interactive Timeframe & Scroll Filters -->
-          <div style="display:flex; gap:0.4rem; align-items:center;">
-            <span style="font-size:0.75rem; color:var(--text-muted); margin-right:4px;">Window:</span>
+          <div style="display:flex; gap:0.4rem; align-items:center; flex-wrap:wrap;">
+            <span style="font-size:0.75rem; color:var(--color-text-muted); margin-right:4px;">Window:</span>
+            <button class="btn btn-secondary chart-filter-btn" id="btnLoad90d" onclick="filterDailyLoad(90)" style="font-size:0.7rem; padding:0.25rem 0.6rem;">90 Days</button>
+            <button class="btn btn-secondary chart-filter-btn" id="btnLoad60d" onclick="filterDailyLoad(60)" style="font-size:0.7rem; padding:0.25rem 0.6rem;">60 Days</button>
             <button class="btn btn-secondary chart-filter-btn active" id="btnLoad30d" onclick="filterDailyLoad(30)" style="font-size:0.7rem; padding:0.25rem 0.6rem;">30 Days</button>
             <button class="btn btn-secondary chart-filter-btn" id="btnLoad14d" onclick="filterDailyLoad(14)" style="font-size:0.7rem; padding:0.25rem 0.6rem;">14 Days</button>
             <button class="btn btn-secondary chart-filter-btn" id="btnLoad7d" onclick="filterDailyLoad(7)" style="font-size:0.7rem; padding:0.25rem 0.6rem;">7 Days</button>
@@ -964,22 +1106,23 @@ def get_app_html() -> str:
         </div>
 
         <!-- Scrollable Chart Container -->
-        <div class="chart-scroll-container" id="loadChartScrollBox" style="position:relative; width:100%; overflow-x:auto; overflow-y:hidden; border-radius:8px; border:1px solid var(--border); background:#0f172a; padding: 0.5rem 0;">
-          <div class="chart-tooltip" id="loadTooltip"></div>
-          <svg id="loadChartSvg" height="190" style="display:block; min-width:850px; width:100%;">
+        <div class="chart-scroll-container" id="loadChartScrollBox" style="position:relative; width:100%; overflow-x:auto; overflow-y:hidden; border-radius:var(--radius-md); border:1px solid var(--color-border); background:var(--color-surface-sunken); padding: 0.5rem 0; cursor:crosshair;">
+          <div class="chart-tooltip" id="loadTooltip" role="tooltip"></div>
+          <svg id="loadChartSvg" height="190" style="display:block; min-width:850px; width:100%;" role="img" aria-label="Daily Training Load Stacked Chart">
           </svg>
         </div>
+        <div id="loadDayInspector" class="diagnostic-panel" style="display:none; margin-top:0.75rem; background:var(--color-surface-sunken); border:1px solid var(--color-border); border-radius:var(--radius-md); padding:0.75rem 1rem;"></div>
 
         <div class="chart-legend" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-top:0.75rem;">
           <div style="display:flex; gap:1rem; flex-wrap:wrap;">
-            <span class="chart-legend-item" style="color:#06b6d4;">■ Run</span>
-            <span class="chart-legend-item" style="color:#f59e0b;">■ Ride</span>
-            <span class="chart-legend-item" style="color:#38bdf8;">■ Swim</span>
-            <span class="chart-legend-item" style="color:#a855f7;">■ Brick/Duathlon</span>
-            <span class="chart-legend-item" style="color:#64748b;">■ Other</span>
+            <span class="chart-legend-item" style="color:#06b6d4;">Run</span>
+            <span class="chart-legend-item" style="color:#f59e0b;">Ride</span>
+            <span class="chart-legend-item" style="color:#38bdf8;">Swim</span>
+            <span class="chart-legend-item" style="color:#c084fc;">Brick/Duathlon</span>
+            <span class="chart-legend-item" style="color:#64748b;">Other</span>
           </div>
-          <div style="font-size:0.7rem; color:var(--text-muted);">
-            Scroll horizontally or drag / swipe on touch devices to explore all days
+          <div style="font-size:0.7rem; color:var(--color-text-muted);">
+            Hover to inspect load breakdown. Click any day bar to view detailed activities.
           </div>
         </div>
       </div>
@@ -1211,7 +1354,7 @@ def get_app_html() -> str:
           <div style="background:#0f172a; border:1px solid #1f2937; border-radius:8px; padding:1rem;">
             <div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; font-weight:700; margin-bottom:0.5rem;">Aerobic Efficiency Gauge</div>
             <div id="decouplingGaugeContainer" style="height:90px;">
-              <svg id="decouplingGaugeSvg" width="100%" height="100%" viewBox="0 0 350 90">
+              <svg id="decouplingGaugeSvg" width="100%" height="100%" viewBox="0 0 350 90" role="img" aria-label="Aerobic Efficiency Gauge">
               </svg>
             </div>
             <div id="decouplingVerdict" style="font-size:0.875rem; font-weight:700; color:var(--success); margin-top:0.5rem;">Optimal Base Coupling (&lt;5% drift)</div>
@@ -1408,7 +1551,7 @@ def get_app_html() -> str:
           <div style="background:#0f172a; border:1px solid #1f2937; border-radius:8px; padding:1.25rem;">
             <div style="font-weight:700; color:var(--accent); margin-bottom:0.5rem; font-size:0.9375rem;">1. Intervals.icu Garmin Cloud Relay</div>
             <p style="font-size:0.8125rem; color:var(--text-muted); margin-bottom:0.75rem;">
-              Enables seamless, hands-free workout sync directly to your Garmin watch or bike computer whenever workouts are generated or updated.
+              Enables automatic hands-free workout sync directly to your Garmin watch or bike computer whenever workouts are generated or updated.
             </p>
             <div style="display:flex; flex-direction:column; gap:0.5rem; margin-bottom:0.75rem; font-size:0.8125rem;">
               <div style="display:flex; justify-content:space-between;">
@@ -1634,9 +1777,9 @@ def get_app_html() -> str:
       </div>
 
       <div>
-        <h4 style="font-size: 0.8125rem; text-transform:uppercase; color:#38bdf8; margin-bottom: 0.5rem;">COROS Watch Screen Simulation</h4>
+        <h4 style="font-size: 0.8125rem; color:var(--color-accent); margin-bottom: 0.5rem; font-weight:700;">Coros Watch Screen Simulation</h4>
         <div class="coros-preview-box">
-          <div class="coros-screen-header" id="corosWatchHeader">COROS PACE / APEX DISPLAY</div>
+          <div class="coros-screen-header" id="corosWatchHeader">Coros Pace and Apex Display</div>
           <div id="corosWatchBody">
             <div style="font-size:1.25rem; font-weight:800; color:#fff;" id="corosStepCue">WARMUP 10M</div>
             <div style="font-size:0.875rem; color:#94a3b8; margin-top:4px;" id="corosTargetRange">HR: 130-150 bpm</div>
@@ -2665,6 +2808,45 @@ def get_app_html() -> str:
       }
     }
 
+    let pmcVisibleSeries = { ctl: true, atl: true, tsb: true };
+    let pmcSelectedDate = null;
+
+    function togglePmcSeries(seriesKey) {
+      pmcVisibleSeries[seriesKey] = !pmcVisibleSeries[seriesKey];
+      const btn = document.getElementById('pmcToggle' + seriesKey.toUpperCase());
+      if (btn) {
+        btn.classList.toggle('active', pmcVisibleSeries[seriesKey]);
+        btn.setAttribute('aria-pressed', pmcVisibleSeries[seriesKey] ? 'true' : 'false');
+      }
+      if (currentAnalytics && currentAnalytics.daily_series) {
+        renderPmcChart(currentAnalytics.daily_series);
+      }
+    }
+
+    function updatePmcInspector(pt) {
+      const insp = document.getElementById('pmcDayInspector');
+      if (!insp || !pt) return;
+      insp.style.display = 'block';
+      const formStatus = pt.tsb >= 15 ? 'Very Fresh (Taper / Race Ready)' :
+                         pt.tsb >= 5 ? 'Fresh (Optimal Race Form)' :
+                         pt.tsb >= -10 ? 'Optimal Training Stimulus (Absorbing Load)' :
+                         pt.tsb >= -25 ? 'High Fatigue (Recovery Recommended)' : 'Severe Overload Risk';
+      const formColor = pt.tsb >= 0 ? 'var(--color-success)' : (pt.tsb >= -15 ? 'var(--color-accent)' : 'var(--color-danger)');
+
+      insp.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--color-border); padding-bottom:6px; margin-bottom:8px;">
+          <span style="font-weight:700; color:var(--color-text); font-size:0.875rem;">Selected Day Diagnostic: ${pt.date}</span>
+          <span style="color:${formColor}; font-weight:700; font-size:0.75rem;">${formStatus}</span>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:0.75rem; font-size:0.8125rem;">
+          <div><span style="color:var(--color-text-muted); font-size:0.7rem;">Fitness (CTL):</span> <strong style="color:#06b6d4; display:block;">${pt.ctl}</strong></div>
+          <div><span style="color:var(--color-text-muted); font-size:0.7rem;">Fatigue (ATL):</span> <strong style="color:#f43f5e; display:block;">${pt.atl}</strong></div>
+          <div><span style="color:var(--color-text-muted); font-size:0.7rem;">Form (TSB):</span> <strong style="color:#10b981; display:block;">${(pt.tsb >= 0 ? '+' : '') + pt.tsb}</strong></div>
+          <div><span style="color:var(--color-text-muted); font-size:0.7rem;">Daily TSS Load:</span> <strong style="color:var(--color-text); display:block;">${pt.load_tss} TSS</strong></div>
+        </div>
+      `;
+    }
+
     function renderPmcChart(series) {
       const svg = document.getElementById('pmcChartSvg');
       if (!svg || !series || series.length === 0) return;
@@ -2693,24 +2875,24 @@ def get_app_html() -> str:
       for (let s = 0; s <= ySteps; s++) {
         const val = minVal + (s / ySteps) * (maxVal - minVal);
         const yPos = getY(val);
-        gridSvg += `<line x1="${padL}" y1="${yPos}" x2="${w - padR}" y2="${yPos}" stroke="#1f2937" stroke-dasharray="3"/>`;
-        gridSvg += `<text x="${padL - 8}" y="${yPos + 4}" fill="#6b7280" font-size="10" text-anchor="end">${Math.round(val)}</text>`;
+        gridSvg += `<line x1="${padL}" y1="${yPos}" x2="${w - padR}" y2="${yPos}" stroke="#1e2e4a" stroke-dasharray="3"/>`;
+        gridSvg += `<text x="${padL - 8}" y="${yPos + 4}" fill="#64748b" font-size="10" text-anchor="end">${Math.round(val)}</text>`;
       }
 
       if (y0 >= padT && y0 <= padT + ph) {
-        gridSvg += `<line x1="${padL}" y1="${y0}" x2="${w - padR}" y2="${y0}" stroke="#4b5563" stroke-width="1.5" stroke-dasharray="4"/>`;
-        gridSvg += `<text x="${w - padR + 4}" y="${y0 + 3}" fill="#9ca3af" font-size="10">0</text>`;
+        gridSvg += `<line x1="${padL}" y1="${y0}" x2="${w - padR}" y2="${y0}" stroke="#475569" stroke-width="1.5" stroke-dasharray="4"/>`;
+        gridSvg += `<text x="${w - padR + 4}" y="${y0 + 3}" fill="#94a3b8" font-size="10">0</text>`;
       }
 
       let dateSvg = '';
       for (let i = 0; i < series.length; i += 5) {
         const xPos = getX(i);
         const dt = series[i].date ? series[i].date.slice(5) : '';
-        dateSvg += `<text x="${xPos}" y="${h - 10}" fill="#6b7280" font-size="10" text-anchor="middle">${dt}</text>`;
+        dateSvg += `<text x="${xPos}" y="${h - 10}" fill="#64748b" font-size="10" text-anchor="middle">${dt}</text>`;
       }
       const lastX = getX(series.length - 1);
       const lastDt = series[series.length - 1].date ? series[series.length - 1].date.slice(5) : '';
-      dateSvg += `<text x="${lastX}" y="${h - 10}" fill="#9ca3af" font-size="10" text-anchor="middle">${lastDt}</text>`;
+      dateSvg += `<text x="${lastX}" y="${h - 10}" fill="#94a3b8" font-size="10" text-anchor="middle">${lastDt}</text>`;
 
       const ctlPoints = series.map((d, i) => `${getX(i).toFixed(1)},${getY(d.ctl).toFixed(1)}`).join(' L ');
       const atlPoints = series.map((d, i) => `${getX(i).toFixed(1)},${getY(d.atl).toFixed(1)}`).join(' L ');
@@ -2719,6 +2901,15 @@ def get_app_html() -> str:
       const tsbAreaPoints = `M ${getX(0).toFixed(1)},${y0.toFixed(1)} L ` +
         series.map((d, i) => `${getX(i).toFixed(1)},${getY(d.tsb).toFixed(1)}`).join(' L ') +
         ` L ${getX(series.length - 1).toFixed(1)},${y0.toFixed(1)} Z`;
+
+      let selectedMarkerSvg = '';
+      if (pmcSelectedDate) {
+        const sIdx = series.findIndex(d => d.date === pmcSelectedDate);
+        if (sIdx >= 0) {
+          const sx = getX(sIdx);
+          selectedMarkerSvg = `<line x1="${sx}" y1="${padT}" x2="${sx}" y2="${padT + ph}" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="3"/>`;
+        }
+      }
 
       svg.innerHTML = `
         <defs>
@@ -2729,10 +2920,11 @@ def get_app_html() -> str:
         </defs>
         ${gridSvg}
         ${dateSvg}
-        <path d="${tsbAreaPoints}" fill="url(#tsbGradient)"/>
-        <path d="M ${ctlPoints}" fill="none" stroke="#06b6d4" stroke-width="2.5" stroke-linecap="round"/>
-        <path d="M ${atlPoints}" fill="none" stroke="#f43f5e" stroke-width="2" stroke-linecap="round"/>
-        <path d="M ${tsbPoints}" fill="none" stroke="#10b981" stroke-width="2" stroke-dasharray="4" stroke-linecap="round"/>
+        ${pmcVisibleSeries.tsb ? `<path d="${tsbAreaPoints}" fill="url(#tsbGradient)"/>` : ''}
+        ${pmcVisibleSeries.ctl ? `<path d="M ${ctlPoints}" fill="none" stroke="#06b6d4" stroke-width="2.5" stroke-linecap="round"/>` : ''}
+        ${pmcVisibleSeries.atl ? `<path d="M ${atlPoints}" fill="none" stroke="#f43f5e" stroke-width="2" stroke-linecap="round"/>` : ''}
+        ${pmcVisibleSeries.tsb ? `<path d="M ${tsbPoints}" fill="none" stroke="#10b981" stroke-width="2" stroke-dasharray="4" stroke-linecap="round"/>` : ''}
+        ${selectedMarkerSvg}
         <line id="pmcCrosshair" x1="0" y1="${padT}" x2="0" y2="${padT + ph}" stroke="#94a3b8" stroke-dasharray="2" opacity="0"/>
       `;
 
@@ -2762,20 +2954,34 @@ def get_app_html() -> str:
           }
 
           tooltip.style.display = 'block';
-          tooltip.style.left = Math.min(rect.width - 160, Math.max(10, mouseX - 60)) + 'px';
+          tooltip.style.left = Math.min(rect.width - 170, Math.max(10, mouseX - 60)) + 'px';
           tooltip.style.top = '15px';
           tooltip.innerHTML = `
-            <div style="font-weight:700; color:#fff; border-bottom:1px solid #334155; padding-bottom:2px; margin-bottom:4px;">${pt.date}</div>
+            <div style="font-weight:700; color:#fff; border-bottom:1px solid #1e2e4a; padding-bottom:2px; margin-bottom:4px;">${pt.date}</div>
             <div style="color:#06b6d4;">CTL (Fitness): <strong>${pt.ctl}</strong></div>
             <div style="color:#f43f5e;">ATL (Fatigue): <strong>${pt.atl}</strong></div>
             <div style="color:#10b981;">TSB (Form): <strong>${(pt.tsb >= 0 ? '+' : '') + pt.tsb}</strong></div>
             <div style="color:#94a3b8; font-size:0.7rem; margin-top:2px;">Daily Load: ${pt.load_tss} TSS</div>
           `;
         };
+
         container.onmouseleave = function() {
           tooltip.style.display = 'none';
           const ch = document.getElementById('pmcCrosshair');
           if (ch) ch.setAttribute('opacity', '0');
+        };
+
+        container.onclick = function(e) {
+          const rect = container.getBoundingClientRect();
+          const mouseX = e.clientX - rect.left;
+          const relX = (mouseX / rect.width) * w;
+          if (relX < padL || relX > w - padR) return;
+          const frac = (relX - padL) / pw;
+          const idx = Math.min(series.length - 1, Math.max(0, Math.round(frac * (series.length - 1))));
+          const pt = series[idx];
+          pmcSelectedDate = pt.date;
+          updatePmcInspector(pt);
+          renderPmcChart(series);
         };
       }
     }
@@ -2812,14 +3018,14 @@ def get_app_html() -> str:
         <text x="${padL - 6}" y="${y1_5 + 3}" fill="#ef4444" font-size="9" text-anchor="end">1.5</text>
         <text x="${padL - 6}" y="${y1_3 + 3}" fill="#f59e0b" font-size="9" text-anchor="end">1.3</text>
         <text x="${padL - 6}" y="${y0_8 + 3}" fill="#10b981" font-size="9" text-anchor="end">0.8</text>
-        <text x="${padL - 6}" y="${y0_0 + 3}" fill="#6b7280" font-size="9" text-anchor="end">0.0</text>
+        <text x="${padL - 6}" y="${y0_0 + 3}" fill="#64748b" font-size="9" text-anchor="end">0.0</text>
       `;
 
       let dateSvg = '';
       for (let i = 0; i < series.length; i += 7) {
         const xPos = getX(i);
         const dt = series[i].date ? series[i].date.slice(5) : '';
-        dateSvg += `<text x="${xPos}" y="${h - 8}" fill="#6b7280" font-size="9" text-anchor="middle">${dt}</text>`;
+        dateSvg += `<text x="${xPos}" y="${h - 8}" fill="#64748b" font-size="9" text-anchor="middle">${dt}</text>`;
       }
       const lastX = getX(series.length - 1);
       const lastDt = series[series.length - 1].date ? series[series.length - 1].date.slice(5) : '';
@@ -2868,15 +3074,31 @@ def get_app_html() -> str:
           tooltip.style.left = Math.min(rect.width - 150, Math.max(10, mouseX - 60)) + 'px';
           tooltip.style.top = '15px';
           tooltip.innerHTML = `
-            <div style="font-weight:700; color:#fff; border-bottom:1px solid #334155; padding-bottom:2px; margin-bottom:4px;">${pt.date}</div>
+            <div style="font-weight:700; color:#fff; border-bottom:1px solid #1e2e4a; padding-bottom:2px; margin-bottom:4px;">${pt.date}</div>
             <div style="color:#38bdf8;">ACWR Ratio: <strong>${pt.acwr_ratio.toFixed(2)}</strong></div>
             <div style="color:${statusColor}; font-size:0.7rem;">Status: ${statusTxt}</div>
           `;
         };
+
         container.onmouseleave = function() {
           tooltip.style.display = 'none';
           const ch = document.getElementById('acwrCrosshair');
           if (ch) ch.setAttribute('opacity', '0');
+        };
+
+        container.onclick = function(e) {
+          const rect = container.getBoundingClientRect();
+          const mouseX = e.clientX - rect.left;
+          const relX = (mouseX / rect.width) * w;
+          if (relX < padL || relX > w - padR) return;
+          const frac = (relX - padL) / pw;
+          const idx = Math.min(series.length - 1, Math.max(0, Math.round(frac * (series.length - 1))));
+          const pt = series[idx];
+          const insp = document.getElementById('acwrDayInspector');
+          if (insp && pt) {
+            insp.style.display = 'block';
+            insp.innerHTML = `<strong>${pt.date} ACWR:</strong> Ratio ${pt.acwr_ratio.toFixed(2)} | Tim Gabbett workload index: ${pt.acwr_ratio > 1.3 ? 'Elevated spike risk' : (pt.acwr_ratio < 0.8 ? 'Under-training base' : 'Optimal training sweet spot')}`;
+          }
         };
       }
     }
@@ -2916,7 +3138,7 @@ def get_app_html() -> str:
       for (let i = 0; i < series.length; i += 7) {
         const xPos = getX(i);
         const dt = series[i].date ? series[i].date.slice(5) : '';
-        dateSvg += `<text x="${xPos}" y="${h - 8}" fill="#6b7280" font-size="9" text-anchor="middle">${dt}</text>`;
+        dateSvg += `<text x="${xPos}" y="${h - 8}" fill="#64748b" font-size="9" text-anchor="middle">${dt}</text>`;
       }
       const lastX = getX(series.length - 1);
       const lastDt = series[series.length - 1].date ? series[series.length - 1].date.slice(5) : '';
@@ -2938,7 +3160,7 @@ def get_app_html() -> str:
       validPoints.forEach(p => {
         const isElevated = p.hr >= baseVal + 4.0;
         const color = isElevated ? '#ef4444' : '#10b981';
-        dotsSvg += `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3.5" fill="${color}" stroke="#0f172a" stroke-width="1"/>`;
+        dotsSvg += `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3.5" fill="${color}" stroke="#060a12" stroke-width="1"/>`;
       });
 
       svg.innerHTML = `
@@ -2986,15 +3208,32 @@ def get_app_html() -> str:
           tooltip.style.left = Math.min(rect.width - 150, Math.max(10, mouseX - 60)) + 'px';
           tooltip.style.top = '15px';
           tooltip.innerHTML = `
-            <div style="font-weight:700; color:#fff; border-bottom:1px solid #334155; padding-bottom:2px; margin-bottom:4px;">${pt.date}</div>
+            <div style="font-weight:700; color:#fff; border-bottom:1px solid #1e2e4a; padding-bottom:2px; margin-bottom:4px;">${pt.date}</div>
             <div style="color:#38bdf8;">Resting HR: <strong>${Math.round(pt.resting_hr)} bpm</strong></div>
             <div style="color:${isElevated ? '#ef4444' : '#10b981'}; font-size:0.7rem;">Delta: ${(delta >= 0 ? '+' : '') + delta.toFixed(1)} bpm [${isElevated ? 'STRAIN' : 'STABLE'}]</div>
           `;
         };
+
         container.onmouseleave = function() {
           tooltip.style.display = 'none';
           const ch = document.getElementById('rhrCrosshair');
           if (ch) ch.setAttribute('opacity', '0');
+        };
+
+        container.onclick = function(e) {
+          const rect = container.getBoundingClientRect();
+          const mouseX = e.clientX - rect.left;
+          const relX = (mouseX / rect.width) * w;
+          if (relX < padL || relX > w - padR) return;
+          const frac = (relX - padL) / pw;
+          const idx = Math.min(series.length - 1, Math.max(0, Math.round(frac * (series.length - 1))));
+          const pt = series[idx];
+          const insp = document.getElementById('rhrDayInspector');
+          if (insp && pt) {
+            insp.style.display = 'block';
+            const delta = pt.resting_hr ? (pt.resting_hr - baseVal).toFixed(1) : '0';
+            insp.innerHTML = `<strong>${pt.date} Autonomic Recovery:</strong> ${pt.resting_hr ? pt.resting_hr + ' bpm (' + (delta >= 0 ? '+' : '') + delta + ' vs 30d baseline)' : 'No RHR recorded'}`;
+          }
         };
       }
     }
@@ -3021,8 +3260,8 @@ def get_app_html() -> str:
         <line x1="${padL}" y1="${y7h}" x2="${w - padR}" y2="${y7h}" stroke="#10b981" stroke-width="1.5" stroke-dasharray="4"/>
         <text x="${w - padR - 5}" y="${y7h - 4}" fill="#10b981" font-size="9" text-anchor="end">7h Optimal</text>
         <text x="${padL - 6}" y="${y7h + 3}" fill="#10b981" font-size="9" text-anchor="end">7h</text>
-        <line x1="${padL}" y1="${getY(4.0)}" x2="${w - padR}" y2="${getY(4.0)}" stroke="#1f2937" stroke-dasharray="3"/>
-        <text x="${padL - 6}" y="${getY(4.0) + 3}" fill="#6b7280" font-size="9" text-anchor="end">4h</text>
+        <line x1="${padL}" y1="${getY(4.0)}" x2="${w - padR}" y2="${getY(4.0)}" stroke="#1e2e4a" stroke-dasharray="3"/>
+        <text x="${padL - 6}" y="${getY(4.0) + 3}" fill="#64748b" font-size="9" text-anchor="end">4h</text>
       `;
 
       let barsSvg = '';
@@ -3036,8 +3275,8 @@ def get_app_html() -> str:
           const bh = (d.sleep_hours / maxVal) * ph;
           const bx = getX(i) - colW / 2;
           const by = padT + ph - bh;
-          const barColor = d.sleep_hours >= 7.0 ? '#10b981' : d.sleep_hours >= 5.0 ? '#a855f7' : '#f59e0b';
-          barsSvg += `<rect x="${bx}" y="${by}" width="${colW}" height="${bh}" rx="2" fill="${barColor}" opacity="0.85"/>`;
+          const barColor = d.sleep_hours >= 7.0 ? '#10b981' : d.sleep_hours >= 5.5 ? '#c084fc' : '#f59e0b';
+          barsSvg += `<rect id="sleepBar_${i}" x="${bx.toFixed(1)}" y="${by.toFixed(1)}" width="${colW.toFixed(1)}" height="${bh.toFixed(1)}" rx="2" fill="${barColor}" opacity="0.85" style="transition:fill 0.15s;"/>`;
         }
       });
 
@@ -3049,13 +3288,85 @@ def get_app_html() -> str:
       for (let i = 0; i < series.length; i += 7) {
         const xPos = getX(i);
         const dt = series[i].date ? series[i].date.slice(5) : '';
-        dateSvg += `<text x="${xPos}" y="${h - 8}" fill="#6b7280" font-size="9" text-anchor="middle">${dt}</text>`;
+        dateSvg += `<text x="${xPos}" y="${h - 8}" fill="#64748b" font-size="9" text-anchor="middle">${dt}</text>`;
       }
       const lastX = getX(series.length - 1);
       const lastDt = series[series.length - 1].date ? series[series.length - 1].date.slice(5) : '';
       dateSvg += `<text x="${lastX}" y="${h - 8}" fill="#9ca3af" font-size="9" text-anchor="middle">${lastDt}</text>`;
 
-      svg.innerHTML = gridSvg + barsSvg + dateSvg;
+      svg.innerHTML = `
+        ${gridSvg}
+        ${dateSvg}
+        ${barsSvg}
+        <line id="sleepCrosshair" x1="0" y1="${padT}" x2="0" y2="${padT + ph}" stroke="#94a3b8" stroke-dasharray="2" opacity="0"/>
+      `;
+
+      // Interactive hover & click inspection
+      const container = document.getElementById('sleepChartContainer');
+      const tooltip = document.getElementById('sleepTooltip');
+      if (container && tooltip) {
+        container.onmousemove = function(e) {
+          const rect = container.getBoundingClientRect();
+          const mouseX = e.clientX - rect.left;
+          const relX = (mouseX / rect.width) * w;
+          if (relX < padL || relX > w - padR) {
+            tooltip.style.display = 'none';
+            const ch = document.getElementById('sleepCrosshair');
+            if (ch) ch.setAttribute('opacity', '0');
+            return;
+          }
+          const frac = (relX - padL) / pw;
+          const idx = Math.min(series.length - 1, Math.max(0, Math.round(frac * (series.length - 1))));
+          const pt = series[idx];
+          const ptX = getX(idx);
+
+          const ch = document.getElementById('sleepCrosshair');
+          if (ch) {
+            ch.setAttribute('x1', ptX);
+            ch.setAttribute('x2', ptX);
+            ch.setAttribute('opacity', '0.7');
+          }
+
+          if (pt.sleep_hours === null || pt.sleep_hours === undefined) {
+            tooltip.style.display = 'none';
+            return;
+          }
+
+          const qualTxt = pt.sleep_hours >= 7.0 ? 'Optimal Restorative (7h+)' : (pt.sleep_hours >= 6.0 ? 'Adequate Recovery' : 'Rest Deficit');
+          const qualColor = pt.sleep_hours >= 7.0 ? '#10b981' : (pt.sleep_hours >= 6.0 ? '#c084fc' : '#f59e0b');
+
+          tooltip.style.display = 'block';
+          tooltip.style.left = Math.min(rect.width - 160, Math.max(10, mouseX - 60)) + 'px';
+          tooltip.style.top = '15px';
+          tooltip.innerHTML = `
+            <div style="font-weight:700; color:#fff; border-bottom:1px solid #1e2e4a; padding-bottom:2px; margin-bottom:4px;">${pt.date}</div>
+            <div style="color:${qualColor};">Duration: <strong>${pt.sleep_hours} hrs</strong></div>
+            <div style="color:${qualColor}; font-size:0.7rem;">Status: ${qualTxt}</div>
+            ${pt.sleep_note ? `<div style="color:#94a3b8; font-size:0.6875rem; margin-top:2px;">Stages: ${pt.sleep_note.slice(0, 32)}</div>` : ''}
+          `;
+        };
+
+        container.onmouseleave = function() {
+          tooltip.style.display = 'none';
+          const ch = document.getElementById('sleepCrosshair');
+          if (ch) ch.setAttribute('opacity', '0');
+        };
+
+        container.onclick = function(e) {
+          const rect = container.getBoundingClientRect();
+          const mouseX = e.clientX - rect.left;
+          const relX = (mouseX / rect.width) * w;
+          if (relX < padL || relX > w - padR) return;
+          const frac = (relX - padL) / pw;
+          const idx = Math.min(series.length - 1, Math.max(0, Math.round(frac * (series.length - 1))));
+          const pt = series[idx];
+          const insp = document.getElementById('sleepDayInspector');
+          if (insp && pt) {
+            insp.style.display = 'block';
+            insp.innerHTML = `<strong>${pt.date} Sleep Telemetry:</strong> ${pt.sleep_hours ? pt.sleep_hours + 'h duration' : 'No sleep data recorded'} ${pt.sleep_note ? '— ' + pt.sleep_note : ''}`;
+          }
+        };
+      }
     }
 
     function renderVitalsChart(series) {
@@ -3063,19 +3374,19 @@ def get_app_html() -> str:
       if (!svg || !series || series.length === 0) return;
 
       const w = 450, h = 180;
-      const padL = 40, padR = 20, padT = 15, padB = 25;
+      const padL = 40, padR = 25, padT = 15, padB = 25;
       const pw = w - padL - padR;
       const ph = h - padT - padB;
 
       const getX = (i) => padL + (i / (series.length - 1)) * pw;
-      // SpO2 scale (90% to 100%) on left, Weight (75kg to 85kg) on right
       const getSpo2Y = (val) => padT + ph - ((val - 90.0) / 10.0) * ph;
-      const getWeightY = (val) => padT + ph - ((val - 75.0) / 10.0) * ph;
+      const getWeightY = (val) => padT + ph - ((val - 70.0) / 15.0) * ph;
 
       let gridSvg = `
         <line x1="${padL}" y1="${getSpo2Y(95.0)}" x2="${w - padR}" y2="${getSpo2Y(95.0)}" stroke="#06b6d4" stroke-width="1" stroke-dasharray="3"/>
         <text x="${padL - 6}" y="${getSpo2Y(95.0) + 3}" fill="#06b6d4" font-size="9" text-anchor="end">95%</text>
-        <text x="${w - padR + 4}" y="${getWeightY(80.0) + 3}" fill="#10b981" font-size="9">80kg</text>
+        <line x1="${padL}" y1="${getWeightY(78.0)}" x2="${w - padR}" y2="${getWeightY(78.0)}" stroke="#10b981" stroke-width="1" stroke-dasharray="3"/>
+        <text x="${w - padR + 4}" y="${getWeightY(78.0) + 3}" fill="#10b981" font-size="9">78kg</text>
       `;
 
       let pointsSvg = '';
@@ -3083,11 +3394,11 @@ def get_app_html() -> str:
         const cx = getX(i);
         if (d.spo2 !== null && d.spo2 !== undefined) {
           const cy = Math.max(padT, Math.min(padT + ph, getSpo2Y(d.spo2)));
-          pointsSvg += `<circle cx="${cx}" cy="${cy}" r="3.5" fill="#06b6d4"/>`;
+          pointsSvg += `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="3.5" fill="#06b6d4" stroke="#060a12" stroke-width="1"/>`;
         }
         if (d.weight !== null && d.weight !== undefined) {
           const wy = Math.max(padT, Math.min(padT + ph, getWeightY(d.weight)));
-          pointsSvg += `<circle cx="${cx}" cy="${wy}" r="3.5" fill="#10b981"/>`;
+          pointsSvg += `<circle cx="${cx.toFixed(1)}" cy="${wy.toFixed(1)}" r="3.5" fill="#10b981" stroke="#060a12" stroke-width="1"/>`;
         }
       });
 
@@ -3095,13 +3406,84 @@ def get_app_html() -> str:
       for (let i = 0; i < series.length; i += 7) {
         const xPos = getX(i);
         const dt = series[i].date ? series[i].date.slice(5) : '';
-        dateSvg += `<text x="${xPos}" y="${h - 8}" fill="#6b7280" font-size="9" text-anchor="middle">${dt}</text>`;
+        dateSvg += `<text x="${xPos}" y="${h - 8}" fill="#64748b" font-size="9" text-anchor="middle">${dt}</text>`;
       }
       const lastX = getX(series.length - 1);
       const lastDt = series[series.length - 1].date ? series[series.length - 1].date.slice(5) : '';
       dateSvg += `<text x="${lastX}" y="${h - 8}" fill="#9ca3af" font-size="9" text-anchor="middle">${lastDt}</text>`;
 
-      svg.innerHTML = gridSvg + pointsSvg + dateSvg;
+      svg.innerHTML = `
+        ${gridSvg}
+        ${dateSvg}
+        ${pointsSvg}
+        <line id="vitalsCrosshair" x1="0" y1="${padT}" x2="0" y2="${padT + ph}" stroke="#94a3b8" stroke-dasharray="2" opacity="0"/>
+      `;
+
+      // Interactive hover & click inspection
+      const container = document.getElementById('vitalsChartContainer');
+      const tooltip = document.getElementById('vitalsTooltip');
+      if (container && tooltip) {
+        container.onmousemove = function(e) {
+          const rect = container.getBoundingClientRect();
+          const mouseX = e.clientX - rect.left;
+          const relX = (mouseX / rect.width) * w;
+          if (relX < padL || relX > w - padR) {
+            tooltip.style.display = 'none';
+            const ch = document.getElementById('vitalsCrosshair');
+            if (ch) ch.setAttribute('opacity', '0');
+            return;
+          }
+          const frac = (relX - padL) / pw;
+          const idx = Math.min(series.length - 1, Math.max(0, Math.round(frac * (series.length - 1))));
+          const pt = series[idx];
+          const ptX = getX(idx);
+
+          const ch = document.getElementById('vitalsCrosshair');
+          if (ch) {
+            ch.setAttribute('x1', ptX);
+            ch.setAttribute('x2', ptX);
+            ch.setAttribute('opacity', '0.7');
+          }
+
+          const hasSpo2 = pt.spo2 !== null && pt.spo2 !== undefined;
+          const hasWeight = pt.weight !== null && pt.weight !== undefined;
+          if (!hasSpo2 && !hasWeight) {
+            tooltip.style.display = 'none';
+            return;
+          }
+
+          tooltip.style.display = 'block';
+          tooltip.style.left = Math.min(rect.width - 160, Math.max(10, mouseX - 60)) + 'px';
+          tooltip.style.top = '15px';
+          tooltip.innerHTML = `
+            <div style="font-weight:700; color:#fff; border-bottom:1px solid #1e2e4a; padding-bottom:2px; margin-bottom:4px;">${pt.date}</div>
+            ${hasSpo2 ? `<div style="color:#06b6d4;">SpO2: <strong>${pt.spo2}%</strong></div>` : ''}
+            ${hasWeight ? `<div style="color:#10b981;">Weight: <strong>${pt.weight} kg</strong></div>` : ''}
+            ${pt.body_fat ? `<div style="color:#c084fc; font-size:0.7rem;">Body Fat: ${pt.body_fat}%</div>` : ''}
+          `;
+        };
+
+        container.onmouseleave = function() {
+          tooltip.style.display = 'none';
+          const ch = document.getElementById('vitalsCrosshair');
+          if (ch) ch.setAttribute('opacity', '0');
+        };
+
+        container.onclick = function(e) {
+          const rect = container.getBoundingClientRect();
+          const mouseX = e.clientX - rect.left;
+          const relX = (mouseX / rect.width) * w;
+          if (relX < padL || relX > w - padR) return;
+          const frac = (relX - padL) / pw;
+          const idx = Math.min(series.length - 1, Math.max(0, Math.round(frac * (series.length - 1))));
+          const pt = series[idx];
+          const insp = document.getElementById('vitalsDayInspector');
+          if (insp && pt) {
+            insp.style.display = 'block';
+            insp.innerHTML = `<strong>${pt.date} Bio-Metrics:</strong> ${pt.spo2 ? 'SpO2: ' + pt.spo2 + '%' : ''} ${pt.weight ? ' | Weight: ' + pt.weight + ' kg' : ''} ${pt.body_fat ? ' | Fat: ' + pt.body_fat + '%' : ''}`;
+          }
+        };
+      }
     }
 
     let currentDailyLoadDays = 30;
@@ -3145,18 +3527,18 @@ def get_app_html() -> str:
       for (let s = 0; s <= ySteps; s++) {
         const val = (s / ySteps) * maxLoad;
         const yPos = getY(val);
-        gridSvg += `<line x1="${padL}" y1="${yPos}" x2="${w - padR}" y2="${yPos}" stroke="#1f2937" stroke-dasharray="3"/>`;
-        gridSvg += `<text x="${padL - 8}" y="${yPos + 4}" fill="#6b7280" font-size="10" text-anchor="end">${Math.round(val)}</text>`;
+        gridSvg += `<line x1="${padL}" y1="${yPos}" x2="${w - padR}" y2="${yPos}" stroke="#1e2e4a" stroke-dasharray="3"/>`;
+        gridSvg += `<text x="${padL - 8}" y="${yPos + 4}" fill="#64748b" font-size="10" text-anchor="end">${Math.round(val)}</text>`;
       }
 
       const sportColors = {
         'Run': '#06b6d4',
         'Ride': '#f59e0b',
         'Swim': '#38bdf8',
-        'Strength': '#a855f7',
-        'WeightTraining': '#a855f7',
-        'Brick': '#a855f7',
-        'Duathlon': '#a855f7',
+        'Strength': '#c084fc',
+        'WeightTraining': '#c084fc',
+        'Brick': '#c084fc',
+        'Duathlon': '#f59e0b',
         'Walk': '#10b981',
         'Other': '#64748b'
       };
@@ -3258,10 +3640,10 @@ def get_app_html() -> str:
           tooltip.style.left = Math.min(rect.width - 170, Math.max(10, tipLeft - 70)) + 'px';
           tooltip.style.top = '12px';
           tooltip.innerHTML = `
-            <div style="font-weight:700; color:#fff; border-bottom:1px solid #334155; padding-bottom:3px; margin-bottom:4px;">${pt.date}</div>
+            <div style="font-weight:700; color:#fff; border-bottom:1px solid #1e2e4a; padding-bottom:3px; margin-bottom:4px;">${pt.date}</div>
             <div style="color:#f59e0b; font-size:0.8125rem;">Total Load: <strong>${pt.load_tss} TSS</strong></div>
             <div style="color:#38bdf8; font-size:0.75rem;">Moving Time: <strong>${pt.moving_hours} hrs</strong></div>
-            ${sportLines ? `<div style="margin-top:4px; border-top:1px dashed #334155; padding-top:4px;">${sportLines}</div>` : ''}
+            ${sportLines ? `<div style="margin-top:4px; border-top:1px dashed #1e2e4a; padding-top:4px;">${sportLines}</div>` : ''}
           `;
         };
 
@@ -3269,6 +3651,26 @@ def get_app_html() -> str:
           tooltip.style.display = 'none';
           const hb = document.getElementById('loadHoverBar');
           if (hb) hb.setAttribute('opacity', '0');
+        };
+
+        scrollBox.onclick = function(e) {
+          const rect = scrollBox.getBoundingClientRect();
+          const mouseX = e.clientX - rect.left + scrollBox.scrollLeft;
+          if (mouseX < padL || mouseX > padL + pw) return;
+          const idx = Math.min(series.length - 1, Math.max(0, Math.floor((mouseX - padL) / colW)));
+          const pt = series[idx];
+          const insp = document.getElementById('loadDayInspector');
+          if (insp && pt) {
+            insp.style.display = 'block';
+            const sports = pt.sports || {};
+            const sportParts = Object.entries(sports).filter(([sp, val]) => val > 0).map(([sp, val]) => `<strong>${sp}:</strong> ${val} TSS`);
+            insp.innerHTML = `
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span><strong>${pt.date} Breakdown:</strong> Total ${pt.load_tss || 0} TSS (${pt.moving_hours || 0} hrs)</span>
+                <span style="font-size:0.75rem; color:var(--color-text-muted);">${sportParts.length ? sportParts.join(' | ') : 'Rest / Recovery'}</span>
+              </div>
+            `;
+          }
         };
       }
     }
