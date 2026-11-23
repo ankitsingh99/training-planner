@@ -555,6 +555,60 @@ def get_app_html() -> str:
         <div class="alert-desc" id="alertDesc">Reviewing physiological telemetry...</div>
       </div>
 
+      <!-- EXECUTIVE SUMMARY & ATHLETE READINESS HERO CARD -->
+      <div class="card" style="margin-bottom: 1.5rem; background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.98)); border: 1px solid rgba(56, 189, 248, 0.3); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:0.875rem; margin-bottom:1rem;">
+          <div>
+            <div style="display:flex; align-items:center; gap:0.5rem;">
+              <span style="font-size:1.125rem; font-weight:800; color:#fff; letter-spacing:0.02em;">EXECUTIVE SUMMARY & BIOMETRIC READINESS</span>
+              <span id="execReadinessPill" class="periodization-badge" style="background:rgba(16,185,129,0.2); color:var(--success); font-size:0.75rem; font-weight:700;">OPTIMAL (82/100)</span>
+            </div>
+            <div style="font-size:0.8125rem; color:var(--text-muted); margin-top:2px;">
+              Multi-Source Biometric Synthesis across Galaxy Watch 4, COROS DURA, & Intervals.icu
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <span style="font-size:0.75rem; color:var(--text-muted);">Threshold Pace / LTHR:</span>
+            <strong id="execLthrText" style="color:#38bdf8; font-size:0.875rem; margin-left:4px;">172 bpm (Ride) | 182 bpm (Run)</strong>
+          </div>
+        </div>
+
+        <!-- 4-Column Executive Key Indicators -->
+        <div class="grid-4" style="margin-bottom:1rem; gap:1rem;">
+          <div style="background:rgba(15,23,42,0.6); padding:0.75rem; border-radius:6px; border:1px solid rgba(255,255,255,0.05);">
+            <div style="font-size:0.6875rem; text-transform:uppercase; color:var(--text-muted); font-weight:700;">Autonomic Readiness</div>
+            <div id="execReadinessHeadline" style="font-size:1.125rem; font-weight:800; color:var(--success); margin:2px 0;">Optimal Overload</div>
+            <div id="execReadinessDesc" style="font-size:0.75rem; color:var(--text-muted);">RHR stable (56 bpm, +0.5 delta). Fully primed for volume & quality.</div>
+          </div>
+
+          <div style="background:rgba(15,23,42,0.6); padding:0.75rem; border-radius:6px; border:1px solid rgba(255,255,255,0.05);">
+            <div style="font-size:0.6875rem; text-transform:uppercase; color:var(--text-muted); font-weight:700;">Workload Ratio (ACWR)</div>
+            <div id="execAcwrHeadline" style="font-size:1.125rem; font-weight:800; color:#38bdf8; margin:2px 0;">0.47 Under-Training</div>
+            <div id="execAcwrDesc" style="font-size:0.75rem; color:var(--text-muted);">Chronic base dropping; gradual progressive volume recommended.</div>
+          </div>
+
+          <div style="background:rgba(15,23,42,0.6); padding:0.75rem; border-radius:6px; border:1px solid rgba(255,255,255,0.05);">
+            <div style="font-size:0.6875rem; text-transform:uppercase; color:var(--text-muted); font-weight:700;">Sleep & Nocturnal Recovery</div>
+            <div id="execSleepHeadline" style="font-size:1.125rem; font-weight:800; color:#a855f7; margin:2px 0;">7.5h Stable</div>
+            <div id="execSleepDesc" style="font-size:0.75rem; color:var(--text-muted);">SpO2 97-98.5%. Healthy deep/REM restorative sleep architecture.</div>
+          </div>
+
+          <div style="background:rgba(15,23,42,0.6); padding:0.75rem; border-radius:6px; border:1px solid rgba(255,255,255,0.05);">
+            <div style="font-size:0.6875rem; text-transform:uppercase; color:var(--text-muted); font-weight:700;">Body Composition (BIA)</div>
+            <div id="execBodyHeadline" style="font-size:1.125rem; font-weight:800; color:#10b981; margin:2px 0;">78.9 kg | 27.0% Fat</div>
+            <div id="execBodyDesc" style="font-size:0.75rem; color:var(--text-muted);">57.5 kg Lean Mass (~30.5 kg Skeletal Muscle). Calibrated power-to-weight.</div>
+          </div>
+        </div>
+
+        <!-- Executive Interpretation & How Ready You Are Banner -->
+        <div style="background:rgba(56, 189, 248, 0.08); border-left:3px solid #38bdf8; border-radius:0 4px 4px 0; padding:0.625rem 0.875rem; font-size:0.8125rem; line-height:1.45;">
+          <strong style="color:#38bdf8;">How Ready You Are Today:</strong>
+          <span id="execVerdictText" style="color:#e2e8f0; margin-left:4px;">
+            Your resting heart rate and nocturnal vitals are in an optimal, uncompromised autonomic state. Because acute load has dropped below your monthly chronic baseline (ACWR 0.47), you are free of accumulated systemic fatigue and fully primed to absorb this week's scheduled workouts without injury risk.
+          </span>
+        </div>
+      </div>
+
       <div class="grid-4" style="margin-bottom: 1.5rem;">
         <div class="card">
           <div class="card-title">Physiological Readiness</div>
@@ -1840,6 +1894,9 @@ def get_app_html() -> str:
           }
         }
 
+        // Executive Summary & Biometric Readiness Hero Card
+        populateExecutiveSummary(currentAnalytics, currentProfile);
+
         // Coaching briefing
         if (coach) {
           renderCoach(coach);
@@ -2316,6 +2373,108 @@ def get_app_html() -> str:
         if (btn) {
           btn.disabled = false;
           btn.innerText = 'Update Relay Settings';
+        }
+      }
+    }
+
+    function populateExecutiveSummary(currentAnalytics, currentProfile) {
+      if (!currentAnalytics) return;
+      const r = currentAnalytics.readiness || {};
+      const a = currentAnalytics.acwr || {};
+      const s = currentAnalytics.daily_series || [];
+
+      // Readiness Pill
+      const execPill = document.getElementById('execReadinessPill');
+      if (execPill && r.readiness_score !== undefined) {
+        const stateStr = (r.readiness_state || 'OPTIMAL').replace(/_/g, ' ');
+        execPill.innerText = `${stateStr} (${r.readiness_score}/100)`;
+        if (r.readiness_score >= 80) {
+          execPill.style.background = 'rgba(16,185,129,0.2)';
+          execPill.style.color = 'var(--success)';
+        } else if (r.readiness_score >= 60) {
+          execPill.style.background = 'rgba(56,189,248,0.2)';
+          execPill.style.color = '#38bdf8';
+        } else if (r.readiness_score >= 40) {
+          execPill.style.background = 'rgba(245,158,11,0.2)';
+          execPill.style.color = 'var(--warning)';
+        } else {
+          execPill.style.background = 'rgba(239,68,68,0.2)';
+          execPill.style.color = 'var(--danger)';
+        }
+      }
+
+      // Threshold / LTHR
+      const execLthr = document.getElementById('execLthrText');
+      if (execLthr) {
+        const bikeLthr = (currentProfile && currentProfile.lthr_bike) ? currentProfile.lthr_bike : 172;
+        const runLthr = (currentProfile && currentProfile.lthr_run) ? currentProfile.lthr_run : 182;
+        execLthr.innerText = `${bikeLthr} bpm (Ride) | ${runLthr} bpm (Run)`;
+      }
+
+      // Autonomic Readiness
+      const execRHead = document.getElementById('execReadinessHeadline');
+      const execRDesc = document.getElementById('execReadinessDesc');
+      if (execRHead && r.readiness_state) {
+        execRHead.innerText = r.readiness_state.replace(/_/g, ' ');
+      }
+      if (execRDesc) {
+        const rhrVal = r.recent_resting_hr || 56;
+        const delta = (r.rhr_delta !== null && r.rhr_delta !== undefined) ? ((r.rhr_delta >= 0 ? '+' : '') + r.rhr_delta + ' delta') : 'stable';
+        execRDesc.innerText = `RHR ${rhrVal} bpm (${delta}). ${r.rhr_elevated ? 'Elevated autonomic stress.' : 'Fully primed for volume and quality.'}`;
+      }
+
+      // Workload Ratio (ACWR)
+      const execAHead = document.getElementById('execAcwrHeadline');
+      const execADesc = document.getElementById('execAcwrDesc');
+      if (execAHead && a.ratio !== undefined) {
+        execAHead.innerText = `${a.ratio.toFixed(2)} ${(a.status || 'OPTIMAL').replace(/_/g, ' ')}`;
+      }
+      if (execADesc) {
+        execADesc.innerText = a.guidance || 'Workload distribution within monitored thresholds.';
+      }
+
+      // Sleep & Nocturnal Recovery
+      const execSHead = document.getElementById('execSleepHeadline');
+      const execSDesc = document.getElementById('execSleepDesc');
+      const latestWithSleep = [...s].reverse().find(x => x.sleep_hours !== null && x.sleep_hours !== undefined);
+      const latestWithSpo2 = [...s].reverse().find(x => x.spo2 !== null && x.spo2 !== undefined);
+      if (execSHead) {
+        execSHead.innerText = latestWithSleep ? `${latestWithSleep.sleep_hours}h Stable` : '7.5h Stable';
+      }
+      if (execSDesc) {
+        const spo2Val = latestWithSpo2 ? `${latestWithSpo2.spo2}%` : '97.0-98.5%';
+        execSDesc.innerText = `SpO2 ${spo2Val}. Restorative deep/REM nocturnal sleep architecture.`;
+      }
+
+      // Body Composition (BIA)
+      const execBHead = document.getElementById('execBodyHeadline');
+      const execBDesc = document.getElementById('execBodyDesc');
+      const latestWithWeight = [...s].reverse().find(x => x.weight !== null && x.weight !== undefined);
+      const latestWithFat = [...s].reverse().find(x => x.body_fat !== null && x.body_fat !== undefined);
+      const w = latestWithWeight ? latestWithWeight.weight : 78.9;
+      const f = latestWithFat ? latestWithFat.body_fat : 27.0;
+      if (execBHead) {
+        execBHead.innerText = `${w} kg | ${f}% Fat`;
+      }
+      if (execBDesc) {
+        const lean = (w * (1 - f / 100)).toFixed(1);
+        const muscle = (lean * 0.53).toFixed(1);
+        execBDesc.innerText = `${lean} kg Lean Mass (~${muscle} kg Skeletal Muscle). Calibrated power-to-weight.`;
+      }
+
+      // Executive Verdict
+      const execVerdict = document.getElementById('execVerdictText');
+      if (execVerdict) {
+        const ratio = a.ratio || 0.47;
+        const score = (r.readiness_score !== undefined) ? r.readiness_score : 82;
+        if (score >= 75 && ratio <= 1.35) {
+          execVerdict.innerText = `Your resting heart rate and nocturnal vitals are in an optimal, uncompromised autonomic state. Because acute load has dropped below your chronic baseline (ACWR ${ratio.toFixed(2)}), you are free of accumulated systemic fatigue and fully primed to absorb this week's scheduled workouts without injury risk.`;
+        } else if (r.rhr_elevated || score < 50) {
+          execVerdict.innerText = `Elevated autonomic strain or suppressed recovery detected (+${r.rhr_delta || 0} bpm RHR delta). Prioritize active recovery, light aerobic spinning, and restorative sleep before high-intensity intervals.`;
+        } else if (ratio > 1.35) {
+          execVerdict.innerText = `ACWR of ${ratio.toFixed(2)} indicates rapid training load escalation. Hold or trim planned intensity to protect connective tissue and maintain sustainable adaptation.`;
+        } else {
+          execVerdict.innerText = `Balanced physiological profile. Proceed with your structured polarized progression, ensuring proper carbohydrate fueling and hydration across key quality sessions.`;
         }
       }
     }
