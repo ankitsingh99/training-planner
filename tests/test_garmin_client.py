@@ -178,3 +178,4 @@ def test_plan_exporter_garmin_fit_and_json():
     json_dict = PlanExporter.event_to_garmin_json(event)
     assert json_dict["workoutName"] == "Tempo Run"
     assert json_dict["sportType"]["sportTypeKey"] == "running"
+
