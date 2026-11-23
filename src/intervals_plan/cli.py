@@ -670,7 +670,9 @@ def handle_plan_next(cfg: Config, args: argparse.Namespace) -> None:
 
 
 def handle_coros_status(cfg: Config) -> None:
-    print("\nChecking COROS Cloud Connection & Sync Status...\n")
+    print("\nChecking COROS Cloud Connection & MCP Status...\n")
+    from intervals_plan.integrations.coros_client import CorosClient
+    coros = CorosClient.from_config(cfg)
     client = IntervalsClient(api_key=cfg.api_key, athlete_id=cfg.athlete_id, base_url=cfg.base_url)
     try:
         ath = client._request("GET", f"/athlete/{cfg.athlete_id}")
@@ -679,6 +681,7 @@ def handle_coros_status(cfg: Config) -> None:
         upload_workouts = ath.get("coros_upload_workouts")
         download_wellness = ath.get("coros_download_wellness")
         last_upload = ath.get("coros_last_upload")
+        mcp_stat = coros.check_status(client)
 
         print("Connection Details:")
         print(f"  - COROS User ID:        {user_id or 'Not Connected'}")
@@ -686,6 +689,9 @@ def handle_coros_status(cfg: Config) -> None:
         print(f"  - Download Activities:  {' ENABLED' if sync_acts else ' DISABLED'}")
         print(f"  - Download Wellness:    {' ENABLED' if download_wellness else ' DISABLED'}")
         print(f"  - Last Cloud Push:      {last_upload or 'Never'}")
+        print(f"  - Operating Mode:       {mcp_stat.mode}")
+        print(f"  - Official COROS MCP:   {mcp_stat.mcp_endpoint}")
+        print(f"  - MCP Integration:      {'CONFIGURED' if mcp_stat.mcp_enabled else 'DISABLED'}")
 
         if upload_workouts and user_id:
             print("\nVerification Successful: Intervals.icu is actively pushing workouts to COROS!")
