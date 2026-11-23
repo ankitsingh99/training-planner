@@ -229,6 +229,14 @@ def build_parser() -> argparse.ArgumentParser:
     hc_p.add_argument("--dry-run", action="store_true", default=True, help="Preview without updating Intervals.icu")
     hc_p.add_argument("--apply", action="store_true", help="Apply updates to Intervals.icu and COROS")
 
+    # omnisync
+    omni_p = subparsers.add_parser("omnisync", help="Run full cross-platform sync (Samsung Health, Google Fit, COROS, Intervals.icu)")
+    omni_p.add_argument("--dry-run", action="store_true", default=False, help="Simulate sync without mutating calendar or wellness")
+    omni_p.add_argument("--apply", action="store_true", help="Apply updates directly to Intervals.icu and COROS")
+    omni_p.add_argument("--weeks", type=int, choices=[1, 2], default=1, help="Number of rolling weeks to plan/reconcile (default: 1)")
+    omni_p.add_argument("--no-plan", action="store_true", help="Sync vitals and wellness only, skip training plan regeneration")
+    omni_p.add_argument("--file", help="Path to Health Connect / Samsung Health export JSON")
+
     return parser
 
 
@@ -1109,6 +1117,24 @@ def main() -> None:
         handle_compliance(cfg, args)
     elif args.subcommand == "review-session":
         handle_session_review(args)
+    elif args.subcommand == "omnisync":
+        from intervals_plan.omnisync import OmniSyncEngine
+        engine = OmniSyncEngine(cfg)
+        apply_mode = bool(args.apply)
+        hc_file = Path(args.file) if args.file else None
+        res = engine.run_sync(
+            apply=apply_mode,
+            sync_plan=not args.no_plan,
+            weeks=args.weeks,
+            health_connect_file=hc_file,
+        )
+        print(f"\nOmniSync Run Complete [{res.status}] ({'LIVE APPLIED' if apply_mode else 'DRY-RUN'})")
+        print("=" * 60)
+        for msg in res.messages:
+            print(f"  * {msg}")
+        print("=" * 60)
+        if not apply_mode:
+            print("Notice: Run with '--apply' to persist updates to Intervals.icu and push to COROS.\n")
     elif args.subcommand == "token-audit":
         handle_token_audit(cfg, args)
     elif args.subcommand == "health-connect":
