@@ -34,9 +34,13 @@ jobs:
           INTERVALS_ATHLETE_ID: ${{ secrets.INTERVALS_ATHLETE_ID }}
           COROS_ACCESS_TOKEN: ${{ secrets.COROS_ACCESS_TOKEN }}
           COROS_USER_ID: ${{ secrets.COROS_USER_ID }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENROUTER_MODEL: "openrouter/free"
           PYTHONPATH: src
         run: |
           python -m intervals_plan.cli omnisync --apply --weeks 1
+          # Generate AI sports-science synthesis using openrouter/free
+          python -m intervals_plan.cli coach --ai || true
 
       - name: Commit Updated Manifest & Audit Logs
         uses: stefanzweifel/git-auto-commit-action@v5
