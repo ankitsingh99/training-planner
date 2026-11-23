@@ -235,13 +235,13 @@ class OmniSyncEngine:
                         if ev.id:
                             self.intervals.update_event(ev)
 
-                    # 3. Creations
+                    # 3. Creations (Intervals.icu bulk upsert endpoint)
                     created_events = []
-                    for ev in diff.to_create:
-                        created = self.intervals.create_event(ev)
-                        created_events.append(created)
-                        if created.id:
-                            manifest[str(created.id)] = created.to_dict()
+                    if diff.to_create:
+                        created_events = self.intervals.bulk_upsert_events(diff.to_create)
+                        for created in created_events:
+                            if created.id:
+                                manifest[str(created.id)] = created.to_dict()
 
                     # Save updated manifest
                     manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")

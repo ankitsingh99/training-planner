@@ -105,7 +105,7 @@ def test_omnisync_live_apply_flow(tmp_path: Path):
     engine.intervals.list_events = MagicMock(return_value=[])
 
     dummy_created = IntervalsEvent(id=999, name="Test Workout", type="Ride", start_date_local="2026-11-24")
-    engine.intervals.create_event = MagicMock(return_value=dummy_created)
+    engine.intervals.bulk_upsert_events = MagicMock(return_value=[dummy_created])
 
     engine.coros.check_status = MagicMock(return_value=CorosSyncStatus(
         connected=True,
