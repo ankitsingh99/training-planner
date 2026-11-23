@@ -436,6 +436,28 @@ class AdaptPulseRequestHandler(BaseHTTPRequestHandler):
             self._send_json({"status": "synced", "garmin": status.to_dict()})
             return
 
+        # 11. Full Cross-Platform Ecosystem Sync (OmniSync)
+        if path == "/api/sync":
+            from intervals_plan.omnisync import OmniSyncEngine
+            apply = bool(req_data.get("apply", True))
+            sync_plan = bool(req_data.get("sync_plan", True))
+            weeks = int(req_data.get("weeks", 1))
+            try:
+                engine = OmniSyncEngine()
+                res = engine.run_sync(apply=apply, sync_plan=sync_plan, weeks=weeks)
+                self._send_json(res.to_dict())
+            except Exception as exc:
+                self._send_json({
+                    "status": "ERROR",
+                    "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                    "messages": [f"Sync failed: {str(exc)}"],
+                    "wellness_days_updated": 0,
+                    "activities_analyzed": 0,
+                    "plan_events_created": 0,
+                    "plan_events_updated": 0,
+                }, status=500)
+            return
+
         self._send_json({"error": "Endpoint not found"}, status=404)
 
     def _compute_data_quality(self) -> Dict[str, Any]:

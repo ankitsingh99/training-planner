@@ -310,7 +310,32 @@ def test_web_ui_endpoints():
             assert sync_res["status"] == "synced"
             assert "garmin" in sync_res
 
-        # 24. 404 test on GET and POST
+        # 24. OmniSync Full Ecosystem Sync API (POST)
+        with patch("intervals_plan.omnisync.OmniSyncEngine.run_sync") as mock_omni:
+            from intervals_plan.omnisync import OmniSyncResult
+            mock_omni.return_value = OmniSyncResult(
+                timestamp="2026-11-23T08:00:00Z",
+                status="SUCCESS",
+                wellness_days_updated=5,
+                activities_analyzed=12,
+                plan_events_created=3,
+                messages=["Authenticated", "Synced"],
+            )
+            omni_req = urllib.request.Request(
+                f"{base_url}/api/sync",
+                data=json.dumps({"apply": True, "sync_plan": True, "weeks": 1}).encode("utf-8"),
+                headers={"Content-Type": "application/json"},
+                method="POST",
+            )
+            with urllib.request.urlopen(omni_req) as res:
+                assert res.status == 200
+                sync_data = json.loads(res.read().decode("utf-8"))
+                assert sync_data["status"] == "SUCCESS"
+                assert sync_data["wellness_days_updated"] == 5
+                assert sync_data["activities_analyzed"] == 12
+                assert sync_data["plan_events_created"] == 3
+
+        # 25. 404 test on GET and POST
         req_404 = urllib.request.Request(f"{base_url}/api/nonexistent")
         try:
             urllib.request.urlopen(req_404)

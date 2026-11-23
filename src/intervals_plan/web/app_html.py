@@ -167,7 +167,7 @@ def get_app_html() -> str:
     .header-actions {
       display: flex;
       align-items: center;
-      gap: 1rem;
+      gap: 0.75rem;
     }
     .status-badge {
       font-size: 0.75rem;
@@ -177,6 +177,21 @@ def get_app_html() -> str:
       color: var(--color-success);
       border: 1px solid rgba(16, 185, 129, 0.3);
       font-weight: 600;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 0.75rem;
+      height: 0.75rem;
+      border: 2px solid rgba(255, 255, 255, 0.25);
+      border-radius: 50%;
+      border-top-color: #ffffff;
+      animation: spin 0.8s linear infinite;
+      margin-right: 0.375rem;
+      vertical-align: middle;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
     }
 
     main {
@@ -664,6 +679,10 @@ def get_app_html() -> str:
       <button class="nav-btn" onclick="switchTab('export')">Export Center</button>
     </nav>
     <div class="header-actions">
+      <button id="globalSyncBtn" class="btn" style="padding:0.35rem 0.85rem; font-size:0.75rem; font-weight:600;" onclick="triggerEcosystemSync()" title="Synchronize biometrics & workouts across Intervals, COROS, Samsung Health, Strava, Fit">
+        <span id="syncBtnSpinner" style="display:none;" class="spinner" aria-hidden="true"></span>
+        <span id="syncBtnText">Sync Ecosystem</span>
+      </button>
       <span class="status-badge" id="systemStatus">Online</span>
     </div>
   </header>
@@ -1510,6 +1529,25 @@ def get_app_html() -> str:
 
     <!-- TAB 5: ECOSYSTEM & SYNC -->
     <div id="tab-sync" class="tab-content">
+      <!-- Universal Ecosystem Sync Control Card -->
+      <div class="card" style="margin-bottom: 1.5rem; background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(56, 189, 248, 0.05)); border: 1px solid rgba(16, 185, 129, 0.25);">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+          <div>
+            <div class="card-title" style="margin-bottom: 0.25rem; font-size: 1.1rem; color: #f3f4f6;">Universal Cross-Platform Synchronization</div>
+            <p class="card-subtext" style="margin-bottom: 0;">
+              Synchronize biometrics and training sessions across Samsung Health, Health Connect, Intervals.icu, COROS, Strava, and Google Fit. Updates 30-day rolling analytics and re-aligns workout calendar.
+            </p>
+          </div>
+          <div style="display: flex; gap: 0.75rem; align-items: center;">
+            <button id="tabSyncBtn" class="btn" onclick="triggerEcosystemSync()" style="font-weight: 600; padding: 0.5rem 1.25rem;">
+              <span id="tabSyncBtnSpinner" style="display:none;" class="spinner" aria-hidden="true"></span>
+              <span id="tabSyncBtnText">Sync All Data Sources</span>
+            </button>
+          </div>
+        </div>
+        <div id="syncStatusBanner" style="display: none; margin-top: 1rem; padding: 0.75rem 1rem; border-radius: 6px; font-size: 0.8125rem;"></div>
+      </div>
+
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 1.25rem; margin-bottom: 1.5rem;">
         <div class="card">
           <div class="card-title">Intervals.icu Cloud Hub</div>
@@ -2396,6 +2434,75 @@ def get_app_html() -> str:
         }
       } catch (err) {
         console.debug('Failed loading Health Connect status:', err);
+      }
+    }
+
+    async function triggerEcosystemSync() {
+      const globalBtn = document.getElementById('globalSyncBtn');
+      const globalText = document.getElementById('syncBtnText');
+      const globalSpin = document.getElementById('syncBtnSpinner');
+
+      const tabBtn = document.getElementById('tabSyncBtn');
+      const tabText = document.getElementById('tabSyncBtnText');
+      const tabSpin = document.getElementById('tabSyncBtnSpinner');
+
+      const banner = document.getElementById('syncStatusBanner');
+
+      const setSyncing = (isSyncing) => {
+        if (globalBtn) globalBtn.disabled = isSyncing;
+        if (globalText) globalText.innerText = isSyncing ? 'Syncing...' : 'Sync Ecosystem';
+        if (globalSpin) globalSpin.style.display = isSyncing ? 'inline-block' : 'none';
+
+        if (tabBtn) tabBtn.disabled = isSyncing;
+        if (tabText) tabText.innerText = isSyncing ? 'Syncing Ecosystem...' : 'Sync All Data Sources';
+        if (tabSpin) tabSpin.style.display = isSyncing ? 'inline-block' : 'none';
+      };
+
+      setSyncing(true);
+      showToast('Initiating cross-platform ecosystem synchronization...');
+
+      try {
+        const res = await fetch('/api/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ apply: true, sync_plan: true, weeks: 1 })
+        });
+        const data = await res.json();
+
+        if (data.status === 'SUCCESS' || data.status === 'PARTIAL') {
+          const detail = `${data.wellness_days_updated} wellness days, ${data.activities_analyzed} activities evaluated.`;
+          showToast(`Ecosystem sync completed: ${detail}`);
+          if (banner) {
+            banner.style.display = 'block';
+            banner.style.background = 'rgba(16, 185, 129, 0.15)';
+            banner.style.border = '1px solid var(--color-success)';
+            banner.style.color = 'var(--color-text)';
+            const msgs = (data.messages && data.messages.length) ? `<div style="color:var(--color-text-muted); font-size:0.75rem; margin-top:0.35rem;">${data.messages.join(' | ')}</div>` : '';
+            banner.innerHTML = `<strong>Synchronization successful (${new Date().toLocaleTimeString()}):</strong> ${detail} ${msgs}`;
+          }
+          await loadDashboard();
+        } else {
+          const msg = data.messages && data.messages.length ? data.messages.join(', ') : 'Synchronization encountered issues.';
+          showToast(`Sync notice: ${msg}`);
+          if (banner) {
+            banner.style.display = 'block';
+            banner.style.background = 'rgba(239, 68, 68, 0.15)';
+            banner.style.border = '1px solid var(--color-danger)';
+            banner.style.color = 'var(--color-text)';
+            banner.innerHTML = `<strong>Synchronization notice:</strong> ${msg}`;
+          }
+        }
+      } catch (err) {
+        showToast('Ecosystem sync failed: ' + err);
+        if (banner) {
+          banner.style.display = 'block';
+          banner.style.background = 'rgba(239, 68, 68, 0.15)';
+          banner.style.border = '1px solid var(--color-danger)';
+          banner.style.color = 'var(--color-text)';
+          banner.innerHTML = `<strong>Network error:</strong> Unable to reach server sync endpoint (${err}).`;
+        }
+      } finally {
+        setSyncing(false);
       }
     }
 
