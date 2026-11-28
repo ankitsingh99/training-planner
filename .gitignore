@@ -20,6 +20,8 @@ data/backups/*
 !data/backups/.gitkeep
 data/cache/*
 !data/cache/.gitkeep
+data/database/*
+!data/database/.gitkeep
 data/manifest.json
 data/audit.log
 data/athlete_profile.json
@@ -28,6 +30,7 @@ data/health_connect_latest.json
 !data/athlete_profile.json.example
 *.sqlite
 *.sqlite3
+*.db
 
 # macOS
 .DS_Store

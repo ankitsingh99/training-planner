@@ -394,7 +394,7 @@ def test_run_web_server_function():
     from unittest.mock import MagicMock, patch
     from intervals_plan.web.server import run_web_server
 
-    with patch("intervals_plan.web.server.ThreadingHTTPServer") as mock_srv_cls, \
+    with patch("intervals_plan.web.server.AdaptPulseHTTPServer") as mock_srv_cls, \
          patch("intervals_plan.web.server.webbrowser.open") as mock_open:
         mock_srv = MagicMock()
         mock_srv.serve_forever.side_effect = KeyboardInterrupt

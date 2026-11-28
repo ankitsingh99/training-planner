@@ -30,29 +30,38 @@ class AdaptPulseRequestHandler(BaseHTTPRequestHandler):
     """HTTP request handler providing REST endpoints and serving the Web UI."""
 
     def _send_json(self, data: Any, status: int = 200) -> None:
-        payload = json.dumps(data).encode("utf-8")
-        self.send_response(status)
-        self.send_header("Content-Type", "application/json")
-        self.send_header("Content-Length", str(len(payload)))
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.end_headers()
-        self.wfile.write(payload)
+        try:
+            payload = json.dumps(data).encode("utf-8")
+            self.send_response(status)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(payload)))
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            self.wfile.write(payload)
+        except (BrokenPipeError, ConnectionResetError):
+            pass
 
     def _send_html(self, html_text: str, status: int = 200) -> None:
-        payload = html_text.encode("utf-8")
-        self.send_response(status)
-        self.send_header("Content-Type", "text/html; charset=utf-8")
-        self.send_header("Content-Length", str(len(payload)))
-        self.end_headers()
-        self.wfile.write(payload)
+        try:
+            payload = html_text.encode("utf-8")
+            self.send_response(status)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", str(len(payload)))
+            self.end_headers()
+            self.wfile.write(payload)
+        except (BrokenPipeError, ConnectionResetError):
+            pass
 
     def _send_text(self, text: str, status: int = 200, content_type: str = "text/plain") -> None:
-        payload = text.encode("utf-8")
-        self.send_response(status)
-        self.send_header("Content-Type", content_type)
-        self.send_header("Content-Length", str(len(payload)))
-        self.end_headers()
-        self.wfile.write(payload)
+        try:
+            payload = text.encode("utf-8")
+            self.send_response(status)
+            self.send_header("Content-Type", content_type)
+            self.send_header("Content-Length", str(len(payload)))
+            self.end_headers()
+            self.wfile.write(payload)
+        except (BrokenPipeError, ConnectionResetError):
+            pass
 
     def do_OPTIONS(self) -> None:
         self.send_response(200)
@@ -843,9 +852,19 @@ class AdaptPulseRequestHandler(BaseHTTPRequestHandler):
         return
 
 
+class AdaptPulseHTTPServer(ThreadingHTTPServer):
+    """Threading HTTP server with graceful handling of client disconnections."""
+
+    def handle_error(self, request: Any, client_address: Any) -> None:
+        exc_type, _, _ = sys.exc_info()
+        if exc_type in (BrokenPipeError, ConnectionResetError):
+            return
+        super().handle_error(request, client_address)
+
+
 def run_web_server(host: str = "127.0.0.1", port: int = 8080, open_browser: bool = True) -> None:
     """Launch the AdaptPulse Web UI server."""
-    server = ThreadingHTTPServer((host, port), AdaptPulseRequestHandler)
+    server = AdaptPulseHTTPServer((host, port), AdaptPulseRequestHandler)
     url = f"http://{host}:{port}/"
     print("=" * 64)
     print("  ADAPTPULSE INTERACTIVE WEB UI")
